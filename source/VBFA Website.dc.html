@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<title>VBFA | Hiệp hội Nhiên liệu Sinh học Việt Nam</title>
+<meta name="description" content="VBFA — Hiệp hội Nhiên liệu Sinh học Việt Nam. Không gian kết nối, chia sẻ tri thức và thúc đẩy hợp tác trong hệ sinh thái nhiên liệu sinh học.">
+<meta name="theme-color" content="#0b2616">
+<script src="./image-slot.js"></script>
+<style>
+@font-face{font-family:'Be Vietnam Pro';font-weight:400;font-display:swap;src:url(fonts/BeVietnamPro-Regular.ttf) format('truetype')}
+@font-face{font-family:'Be Vietnam Pro';font-weight:500;font-display:swap;src:url(fonts/BeVietnamPro-Medium.ttf) format('truetype')}
+@font-face{font-family:'Be Vietnam Pro';font-weight:600;font-display:swap;src:url(fonts/BeVietnamPro-SemiBold.ttf) format('truetype')}
+@font-face{font-family:'Be Vietnam Pro';font-weight:700;font-display:swap;src:url(fonts/BeVietnamPro-Bold.ttf) format('truetype')}
+@font-face{font-family:'Mona Sans';font-weight:400;font-display:swap;src:url(fonts/MonaSans-Regular.ttf) format('truetype')}
+@font-face{font-family:'Mona Sans';font-weight:500;font-display:swap;src:url(fonts/MonaSans-Medium.ttf) format('truetype')}
+@font-face{font-family:'Mona Sans';font-weight:700;font-display:swap;src:url(fonts/MonaSans-Bold.ttf) format('truetype')}
+@font-face{font-family:'Mona Sans SemiExp';font-weight:600;font-display:swap;src:url(fonts/MonaSans-SemiExpanded-SemiBold.ttf) format('truetype')}
+@font-face{font-family:'Bebas SemiExp';font-weight:400;font-display:swap;src:url(fonts/BebasNeuePro-SemiExpandedRegular.otf) format('opentype')}
+@font-face{font-family:'Bebas SemiExp';font-weight:700;font-display:swap;src:url(fonts/BebasNeuePro-SemiExpandedBold.otf) format('opentype')}
+@font-face{font-family:'Bebas';font-weight:700;font-display:swap;src:url(fonts/BebasNeuePro-Bold.otf) format('opentype')}
+@font-face{font-family:'Primark';font-weight:400;font-display:swap;src:url(fonts/SVN-Primark.otf) format('opentype')}
+html{scroll-behavior:smooth;scroll-padding-top:96px}
+html,body{margin:0;padding:0;background:#fff}
+body{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility}
+*,*::before,*::after{box-sizing:border-box}
+a{color:#1f5329;text-decoration:none}
+a:hover{color:#143c1d}
+button,input,select,textarea{font:inherit}
+img{display:block;max-width:100%}
+::selection{background:#cfe29a;color:#0b2616}
+:focus-visible{outline:3px solid #e3a63a;outline-offset:3px}
+input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none}
+@keyframes vbfaFade{from{opacity:.35}to{opacity:1}}
+@keyframes vbfaPop{from{opacity:.4;transform:translateY(18px) scale(.985)}to{opacity:1;transform:none}}
+@keyframes vbfaSlide{from{transform:translateX(100%)}to{transform:none}}
+@keyframes vbfaToast{from{opacity:.4;transform:translate(-50%,16px)}to{opacity:1;transform:translate(-50%,0)}}
+@keyframes vbfaRise{from{opacity:.55;transform:translateY(22px)}to{opacity:1;transform:none}}
+@keyframes vbfaSpin{to{transform:rotate(360deg)}}
+@keyframes vbfaFloat{from{transform:translate(-50%,-52%)}to{transform:translate(-50%,-48%)}}
+[data-btn]{transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s cubic-bezier(.2,.8,.2,1),background-color .25s,border-color .25s,color .25s}
+[data-btn]:hover{transform:translateY(-2px);box-shadow:0 14px 30px rgba(6,30,16,.2)}
+[data-btn]:active{transform:none;box-shadow:none}
+[data-ar]{display:inline-block;transition:transform .3s cubic-bezier(.2,.8,.2,1)}
+[data-btn]:hover [data-ar],[data-link]:hover [data-ar],[data-card]:hover [data-ar],[data-row]:hover [data-ar],[data-news]:hover [data-ar]{transform:translate(2px,-2px)}
+[data-card]{transition:transform .5s cubic-bezier(.2,.8,.2,1),box-shadow .5s cubic-bezier(.2,.8,.2,1),border-color .3s}
+[data-card]:hover{transform:translateY(-6px);box-shadow:0 26px 60px rgba(11,46,26,.12);border-color:#c5d5bd}
+[data-tile],[data-rc],[data-bar]{transition:background-color .3s,color .3s,border-color .3s,transform .55s cubic-bezier(.2,.8,.2,1)}
+[data-card]:hover [data-tile]{background:#1f5329!important;color:#b2d25a!important}
+[data-card]:hover [data-rc],[data-row]:hover [data-rc]{background:#1f5329!important;border-color:#1f5329!important;color:#fff!important}
+[data-card]:hover [data-bar]{transform:scaleX(1)!important}
+[data-row]{transition:background-color .3s,padding .35s cubic-bezier(.2,.8,.2,1)}
+[data-row]:hover{background:#f4f6ec;padding-left:16px!important;padding-right:16px!important}
+[data-news]{transition:opacity .4s,filter .4s,box-shadow .45s,transform .45s cubic-bezier(.2,.8,.2,1),border-color .3s}
+[data-news]:hover{box-shadow:0 24px 56px rgba(11,46,26,.11);border-color:#c5d5bd}
+[data-zoom]{transition:transform .9s cubic-bezier(.2,.8,.2,1)}
+[data-news]:hover [data-zoom]{transform:scale(1.045)}
+[data-ttl]{transition:color .25s}
+[data-news]:hover [data-ttl]{color:#1f5329!important}
+[data-nav]{position:relative}
+[data-nav]::after{content:'';position:absolute;left:0;right:0;bottom:-9px;height:2px;background:#e3a63a;transform:scaleX(0);transform-origin:left;transition:transform .35s cubic-bezier(.2,.8,.2,1)}
+[data-nav]:hover::after,[data-nav][aria-current]::after{transform:scaleX(1)}
+[data-nav][aria-current]{color:#1f5329!important}
+@media (max-width:1040px){
+[data-r=nav],[data-r=hdr-cta],[data-r=strip-items],[data-r=hero-micro]{display:none!important}
+[data-r=burger]{display:inline-flex!important}
+[data-r=hero-art]{opacity:.34;right:-110px!important;top:40%!important;width:440px!important}
+}
+@media (max-width:900px){
+[data-r=fgrid]{grid-template-columns:1fr 1fr!important}
+[data-r=fcol0],[data-r=fcol3]{grid-column:1/-1}
+}
+@media (max-width:720px){
+[data-r=utility],[data-r=brh],[data-r=strip-cta],[data-r=join-side]{display:none!important}
+[data-r=hero-art]{width:380px!important;right:-150px!important;top:-40px!important;bottom:auto!important;transform:none!important;opacity:.2}
+[data-r=actions]{flex-direction:column;align-items:stretch!important}
+[data-r=actions]>a,[data-r=actions]>button{justify-content:space-between!important}
+[data-r=join-grid],[data-r=join-dialog]{grid-template-columns:1fr!important}
+}
+@media (hover:none){[data-card]:hover{transform:none}}
+[data-embed] *,[data-embed] *::before,[data-embed] *::after{animation:none!important}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+</style>
+</helmet>
+<div ref="{{ setRoot }}" data-embed="{{ embedAttr }}" style="font-family:'Be Vietnam Pro',Arial,sans-serif;font-size:16px;line-height:1.7;color:#11271a;background:#fff;overflow-x:clip;position:relative">
+<div aria-hidden="true" ref="{{ setBar }}" style="position:fixed;top:0;left:0;right:0;height:3px;z-index:140;transform-origin:left center;transform:scaleX(0);background:linear-gradient(90deg,#96b949,#e3a63a);pointer-events:none"></div>
+<a href="#main" style="position:fixed;left:16px;top:-90px;z-index:200;background:#fff;color:#0b2616;padding:12px 18px;border-radius:6px;box-shadow:0 10px 30px rgba(0,0,0,.25);font-weight:600" style-focus="top:12px">Bỏ qua đến nội dung</a>
+
+<sc-if value="{{ showUtility }}" hint-placeholder-val="{{ true }}">
+<div data-r="utility" style="background:#0b2616;color:#cfe0cf">
+<div style="max-width:1280px;margin:0 auto;padding:0 clamp(20px,4vw,48px);min-height:40px;display:flex;align-items:center;justify-content:space-between;gap:8px 24px;flex-wrap:wrap;font-family:'Bebas SemiExp','Bebas',Impact,sans-serif;font-size:14px;line-height:1.2;letter-spacing:.16em;text-transform:uppercase">
+<span style="color:#fff;font-weight:700">VBFA · Hiệp hội Nhiên liệu Sinh học Việt Nam</span>
+<span>Không gian thông tin &amp; kết nối ngành</span>
+</div>
+</div>
+</sc-if>
+
+<header style="position:sticky;top:0;z-index:60;background:rgba(255,255,255,.95);-webkit-backdrop-filter:saturate(1.5) blur(14px);backdrop-filter:saturate(1.5) blur(14px);border-bottom:1px solid #e2e8dd;box-shadow:{{ headerShadow }};transition:box-shadow .3s">
+<div style="max-width:1280px;margin:0 auto;padding:0 clamp(20px,4vw,48px);height:clamp(68px,6vw,88px);display:flex;align-items:center;justify-content:space-between;gap:24px">
+<a href="#top" style="display:flex;align-items:center;flex:none"><img src="assets/vbfa-logo.png" alt="VBFA - Hiệp hội Nhiên liệu Sinh học Việt Nam" width="1255" height="516" style="height:clamp(46px,4.5vw,60px);width:auto"></a>
+<nav data-r="nav" aria-label="Điều hướng chính" style="display:flex;align-items:center;justify-content:center;flex:1 1 auto;white-space:nowrap;gap:clamp(18px,2.4vw,38px)">
+<a data-nav href="#top" aria-current="{{ cur.top }}" style="font-size:14.5px;font-weight:600;color:#26382c;padding:8px 0">Trang chủ</a>
+<a data-nav href="#about" aria-current="{{ cur.about }}" style="font-size:14.5px;font-weight:600;color:#26382c;padding:8px 0">Về VBFA</a>
+<a data-nav href="#focus" aria-current="{{ cur.focus }}" style="font-size:14.5px;font-weight:600;color:#26382c;padding:8px 0">Lĩnh vực</a>
+<a data-nav href="#news" aria-current="{{ cur.news }}" style="font-size:14.5px;font-weight:600;color:#26382c;padding:8px 0">Tin tức</a>
+<a data-nav href="#resources" aria-current="{{ cur.resources }}" style="font-size:14.5px;font-weight:600;color:#26382c;padding:8px 0">Thư viện</a>
+<a data-nav href="#contact" aria-current="{{ cur.contact }}" style="font-size:14.5px;font-weight:600;color:#26382c;padding:8px 0">Liên hệ</a>
+</nav>
+<div style="display:flex;align-items:center;gap:12px;flex:none">
+<button type="button" aria-label="Tìm kiếm" onClick="{{ openSearch }}" style="width:44px;height:44px;border-radius:50%;border:1px solid #d2dcce;background:#fff;color:#1f5329;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:background-color .25s,border-color .25s" style-hover="background:#eef3e1;border-color:#aebfa9"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"></circle><path d="M16 16l4.5 4.5"></path></svg></button>
+<button data-btn data-r="hdr-cta" type="button" onClick="{{ openJoin }}" style="display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:46px;padding:0 22px;border-radius:6px;border:1px solid #1f5329;background:#1f5329;color:#fff;font-size:14.5px;font-weight:600;white-space:nowrap;cursor:pointer" style-hover="background:#17441f;border-color:#17441f">Trở thành hội viên <svg data-ar width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M7 17L17 7M8 7h9v9"></path></svg></button>
+<button data-r="burger" type="button" aria-label="Mở menu" aria-expanded="{{ menuExpanded }}" onClick="{{ openMenu }}" style="display:none;width:44px;height:44px;border-radius:8px;border:1px solid #d2dcce;background:#fff;color:#1f5329;align-items:center;justify-content:center;cursor:pointer"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10"></path></svg></button>
+</div>
+</div>
+</header>
+
+<main id="main">
+
+<section id="top" aria-labelledby="hero-title" style="position:relative;background:#0b2616;color:#fff;overflow:hidden;isolation:isolate">
+<div aria-hidden="true" style="position:absolute;inset:0;z-index:-1;background:radial-gradient(56% 78% at 76% 46%,rgba(150,185,73,.22),transparent 64%),radial-gradient(42% 52% at 4% 104%,rgba(227,166,58,.12),transparent 70%),linear-gradient(110deg,#091f12 0%,#0e2f1b 52%,#164126 100%)"></div>
+<div style="max-width:1280px;margin:0 auto;padding:0 clamp(20px,4vw,48px);position:relative">
+
+<sc-if value="{{ heroRipple }}" hint-placeholder-val="{{ true }}">
+<div data-r="hero-art" aria-hidden="true" style="position:absolute;right:clamp(-60px,-2vw,0px);top:50%;width:clamp(320px,42vw,620px);aspect-ratio:1/1;transform:translateY(-50%)">
+<div style="position:absolute;inset:0;animation:vbfaRise 1.2s cubic-bezier(.2,.8,.2,1) .25s both">
+<div style="position:absolute;left:50%;top:50%;width:74%;height:74%;transform:translate(-50%,-50%);background:radial-gradient(circle,rgba(242,207,117,.24),rgba(150,185,73,.12) 46%,transparent 70%);filter:blur(12px)"></div>
+<svg viewBox="0 0 620 620" width="100%" height="100%" fill="none" style="position:absolute;inset:0;overflow:visible">
+<circle cx="310" cy="310" r="120" stroke="#96b949" strokeOpacity=".36"></circle>
+<circle cx="310" cy="310" r="170" stroke="#96b949" strokeOpacity=".25"></circle>
+<circle cx="310" cy="310" r="224" stroke="#96b949" strokeOpacity=".16"></circle>
+<circle cx="310" cy="310" r="280" stroke="#96b949" strokeOpacity=".10"></circle>
+<circle cx="310" cy="310" r="308" stroke="#e3a63a" strokeOpacity=".4" strokeDasharray="2 9" strokeLinecap="round" style="transform-origin:310px 310px;animation:vbfaSpin 160s linear infinite"></circle>
+<circle cx="439" cy="202" r="6" fill="#e3a63a"></circle>
+<circle cx="109" cy="216" r="5" fill="#b2d25a"></circle>
+<circle cx="538" cy="469" r="6" fill="#e3a63a"></circle>
+<circle cx="272" cy="529" r="4" fill="#b2d25a"></circle>
+<circle cx="152" cy="368" r="3.5" fill="#fff"></circle>
+<circle cx="262" cy="36" r="4" fill="#b2d25a"></circle>
+</svg>
+<img src="assets/vbfa-drop-solid.png" alt="" width="618" height="888" style="position:absolute;left:50%;top:50%;height:58%;width:auto;transform:translate(-50%,-50%);filter:drop-shadow(0 34px 44px rgba(0,0,0,.45));animation:vbfaFloat 7s ease-in-out infinite alternate">
+<div data-r="hero-micro" style="position:absolute;left:50%;bottom:1%;transform:translateX(-50%);white-space:nowrap;font-family:'Bebas SemiExp','Bebas',sans-serif;font-size:14px;letter-spacing:.3em;text-transform:uppercase;color:#b2d25a">Energy · Collaboration · Sustainability</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ heroPhoto }}" hint-placeholder-val="{{ false }}">
+<div data-r="hero-art" style="position:absolute;right:clamp(-60px,-2vw,0px);top:50%;width:clamp(320px,42vw,620px);aspect-ratio:1/1;transform:translateY(-50%)">
+<div style="position:absolute;inset:6% 0;border-radius:0 140px 0 140px;overflow:hidden;background:linear-gradient(135deg,#1c4a2e,#2f6e43);color:#d7e6d4;box-shadow:0 40px 80px rgba(0,0,0,.35)"><image-slot id="hero-photo" shape="rect" placeholder="Ảnh hero: nhà máy, cánh đồng nguyên liệu" style="width:100%;height:100%"></image-slot></div>
+<img src="assets/vbfa-drop-solid.png" alt="" width="618" height="888" style="position:absolute;left:-30px;bottom:9%;height:27%;width:auto;filter:drop-shadow(0 16px 24px rgba(0,0,0,.4));pointer-events:none">
+</div>
+</sc-if>
+
+<div style="position:relative;max-width:700px;padding:clamp(48px,6vw,88px) 0 clamp(56px,7vw,104px)">
+<div style="animation:vbfaRise .9s cubic-bezier(.2,.8,.2,1) both"><span style="display:inline-flex;align-items:center;gap:14px;font-family:'Bebas SemiExp','Bebas',Impact,sans-serif;font-weight:700;font-size:14px;line-height:1;letter-spacing:.22em;text-transform:uppercase;color:#b2d25a"><span aria-hidden="true" style="width:34px;height:2px;background:#e3a63a"></span>Vietnam Biofuels Association</span></div>
+<h1 id="hero-title" style="margin:24px 0 0;font-family:'Mona Sans SemiExp','Mona Sans','Be Vietnam Pro',sans-serif;font-weight:600;font-size:clamp(32px,4.1vw,60px);line-height:1.18;letter-spacing:-.025em;color:#fff;text-wrap:balance;animation:vbfaRise .9s cubic-bezier(.2,.8,.2,1) .1s both">Kết nối nguồn lực. <br data-r="brh">Kiến tạo tương lai <em style="font-style:normal;color:#b2d25a;white-space:nowrap">năng lượng xanh.</em></h1>
+<p style="margin:28px 0 0;max-width:540px;font-size:clamp(16px,1.25vw,18px);line-height:1.85;color:#d4e4d3;text-wrap:pretty;animation:vbfaRise .9s cubic-bezier(.2,.8,.2,1) .2s both">Không gian kết nối doanh nghiệp, chuyên gia và đối tác; chia sẻ thông tin, tri thức và cơ hội hợp tác trong hệ sinh thái nhiên liệu sinh học Việt Nam.</p>
+<div data-r="actions" style="display:flex;flex-wrap:wrap;gap:14px;margin-top:40px;animation:vbfaRise .9s cubic-bezier(.2,.8,.2,1) .3s both">
+<a data-btn href="#about" style="display:inline-flex;align-items:center;justify-content:center;gap:14px;min-height:52px;padding:0 26px;border-radius:6px;background:#b2d25a;color:#0b2616;font-size:15px;font-weight:600;white-space:nowrap" style-hover="background:#c6e07c;color:#0b2616">Khám phá VBFA <svg data-ar width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M7 17L17 7M8 7h9v9"></path></svg></a>
+<a data-btn href="#focus" style="display:inline-flex;align-items:center;justify-content:center;gap:14px;min-height:52px;padding:0 26px;border-radius:6px;border:1px solid #6f9279;color:#fff;font-size:15px;font-weight:600;white-space:nowrap" style-hover="background:rgba(255,255,255,.09);border-color:#b2d25a;color:#fff">Các lĩnh vực trọng tâm <svg data-ar width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 12h16M14 6l6 6-6 6"></path></svg></a>
+</div>
+</div>
+</div>
+
+<div style="border-top:1px solid rgba(255,255,255,.14);background:rgba(3,20,11,.38);animation:vbfaRise .9s cubic-bezier(.2,.8,.2,1) .5s both">
+<div style="max-width:1280px;margin:0 auto;padding:0 clamp(20px,4vw,48px);min-height:88px;display:flex;align-items:center;justify-content:space-between;gap:16px 40px;flex-wrap:wrap">
+<div style="display:flex;align-items:baseline;gap:6px 16px;flex-wrap:wrap;padding:12px 0">
+<strong style="font-family:'Bebas SemiExp','Bebas',sans-serif;font-weight:700;font-size:20px;line-height:1.3;letter-spacing:.14em;color:#fff">KẾT NỐI</strong>
+<span style="font-family:'Primark','Segoe Script',cursive;font-size:clamp(30px,3vw,40px);line-height:1.5;color:#f2cf75">vì tương lai bền vững</span>
+</div>
+<ul data-r="strip-items" style="display:flex;gap:12px 32px;list-style:none;margin:0;padding:0;font-size:14px;color:#d4e4d3">
+<li style="display:flex;align-items:center;gap:10px"><span aria-hidden="true" style="width:6px;height:6px;border-radius:50%;background:#e3a63a"></span>Kết nối doanh nghiệp</li>
+<li style="display:flex;align-items:center;gap:10px"><span aria-hidden="true" style="width:6px;height:6px;border-radius:50%;background:#e3a63a"></span>Trao đổi chính sách</li>
+<li style="display:flex;align-items:center;gap:10px"><span aria-hidden="true" style="width:6px;height:6px;border-radius:50%;background:#e3a63a"></span>Chia sẻ tri thức</li>
+</ul>
+<a data-r="strip-cta" href="#about" style="display:inline-flex;align-items:center;gap:10px;min-height:44px;font-family:'Bebas SemiExp','Bebas',sans-serif;font-weight:700;font-size:14px;letter-spacing:.2em;color:#d4e4d3" style-hover="color:#fff">KHÁM PHÁ BÊN DƯỚI <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 4v16M6 14l6 6 6-6"></path></svg></a>
+</div>
+</div>
+</section>
+
+<section id="about" aria-labelledby="about-title" style="padding:clamp(72px,9vw,128px) 0;background:#fff">
+<div style="max-width:1280px;margin:0 auto;padding:0 clamp(20px,4vw,48px);display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:clamp(40px,6vw,96px);align-items:start">
+<div>
+<span style="display:inline-flex;align-items:center;gap:14px;font-family:'Bebas SemiExp','Bebas',Impact,sans-serif;font-weight:700;font-size:14px;line-height:1;letter-spacing:.22em;text-transform:uppercase;color:#1f5329"><span aria-hidden="true" style="width:34px;height:2px;background:#e3a63a"></span>Về hiệp hội</span>
+<h2 id="about-title" style="margin:22px 0 0;max-width:600px;font-family:'Mona Sans SemiExp','Mona Sans','Be Vietnam Pro',sans-serif;font-weight:600;font-size:clamp(27px,2.9vw,42px);line-height:1.24;letter-spacing:-.02em;color:#0f2a1a;text-wrap:balance">Nơi hội tụ những tiếng nói vì một ngành nhiên liệu sinh học phát triển bền vững.</h2>
+<a data-link href="#membership" style="display:inline-flex;align-items:center;gap:12px;margin-top:20px;padding:12px 0 7px;border-bottom:2px solid #e3a63a;font-size:15px;font-weight:600;color:#1f5329" style-hover="color:#143c1d">Tìm hiểu về mạng lưới hội viên <svg data-ar width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M7 17L17 7M8 7h9v9"></path></svg></a>
+</div>
+<div>
+<p style="margin:0 0 36px;font-size:clamp(16px,1.3vw,18px);line-height:1.9;color:#435448;text-wrap:pretty">Nơi hội tụ những trao đổi về nhiên liệu sinh học tại Việt Nam — từ chính sách, công nghệ đến thị trường và hợp tác. VBFA hướng đến việc kết nối cộng đồng và làm cho tri thức ngành trở nên dễ tiếp cận hơn.</p>
+<div style="border-bottom:1px solid #dfe6da">
+<a data-row href="#membership" style="display:flex;align-items:center;gap:22px;padding:26px 0;border-top:1px solid #dfe6da;color:#11271a">
+<span style="min-width:38px;font-family:'Bebas SemiExp','Bebas',sans-serif;font-weight:700;font-size:24px;line-height:1;letter-spacing:.06em;color:#b07d17">01</span>
+<span style="flex:1;font-family:'Mona Sans','Be Vietnam Pro',sans-serif;font-weight:500;font-size:clamp(17px,1.5vw,20px);line-height:1.45;letter-spacing:-.01em">Kết nối hệ sinh thái và các bên liên quan</span>
+<span data-rc style="flex:none;width:42px;height:42px;border-radius:50%;border:1px solid #c5d2c3;color:#1f5329;display:inline-flex;align-items:center;justify-content:center"><svg data-ar width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M7 17L17 7M8 7h9v9"></path></svg></span>
+</a>
+<a data-row href="#news" style="display:flex;align-items:center;gap:22px;padding:26px 0;border-top:1px solid #dfe6da;color:#11271a">
+<span style="min-width:38px;font-family:'Bebas SemiExp','Bebas',sans-serif;font-weight:700;font-size:24px;line-height:1;letter-spacing:.06em;color:#b07d17">02</span>
+<span style="flex:1;font-family:'Mona Sans','Be Vietnam Pro',sans-serif;font-weight:500;font-size:clamp(17px,1.5vw,20px);line-height:1.45;letter-spacing:-.01em">Cập nhật thông tin ngành và chính sách</span>
+<span data-rc style="flex:none;width:42px;height:42px;border-radius:50%;border:1px solid #c5d2c3;color:#1f5329;display:inline-flex;align-items:center;justify-content:center"><svg data-ar width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M7 17L17 7M8 7h9v9"></path></svg></span>
+</a>
+<a data-row href="#resources" style="display:flex;align-items:center;gap:22px;padding:26px 0;border-top:1px solid #dfe6da;color:#11271a">
+<span style="min-width:38px;font-family:'Bebas SemiExp','Bebas',sans-serif;font-weight:700;font-size:24px;line-height:1;letter-spacing:.06em;color:#b07d17">03</span>
+<span style="flex:1;font-family:'Mona Sans','Be Vietnam Pro',sans-serif;font-weight:500;font-size:clamp(17px,1.5vw,20px);line-height:1.45;letter-spacing:-.01em">Thúc đẩy trao đổi tri thức và hợp tác</span>
+<span data-rc style="flex:none;width:42px;height:42px;border-radius:50%;border:1px solid #c5d2c3;color:#1f5329;display:inline-flex;align-items:center;justify-content:center"><svg data-ar width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M7 17L17 7M8 7h9v9"></path></svg></span>
+</a>
+</div>
+</div>
+</div>
+</section>
+
+<section id="focus" aria-labelledby="focus-title" style="padding:clamp(72px,9vw,128px) 0;background:#f4f6ec">
+<div style="max-width:1280px;margin:0 auto;padding:0 clamp(20px,4vw,48px)">
+<div style="display:flex;justify-content:space-between;align-items:flex-end;gap:24px 64px;flex-wrap:wrap;margin-bottom:clamp(36px,4vw,56px)">
+<div style="flex:1 1 480px">
+<span style="display:inline-flex;align-items:center;gap:14px;font-family:'Bebas SemiExp','Bebas',Impact,sans-serif;font-weight:700;font-size:14px;line-height:1;letter-spacing:.22em;text-transform:uppercase;color:#1f5329"><span aria-hidden="true" style="width:34px;height:2px;background:#e3a63a"></span>Lĩnh vực trọng tâm</span>
+<h2 id="focus-title" style="margin:22px 0 0;max-width:640px;font-family:'Mona Sans SemiExp','Mona Sans','Be Vietnam Pro',sans-serif;font-weight:600;font-size:clamp(27px,2.9vw,42px);line-height:1.24;letter-spacing:-.02em;color:#0f2a1a;text-wrap:balance">Những lĩnh vực tạo nên chuyển động ngành.</h2>
+</div>
+<p style="flex:0 1 410px;margin:0;font-size:15px;line-height:1.85;color:#435448;text-wrap:pretty">Từ chính sách, thị trường đến công nghệ và phát triển bền vững — những góc nhìn góp phần kết nối hệ sinh thái nhiên liệu sinh học.</p>
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:20px">
+
+<a data-card href="#resources" style="position:relative;display:flex;flex-direction:column;min-height:clamp(250px,22vw,300px);padding:32px 30px 34px;background:#fff;border:1px solid #e0e7da;border-radius:10px;overflow:hidden;color:#11271a">
+<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:'Bebas SemiExp','Bebas',sans-serif;font-size:14px;line-height:1;letter-spacing:.2em;color:#5a6b5e">CHỦ ĐỀ / 01</span><span data-rc style="width:36px;height:36px;border-radius:50%;border:1px solid #cfdacb;color:#1f5329;display:inline-flex;align-items:center;justify-content:center"><svg data-ar width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M7 17L17 7M8 7h9v9"></path></svg></span></div>
+<div data-tile style="width:60px;height:60px;margin:34px 0 24px;border-radius:0 22px 0 22px;background:#e6eed2;color:#1f5329;display:flex;align-items:center;justify-content:center"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 4v16M8 20h8M4 7h16M6.5 7l-3 7a3 3 0 0 0 6 0l-3-7zM17.5 7l-3 7a3 3 0 0 0 6 0l-3-7z"></path></svg></div>
+<h3 style="margin:0;font-family:'Mona Sans','Be Vietnam Pro',sans-serif;font-weight:700;font-size:21px;line-height:1.35;letter-spacing:-.01em;color:#0f2a1a">Chính sách &amp; pháp lý</h3>
+<p style="margin:10px 0 0;font-size:15px;line-height:1.75;color:#4a5a4f;text-wrap:pretty">Cập nhật định hướng, văn bản và những thông tin liên quan đến hoạt động của ngành.</p>
+<span data-bar aria-hidden="true" style="position:absolute;left:0;right:0;bottom:0;height:3px;background:linear-gradient(90deg,#1f5329,#e3a63a);transform:scaleX(0);transform-origin:left"></span>
+</a>
+
+<a data-card href="#resources" style="position:relative;display:flex;flex-direction:column;min-height:clamp(250px,22vw,300px);padding:32px 30px 34px;background:#fff;border:1px solid #e0e7da;border-radius:10px;overflow:hidden;color:#11271a">
+<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:'Bebas SemiExp','Bebas',sans-serif;font-size:14px;line-height:1;letter-spacing:.2em;color:#5a6b5e">CHỦ ĐỀ / 02</span><span data-rc style="width:36px;height:36px;border-radius:50%;border:1px solid #cfdacb;color:#1f5329;display:inline-flex;align-items:center;justify-content:center"><svg data-ar width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M7 17L17 7M8 7h9v9"></path></svg></span></div>
+<div data-tile style="width:60px;height:60px;margin:34px 0 24px;border-radius:0 22px 0 22px;background:#e6eed2;color:#1f5329;display:flex;align-items:center;justify-content:center"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 3v18h18M7 15l4-4 3 3 6-7M16 7h4v4"></path></svg></div>
+<h3 style="margin:0;font-family:'Mona Sans','Be Vietnam Pro',sans-serif;font-weight:700;font-size:21px;line-height:1.35;letter-spacing:-.01em;color:#0f2a1a">Thị trường &amp; đầu tư</h3>
+<p style="margin:10px 0 0;font-size:15px;line-height:1.75;color:#4a5a4f;text-wrap:pretty">Góc nhìn và nguồn tham khảo về thị trường, chuỗi giá trị và cơ hội phát triển.</p>
+<span data-bar aria-hidden="true" style="position:absolute;left:0;right:0;bottom:0;height:3px;background:linear-gradient(90deg,#1f5329,#e3a63a);transform:scaleX(0);transform-origin:left"></span>
+</a>
+
+<a data-card href="#resources" style="position:relative;display:flex;flex-direction:column;min-height:clamp(250px,22vw,300px);padding:32px 30px 34px;background:#fff;border:1px solid #e0e7da;border-radius:10px;overflow:hidden;color:#11271a">
+<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:'Bebas SemiExp','Bebas',sans-serif;font-size:14px;line-height:1;letter-spacing:.2em;color:#5a6b5e">CHỦ ĐỀ / 03</span><span data-rc style="width:36px;height:36px;border-radius:50%;border:1px solid #cfdacb;color:#1f5329;display:inline-flex;align-items:center;justify-content:center"><svg data-ar width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M7 17L17 7M8 7h9v9"></path></svg></span></div>
+<div data-tile style="width:60px;height:60px;margin:34px 0 24px;border-radius:0 22px 0 22px;background:#e6eed2;color:#1f5329;display:flex;align-items:center;justify-content:center"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 3h6M10 3v6l-5.2 9.2A2 2 0 0 0 6.5 21h11a2 2 0 0 0 1.7-2.8L14 9V3M7.6 15h8.8"></path></svg></div>
+<h3 style="margin:0;font-family:'Mona Sans','Be Vietnam Pro',sans-serif;font-weight:700;font-size:21px;line-height:1.35;letter-spacing:-.01em;color:#0f2a1a">Công nghệ &amp; đổi mới</h3>
+<p style="margin:10px 0 0;font-size:15px;line-height:1.75;color:#4a5a4f;text-wrap:pretty">Thông tin về giải pháp, công nghệ và thực tiễn triển khai nhiên liệu sinh học.</p>
+<span data-bar aria-hidden="true" style="position:absolute;left:0;right:0;bottom:0;height:3px;background:linear-gradient(90deg,#1f5329,#e3a63a);transform:scaleX(0);transform-origin:left"></span>
+</a>
+
+<a data-card href="#resources" style="position:relative;display:flex;flex-direction:column;min-height:clamp(250px,22vw,300px);padding:32px 30px 34px;background:#fff;border:1px solid #e0e7da;border-radius:10px;overflow:hidden;color:#11271a">
+<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:'Bebas SemiExp','Bebas',sans-serif;font-size:14px;line-height:1;letter-spacing:.2em;color:#5a6b5e">CHỦ ĐỀ / 04</span><span data-rc style="width:36px;height:36px;border-radius:50%;border:1px solid #cfdacb;color:#1f5329;display:inline-flex;align-items:center;justify-content:center"><svg data-ar width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M7 17L17 7M8 7h9v9"></path></svg></span></div>
+<div data-tile style="width:60px;height:60px;margin:34px 0 24px;border-radius:0 22px 0 22px;background:#e6eed2;color:#1f5329;display:flex;align-items:center;justify-content:center"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 21v-9M12 12c0-4.2-3-6.5-7.5-6.5 0 4.2 3 6.5 7.5 6.5zM12 14c0-3.6 2.6-6 7-6 0 3.6-2.6 6-7 6z"></path></svg></div>
+<h3 style="margin:0;font-family:'Mona Sans','Be Vietnam Pro',sans-serif;font-weight:700;font-size:21px;line-height:1.35;letter-spacing:-.01em;color:#0f2a1a">Phát triển bền vững</h3>
+<p style="margin:10px 0 0;font-size:15px;line-height:1.75;color:#4a5a4f;text-wrap:pretty">Trao đổi về hiệu quả môi trường, chuyển dịch năng lượng và các tiêu chí ESG.</p>
+<span data-bar aria-hidden="true" style="position:absolute;left:0;right:0;bottom:0;height:3px;background:linear-gradient(90deg,#1f5329,#e3a63a);transform:scaleX(0);transform-origin:left"></span>
+</a>
+
+<a data-card href="#resources" style="position:relative;display:flex;flex-direction:column;min-height:clamp(250px,22vw,300px);padding:32px 30px 34px;background:#fff;border:1px solid #e0e7da;border-radius:10px;overflow:hidden;color:#11271a">
+<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:'Bebas SemiExp','Bebas',sans-serif;font-size:14px;line-height:1;letter-spacing:.2em;color:#5a6b5e">CHỦ ĐỀ / 05</span><span data-rc style="width:36px;height:36px;border-radius:50%;border:1px solid #cfdacb;color:#1f5329;display:inline-flex;align-items:center;justify-content:center"><svg data-ar width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M7 17L17 7M8 7h9v9"></path></svg></span></div>
+<div data-tile style="width:60px;height:60px;margin:34px 0 24px;border-radius:0 22px 0 22px;background:#e6eed2;color:#1f5329;display:flex;align-items:center;justify-content:center"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 6.5C10.2 5 7.2 4.5 4 4.5v13c3.2 0 6.2.5 8 2 1.8-1.5 4.8-2 8-2v-13c-3.2 0-6.2.5-8 2zM12 6.5v13"></path></svg></div>
+<h3 style="margin:0;font-family:'Mona Sans','Be Vietnam Pro',sans-serif;font-weight:700;font-size:21px;line-height:1.35;letter-spacing:-.01em;color:#0f2a1a">Đào tạo &amp; tri thức</h3>
+<p style="margin:10px 0 0;font-size:15px;line-height:1.75;color:#4a5a4f;text-wrap:pretty">Chia sẻ tài liệu, tọa đàm và nguồn kiến thức có giá trị đối với cộng đồng.</p>
+<span data-bar aria-hidden="true" style="position:absolute;left:0;right:0;bottom:0;height:3px;background:linear-gradient(90deg,#1f5329,#e3a63a);transform:scaleX(0);transform-origin:left"></span>
+</a>
+
+<a data-card href="#resources" style="position:relative;display:flex;flex-direction:column;min-height:clamp(250px,22vw,300px);padding:32px 30px 34px;background:#fff;border:1px solid #e0e7da;border-radius:10px;overflow:hidden;color:#11271a">
+<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:'Bebas SemiExp','Bebas',sans-serif;font-size:14px;line-height:1;letter-spacing:.2em;color:#5a6b5e">CHỦ ĐỀ / 06</span><span data-rc style="width:36px;height:36px;border-radius:50%;border:1px solid #cfdacb;color:#1f5329;display:inline-flex;align-items:center;justify-content:center"><svg data-ar width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M7 17L17 7M8 7h9v9"></path></svg></span></div>
+<div data-tile style="width:60px;height:60px;margin:34px 0 24px;border-radius:0 22px 0 22px;background:#e6eed2;color:#1f5329;display:flex;align-items:center;justify-content:center"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 18 0 9 9 0 1 0-18 0M3 12h18M12 3c2.8 2.6 4 5.6 4 9s-1.2 6.4-4 9c-2.8-2.6-4-5.6-4-9s1.2-6.4 4-9z"></path></svg></div>
+<h3 style="margin:0;font-family:'Mona Sans','Be Vietnam Pro',sans-serif;font-weight:700;font-size:21px;line-height:1.35;letter-spacing:-.01em;color:#0f2a1a">Hợp tác quốc tế</h3>
+<p style="margin:10px 0 0;font-size:15px;line-height:1.75;color:#4a5a4f;text-wrap:pretty">Kết nối đối tác, chia sẻ kinh nghiệm và mở rộng các cơ hội hợp tác.</p>
+<span data-bar aria-hidden="true" style="position:absolute;left:0;right:0;bottom:0;height:3px;background:linear-gradient(90deg,#1f5329,#e3a63a);transform:scaleX(0);transform-origin:left"></span>
+</a>
+
+</div>
+</div>
+</section>
+
+<section id="news" aria-labelledby="news-title" style="padding:clamp(72px,9vw,128px) 0;background:#fff">
+<div style="max-width:1280px;margin:0 auto;padding:0 clamp(20px,4vw,48px)">
+<div style="display:flex;justify-content:space-between;align-items:flex-end;gap:24px 64px;flex-wrap:wrap;margin-bottom:32px">
+<div style="flex:1 1 480px">
+<span style="display:inline-flex;align-items:center;gap:14px;font-family:'Bebas SemiExp','Bebas',Impact,sans-serif;font-weight:700;font-size:14px;line-height:1;letter-spacing:.22em;text-transform:uppercase;color:#1f5329"><span aria-hidden="true" style="width:34px;height:2px;background:#e3a63a"></span>Tin tức &amp; góc nhìn</span>
+<h2 id="news-title" style="margin:22px 0 0;max-width:640px;font-family:'Mona Sans SemiExp','Mona Sans','Be Vietnam Pro',sans-serif;font-weight:600;font-size:clamp(27px,2.9vw,42px);line-height:1.24;letter-spacing:-.02em;color:#0f2a1a;text-wrap:balance">Chuyển động ngành, góc nhìn mới.</h2>
+</div>
+<p style="flex:0 1 410px;margin:0;font-size:15px;line-height:1.85;color:#435448;text-wrap:pretty">Khám phá các thông tin, hoạt động và chủ đề nổi bật của ngành.</p>
+</div>
+<div role="group" aria-label="Lọc tin tức" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:32px">
+<button type="button" aria-pressed="{{ chip.all.pressed }}" onClick="{{ chip.all.click }}" style="min-height:44px;padding:0 20px;border-radius:999px;border:1px solid {{ chip.all.bd }};background:{{ chip.all.bg }};color:{{ chip.all.fg }};font-size:14px;font-weight:600;cursor:pointer;transition:background-color .25s,color .25s,border-color .25s">Tất cả</button>
+<button type="button" aria-pressed="{{ chip.news.pressed }}" onClick="{{ chip.news.click }}" style="min-height:44px;padding:0 20px;border-radius:999px;border:1px solid {{ chip.news.bd }};background:{{ chip.news.bg }};color:{{ chip.news.fg }};font-size:14px;font-weight:600;cursor:pointer;transition:background-color .25s,color .25s,border-color .25s">Tin ngành</button>
+<button type="button" aria-pressed="{{ chip.activity.pressed }}" onClick="{{ chip.activity.click }}" style="min-height:44px;padding:0 20px;border-radius:999px;border:1px solid {{ chip.activity.bd }};background:{{ chip.activity.bg }};color:{{ chip.activity.fg }};font-size:14px;font-weight:600;cursor:pointer;transition:background-color .25s,color .25s,border-color .25s">Hoạt động</button>
+<button type="button" aria-pressed="{{ chip.policy.pressed }}" onClick="{{ chip.policy.click }}" style="min-height:44px;padding:0 20px;border-radius:999px;border:1px solid {{ chip.policy.bd }};background:{{ chip.policy.bg }};color:{{ chip.policy.fg }};font-size:14px;font-weight:600;cursor:pointer;transition:background-color .25s,color .25s,border-color .25s">Chính sách</button>
+</div>
+<div id="news-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,460px),1fr));gap:24px">
+
+<article data-news aria-hidden="{{ d1.hid }}" style="grid-row:span 2;display:{{ d1.disp }};flex-direction:column;background:#fff;border:1px solid #dfe7da;border-radius:10px;overflow:hidden;opacity:{{ d1.o }};pointer-events:{{ d1.pe }};filter:{{ d1.gs }}">
+<div style="position:relative;flex:1 1 auto;min-height:260px;aspect-ratio:16/10;overflow:hidden;background:linear-gradient(135deg,#dfe9c6,#c4d99a);color:#1f5329">
+<div data-zoom style="position:absolute;inset:0"><image-slot id="news-featured" shape="rect" placeholder="Ảnh bài viết nổi bật" style="width:100%;height:100%"></image-slot></div>
+<span style="position:absolute;left:20px;bottom:20px;pointer-events:none;background:#0b2616;color:#fff;font-family:'Bebas SemiExp','Bebas',sans-serif;font-weight:700;font-size:13px;line-height:1;letter-spacing:.2em;padding:10px 13px;border-radius:3px;white-space:nowrap">VBFA / INSIGHTS</span>
+</div>
+<div style="padding:clamp(24px,2.6vw,36px)">
+<div style="font-family:'Bebas SemiExp','Bebas',sans-serif;font-size:14px;line-height:1;letter-spacing:.2em;color:#8a5f0a">TIN NGÀNH · GÓC NHÌN</div>
+<h3 data-ttl style="margin:14px 0 0;font-family:'Mona Sans','Be Vietnam Pro',sans-serif;font-weight:700;font-size:clamp(22px,2vw,28px);line-height:1.34;letter-spacing:-.015em;color:#0f2a1a;text-wrap:balance">Những động lực định hình tương lai nhiên liệu sinh học tại Việt Nam</h3>
+<p style="margin:14px 0 0;font-size:15.5px;line-height:1.8;color:#435448;text-wrap:pretty">Khám phá các chuyển động chính sách, thị trường và công nghệ đang mở ra cơ hội cho nhiên liệu sinh học.</p>
+<a data-link href="#resources" tabIndex="{{ d1.tab }}" style="display:inline-flex;align-items:center;gap:10px;min-height:44px;margin-top:10px;font-size:14.5px;font-weight:600;color:#1f5329" style-hover="color:#143c1d">Xem danh mục thông tin <svg data-ar width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M7 17L17 7M8 7h9v9"></path></svg></a>
+</div>
+</article>
+
+<article data-news aria-hidden="{{ d2.hid }}" style="display:{{ d2.disp }};flex-wrap:wrap;align-items:stretch;background:#fff;border:1px solid #dfe7da;border-radius:10px;overflow:hidden;opacity:{{ d2.o }};pointer-events:{{ d2.pe }};filter:{{ d2.gs }}">
+<div style="position:relative;flex:1 1 190px;min-height:200px;overflow:hidden;background:linear-gradient(135deg,#e3ebcf,#cbdca6);color:#1f5329">
+<div data-zoom style="position:absolute;inset:0"><image-slot id="news-activity" shape="rect" placeholder="Ảnh hoạt động" style="width:100%;height:100%"></image-slot></div>
+<span style="position:absolute;left:14px;bottom:14px;pointer-events:none;background:#0b2616;color:#fff;font-family:'Bebas SemiExp','Bebas',sans-serif;font-weight:700;font-size:13px;line-height:1;letter-spacing:.16em;padding:8px 10px;border-radius:3px;white-space:nowrap">VBFA / COMMUNITY</span>
+</div>
+<div style="flex:2 1 270px;padding:clamp(22px,2.2vw,30px);display:flex;flex-direction:column;justify-content:center">
+<div style="font-family:'Bebas SemiExp','Bebas',sans-serif;font-size:14px;line-height:1;letter-spacing:.2em;color:#8a5f0a">HOẠT ĐỘNG · KẾT NỐI</div>
+<h3 data-ttl style="margin:12px 0 0;font-family:'Mona Sans','Be Vietnam Pro',sans-serif;font-weight:700;font-size:20px;line-height:1.38;letter-spacing:-.01em;color:#0f2a1a">Không gian đối thoại và kết nối cộng đồng doanh nghiệp</h3>
+<p style="margin:10px 0 0;font-size:14.5px;line-height:1.75;color:#435448;text-wrap:pretty">Những kết nối, sáng kiến và hoạt động hợp tác thúc đẩy trao đổi trong cộng đồng ngành.</p>
+<a data-link href="#membership" tabIndex="{{ d2.tab }}" style="display:inline-flex;align-items:center;gap:10px;min-height:44px;margin-top:6px;font-size:14.5px;font-weight:600;color:#1f5329" style-hover="color:#143c1d">Tìm hiểu hợp tác <svg data-ar width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M7 17L17 7M8 7h9v9"></path></svg></a>
+</div>
+</article>
+
+<article data-news aria-hidden="{{ d3.hid }}" style="display:{{ d3.disp }};flex-wrap:wrap;align-items:stretch;background:#fff;border:1px solid #dfe7da;border-radius:10px;overflow:hidden;opacity:{{ d3.o }};pointer-events:{{ d3.pe }};filter:{{ d3.gs }}">
+<div style="position:relative;flex:1 1 190px;min-height:200px;overflow:hidden;background:linear-gradient(135deg,#e6ecd6,#d3dfb4);color:#1f5329">
+<div data-zoom style="position:absolute;inset:0"><image-slot id="news-policy" shape="rect" placeholder="Ảnh chính sách" style="width:100%;height:100%"></image-slot></div>
+<span style="position:absolute;left:14px;bottom:14px;pointer-events:none;background:#0b2616;color:#fff;font-family:'Bebas SemiExp','Bebas',sans-serif;font-weight:700;font-size:13px;line-height:1;letter-spacing:.16em;padding:8px 10px;border-radius:3px;white-space:nowrap">VBFA / POLICY</span>
+</div>
+<div style="flex:2 1 270px;padding:clamp(22px,2.2vw,30px);display:flex;flex-direction:column;justify-content:center">
+<div style="font-family:'Bebas SemiExp','Bebas',sans-serif;font-size:14px;line-height:1;letter-spacing:.2em;color:#8a5f0a">CHÍNH SÁCH · TRI THỨC</div>
+<h3 data-ttl style="margin:12px 0 0;font-family:'Mona Sans','Be Vietnam Pro',sans-serif;font-weight:700;font-size:20px;line-height:1.38;letter-spacing:-.01em;color:#0f2a1a">Tổng hợp thông tin chính sách và tài liệu tham khảo cho ngành</h3>
+<p style="margin:10px 0 0;font-size:14.5px;line-height:1.75;color:#435448;text-wrap:pretty">Tiếp cận các nhóm tài liệu, văn bản và nguồn thông tin hữu ích cho việc tìm hiểu lĩnh vực.</p>
+<a data-link href="#resources" tabIndex="{{ d3.tab }}" style="display:inline-flex;align-items:center;gap:10px;min-height:44px;margin-top:6px;font-size:14.5px;font-weight:600;color:#1f5329" style-hover="color:#143c1d">Xem thư viện <svg data-ar width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M7 17L17 7M8 7h9v9"></path></svg></a>
+</div>
+</article>
+
+</div>
+</div>
+</section>
+
+<section id="membership" aria-labelledby="member-title" style="position:relative;background:#0e3320;color:#fff;overflow:hidden;padding:clamp(72px,9vw,128px) 0;isolation:isolate">
+<svg aria-hidden="true" viewBox="0 0 620 620" fill="none" style="position:absolute;left:-250px;bottom:-300px;width:700px;height:700px;z-index:-1">
+<circle cx="310" cy="310" r="120" stroke="#96b949" strokeOpacity=".22"></circle>
+<circle cx="310" cy="310" r="190" stroke="#96b949" strokeOpacity=".16"></circle>
+<circle cx="310" cy="310" r="250" stroke="#96b949" strokeOpacity=".11"></circle>
+<circle cx="310" cy="310" r="306" stroke="#e3a63a" strokeOpacity=".22" strokeDasharray="2 9" strokeLinecap="round"></circle>
+</svg>
+<div style="max-width:1280px;margin:0 auto;padding:0 clamp(20px,4vw,48px);display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,440px),1fr));gap:clamp(40px,6vw,96px);align-items:start">
+<div>
+<span style="display:inline-flex;align-items:center;gap:14px;font-family:'Bebas SemiExp','Bebas',Impact,sans-serif;font-weight:700;font-size:14px;line-height:1;letter-spacing:.22em;text-transform:uppercase;color:#b2d25a"><span aria-hidden="true" style="width:34px;height:2px;background:#e3a63a"></span>Kết nối cùng VBFA</span>
+<h2 id="member-title" style="margin:22px 0 0;max-width:640px;font-family:'Mona Sans SemiExp','Mona Sans','Be Vietnam Pro',sans-serif;font-weight:600;font-size:clamp(27px,2.9vw,42px);line-height:1.24;letter-spacing:-.02em;color:#fff;text-wrap:balance">Cùng xây dựng một mạng lưới hợp tác có giá trị dài hạn.</h2>
+<p style="margin:24px 0 0;max-width:520px;font-size:clamp(16px,1.25vw,18px);line-height:1.85;color:#c9dbc9;text-wrap:pretty">Kết nối với VBFA để trao đổi thông tin, chia sẻ chuyên môn và tìm hiểu các cơ hội hợp tác trong cộng đồng nhiên liệu sinh học.</p>
+<button data-btn type="button" onClick="{{ openJoin }}" style="display:inline-flex;align-items:center;justify-content:center;gap:14px;min-height:52px;margin-top:36px;padding:0 26px;border-radius:6px;border:0;background:#b2d25a;color:#0b2616;font-size:15px;font-weight:600;white-space:nowrap;cursor:pointer" style-hover="background:#c6e07c">Đăng ký quan tâm hội viên <svg data-ar width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M7 17L17 7M8 7h9v9"></path></svg></button>
+</div>
+<div>
+<div style="display:flex;gap:20px;padding:28px 0;border-top:1px solid rgba(255,255,255,.2)">
+<span aria-hidden="true" style="flex:none;width:40px;height:40px;border-radius:50%;border:1.5px solid #96b949;color:#b2d25a;display:inline-flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></span>
+<div><strong style="display:block;font-family:'Mona Sans','Be Vietnam Pro',sans-serif;font-weight:700;font-size:20px;line-height:1.4;color:#fff">Tiếp cận cộng đồng ngành</strong><p style="margin:6px 0 0;font-size:15px;line-height:1.75;color:#b9ceb9">Tạo cơ hội trao đổi và tăng cường kết nối giữa các bên liên quan.</p></div>
+</div>
+<div style="display:flex;gap:20px;padding:28px 0;border-top:1px solid rgba(255,255,255,.2)">
+<span aria-hidden="true" style="flex:none;width:40px;height:40px;border-radius:50%;border:1.5px solid #96b949;color:#b2d25a;display:inline-flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></span>
+<div><strong style="display:block;font-family:'Mona Sans','Be Vietnam Pro',sans-serif;font-weight:700;font-size:20px;line-height:1.4;color:#fff">Cập nhật thông tin có hệ thống</strong><p style="margin:6px 0 0;font-size:15px;line-height:1.75;color:#b9ceb9">Khám phá các chủ đề, hoạt động và nguồn tài liệu liên quan.</p></div>
+</div>
+<div style="display:flex;gap:20px;padding:28px 0;border-top:1px solid rgba(255,255,255,.2);border-bottom:1px solid rgba(255,255,255,.2)">
+<span aria-hidden="true" style="flex:none;width:40px;height:40px;border-radius:50%;border:1.5px solid #96b949;color:#b2d25a;display:inline-flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></span>
+<div><strong style="display:block;font-family:'Mona Sans','Be Vietnam Pro',sans-serif;font-weight:700;font-size:20px;line-height:1.4;color:#fff">Khám phá cơ hội hợp tác</strong><p style="margin:6px 0 0;font-size:15px;line-height:1.75;color:#b9ceb9">Mở rộng đối thoại và tìm kiếm giá trị cùng phát triển.</p></div>
+</div>
+<p style="margin:30px 0 0;font-family:'Primark','Segoe Script',cursive;font-size:clamp(28px,2.6vw,36px);line-height:1.45;color:#f2cf75;text-wrap:balance">Kết nối hôm nay để bắt đầu những trao đổi có giá trị.</p>
+</div>
+</div>
+</section>
+
+<section id="resources" aria-labelledby="res-title" style="padding:clamp(72px,9vw,128px) 0;background:#fff">
+<div style="max-width:1280px;margin:0 auto;padding:0 clamp(20px,4vw,48px)">
+<div style="display:flex;justify-content:space-between;align-items:flex-end;gap:24px 64px;flex-wrap:wrap;margin-bottom:clamp(36px,4vw,56px)">
+<div style="flex:1 1 480px">
+<span style="display:inline-flex;align-items:center;gap:14px;font-family:'Bebas SemiExp','Bebas',Impact,sans-serif;font-weight:700;font-size:14px;line-height:1;letter-spacing:.22em;text-transform:uppercase;color:#1f5329"><span aria-hidden="true" style="width:34px;height:2px;background:#e3a63a"></span>Trung tâm thông tin</span>
+<h2 id="res-title" style="margin:22px 0 0;max-width:640px;font-family:'Mona Sans SemiExp','Mona Sans','Be Vietnam Pro',sans-serif;font-weight:600;font-size:clamp(27px,2.9vw,42px);line-height:1.24;letter-spacing:-.02em;color:#0f2a1a;text-wrap:balance">Tri thức dễ tiếp cận.<br>Nội dung dễ tra cứu.</h2>
+</div>
+<p style="flex:0 1 410px;margin:0;font-size:15px;line-height:1.85;color:#435448;text-wrap:pretty">Khám phá tài liệu, báo cáo và những nguồn thông tin được tổ chức theo chủ đề, giúp việc tìm hiểu ngành thuận tiện hơn.</p>
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,460px),1fr));gap:24px">
+<div data-card style="position:relative;display:flex;justify-content:space-between;align-items:flex-end;gap:24px;min-height:clamp(240px,20vw,280px);padding:clamp(26px,3vw,40px);background:#fff;border:1px solid #dbe5d7;border-radius:10px;overflow:hidden">
+<div style="display:flex;flex-direction:column;gap:0;max-width:420px">
+<div data-tile style="width:60px;height:60px;margin-bottom:34px;border-radius:0 22px 0 22px;background:#e6eed2;color:#1f5329;display:flex;align-items:center;justify-content:center"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M7 3h7l4 4v14H7zM14 3v4h4M10 12h5M10 16h5"></path></svg></div>
+<div style="font-family:'Bebas SemiExp','Bebas',sans-serif;font-size:14px;line-height:1;letter-spacing:.2em;color:#8a5f0a">01 / THƯ VIỆN</div>
+<h3 style="margin:12px 0 0;font-family:'Mona Sans','Be Vietnam Pro',sans-serif;font-weight:700;font-size:clamp(22px,2vw,27px);line-height:1.3;letter-spacing:-.015em;color:#0f2a1a">Tài liệu &amp; báo cáo</h3>
+<p style="margin:10px 0 0;font-size:15px;line-height:1.75;color:#4a5a4f">Điểm truy cập tài liệu và nghiên cứu được phép công bố.</p>
+</div>
+<a aria-label="Liên hệ về tài liệu" href="#contact" data-rc style="flex:none;width:52px;height:52px;border-radius:50%;border:1px solid #c5d2c3;color:#1f5329;display:inline-flex;align-items:center;justify-content:center" style-after="content:'';position:absolute;inset:0"><svg data-ar width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M7 17L17 7M8 7h9v9"></path></svg></a>
+<span data-bar aria-hidden="true" style="position:absolute;left:0;right:0;bottom:0;height:3px;background:linear-gradient(90deg,#1f5329,#e3a63a);transform:scaleX(0);transform-origin:left"></span>
+</div>
+<div data-card style="position:relative;display:flex;justify-content:space-between;align-items:flex-end;gap:24px;min-height:clamp(240px,20vw,280px);padding:clamp(26px,3vw,40px);background:#fff;border:1px solid #dbe5d7;border-radius:10px;overflow:hidden">
+<div style="display:flex;flex-direction:column;gap:0;max-width:420px">
+<div data-tile style="width:60px;height:60px;margin-bottom:34px;border-radius:0 22px 0 22px;background:#e6eed2;color:#1f5329;display:flex;align-items:center;justify-content:center"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 4v16M8 20h8M4 7h16M6.5 7l-3 7a3 3 0 0 0 6 0l-3-7zM17.5 7l-3 7a3 3 0 0 0 6 0l-3-7z"></path></svg></div>
+<div style="font-family:'Bebas SemiExp','Bebas',sans-serif;font-size:14px;line-height:1;letter-spacing:.2em;color:#8a5f0a">02 / CHÍNH SÁCH</div>
+<h3 style="margin:12px 0 0;font-family:'Mona Sans','Be Vietnam Pro',sans-serif;font-weight:700;font-size:clamp(22px,2vw,27px);line-height:1.3;letter-spacing:-.015em;color:#0f2a1a">Văn bản &amp; thông tin ngành</h3>
+<p style="margin:10px 0 0;font-size:15px;line-height:1.75;color:#4a5a4f">Tập hợp và phân loại nội dung theo chủ đề, thời gian.</p>
+</div>
+<a aria-label="Liên hệ về chính sách" href="#contact" data-rc style="flex:none;width:52px;height:52px;border-radius:50%;border:1px solid #c5d2c3;color:#1f5329;display:inline-flex;align-items:center;justify-content:center" style-after="content:'';position:absolute;inset:0"><svg data-ar width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M7 17L17 7M8 7h9v9"></path></svg></a>
+<span data-bar aria-hidden="true" style="position:absolute;left:0;right:0;bottom:0;height:3px;background:linear-gradient(90deg,#1f5329,#e3a63a);transform:scaleX(0);transform-origin:left"></span>
+</div>
+</div>
+<div style="margin-top:24px;display:flex;align-items:center;gap:16px;padding:22px 28px;border-radius:10px;background:#eaf1d6;color:#1f5329">
+<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style="flex:none"><path d="M12 21v-9M12 12c0-4.2-3-6.5-7.5-6.5 0 4.2 3 6.5 7.5 6.5zM12 14c0-3.6 2.6-6 7-6 0 3.6-2.6 6-7 6z"></path></svg>
+<p style="margin:0;font-size:16px;font-weight:500;line-height:1.6;color:#1b4a25">Cùng mở rộng khả năng tiếp cận thông tin và tri thức về nhiên liệu sinh học.</p>
+</div>
+</div>
+</section>
+
+<section aria-labelledby="nl-title" style="background:#e5edd1;padding:clamp(48px,6vw,80px) 0">
+<div style="max-width:1280px;margin:0 auto;padding:0 clamp(20px,4vw,48px);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:28px 64px">
+<div style="flex:1 1 380px">
+<h2 id="nl-title" style="margin:0;font-family:'Mona Sans SemiExp','Mona Sans','Be Vietnam Pro',sans-serif;font-weight:600;font-size:clamp(24px,2.4vw,34px);line-height:1.28;letter-spacing:-.02em;color:#0f2a1a">Đón nhận cập nhật từ VBFA.</h2>
+<p style="margin:10px 0 0;font-size:16px;line-height:1.7;color:#3d5043">Theo dõi các cập nhật và hoạt động nổi bật của VBFA.</p>
+</div>
+<form onSubmit="{{ onNews }}" style="flex:1 1 400px;max-width:580px;display:flex;flex-wrap:wrap;gap:12px">
+<input type="email" name="email" required="{{ true }}" aria-label="Địa chỉ email" placeholder="Email của bạn" style="flex:1 1 240px;min-height:54px;padding:0 18px;border:1px solid #aebfa9;border-radius:6px;background:#fff;font-size:15px;color:#11271a" style-focus="border-color:#1f5329;box-shadow:0 0 0 3px rgba(150,185,73,.45)">
+<button data-btn type="submit" style="display:inline-flex;align-items:center;justify-content:center;gap:12px;min-height:54px;padding:0 26px;border-radius:6px;border:1px solid #1f5329;background:#1f5329;color:#fff;font-size:15px;font-weight:600;white-space:nowrap;cursor:pointer" style-hover="background:#17441f;border-color:#17441f">Đăng ký <svg data-ar width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M7 17L17 7M8 7h9v9"></path></svg></button>
+</form>
+</div>
+</section>
+
+</main>
+
+<footer id="contact" style="background:#0b2616;color:#cfe0cf;padding:clamp(56px,7vw,96px) 0 32px">
+<div style="max-width:1280px;margin:0 auto;padding:0 clamp(20px,4vw,48px)">
+<div data-r="fgrid" style="display:grid;grid-template-columns:minmax(0,1.6fr) repeat(3,minmax(0,1fr));gap:48px 40px">
+<div data-r="fcol0">
+<img src="assets/vbfa-logo-white-solid.png" alt="Logo VBFA" width="1255" height="516" loading="lazy" decoding="async" style="height:72px;width:auto">
+<p style="margin:22px 0 0;max-width:340px;font-size:15px;line-height:1.8;color:#b9ceb9">Nền tảng thông tin và kết nối dành cho cộng đồng nhiên liệu sinh học Việt Nam.</p>
+</div>
+<div>
+<h4 style="margin:0 0 20px;font-family:'Bebas SemiExp','Bebas',sans-serif;font-weight:700;font-size:15px;line-height:1;letter-spacing:.22em;text-transform:uppercase;color:#b2d25a">Khám phá</h4>
+<ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:0;font-size:15px">
+<li><a href="#about" style="display:flex;align-items:center;min-height:44px;color:#cfe0cf" style-hover="color:#fff">Giới thiệu</a></li>
+<li><a href="#focus" style="display:flex;align-items:center;min-height:44px;color:#cfe0cf" style-hover="color:#fff">Lĩnh vực trọng tâm</a></li>
+<li><a href="#news" style="display:flex;align-items:center;min-height:44px;color:#cfe0cf" style-hover="color:#fff">Tin tức</a></li>
+<li><a href="#membership" style="display:flex;align-items:center;min-height:44px;color:#cfe0cf" style-hover="color:#fff">Hội viên</a></li>
+</ul>
+</div>
+<div>
+<h4 style="margin:0 0 20px;font-family:'Bebas SemiExp','Bebas',sans-serif;font-weight:700;font-size:15px;line-height:1;letter-spacing:.22em;text-transform:uppercase;color:#b2d25a">Thông tin</h4>
+<ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:0;font-size:15px">
+<li><a href="#resources" style="display:flex;align-items:center;min-height:44px;color:#cfe0cf" style-hover="color:#fff">Thư viện</a></li>
+<li><a href="#resources" style="display:flex;align-items:center;min-height:44px;color:#cfe0cf" style-hover="color:#fff">Chính sách</a></li>
+<li><a href="#contact" style="display:flex;align-items:center;min-height:44px;color:#cfe0cf" style-hover="color:#fff">Liên hệ</a></li>
+</ul>
+</div>
+<div data-r="fcol3">
+<h4 style="margin:0 0 20px;font-family:'Bebas SemiExp','Bebas',sans-serif;font-weight:700;font-size:15px;line-height:1;letter-spacing:.22em;text-transform:uppercase;color:#b2d25a">Liên hệ</h4>
+<p style="margin:0;font-size:15px;line-height:1.8;color:#b9ceb9">Để trao đổi về hợp tác hoặc thông tin ngành, vui lòng gửi yêu cầu qua biểu mẫu kết nối.</p>
+<button type="button" onClick="{{ openJoin }}" style="display:inline-flex;align-items:center;gap:10px;margin-top:18px;padding:0 0 6px;border:0;border-bottom:2px solid #e3a63a;background:none;color:#fff;font-size:15px;font-weight:600;cursor:pointer">Mở biểu mẫu kết nối <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M7 17L17 7M8 7h9v9"></path></svg></button>
+</div>
+</div>
+<div style="margin-top:clamp(40px,5vw,72px);padding-top:24px;border-top:1px solid rgba(255,255,255,.16);display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px 24px;font-size:13.5px;color:#a9c0ab">
+<span>© {{ year }} VBFA · Hiệp hội Nhiên liệu Sinh học Việt Nam</span>
+</div>
+</div>
+</footer>
+
+<sc-if value="{{ menuOpen }}" hint-placeholder-val="{{ false }}">
+<div onClick="{{ overlayClick }}" style="position:fixed;inset:0;z-index:100;background:rgba(6,26,15,.62);animation:vbfaFade .25s ease both">
+<div data-trap role="dialog" aria-modal="true" aria-label="Menu" style="position:absolute;top:0;right:0;bottom:0;width:min(100%,400px);background:#fff;padding:18px 28px 28px;display:flex;flex-direction:column;overflow:auto;animation:vbfaSlide .4s cubic-bezier(.2,.8,.2,1) both">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:12px">
+<img src="assets/vbfa-logo.png" alt="VBFA" width="1255" height="516" style="height:46px;width:auto">
+<button type="button" aria-label="Đóng menu" data-autofocus onClick="{{ closeModal }}" style="width:44px;height:44px;border-radius:8px;border:1px solid #d2dcce;background:#fff;color:#1f5329;display:inline-flex;align-items:center;justify-content:center;cursor:pointer"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+</div>
+<nav aria-label="Menu di động" style="display:flex;flex-direction:column;margin-top:12px">
+<a href="#top" onClick="{{ closeModal }}" style="display:flex;justify-content:space-between;align-items:center;padding:18px 0;border-bottom:1px solid #e2e8dd;font-family:'Mona Sans','Be Vietnam Pro',sans-serif;font-weight:500;font-size:21px;color:#0f2a1a">Trang chủ <span style="font-family:'Bebas SemiExp','Bebas',sans-serif;font-size:14px;letter-spacing:.14em;color:#b07d17">01</span></a>
+<a href="#about" onClick="{{ closeModal }}" style="display:flex;justify-content:space-between;align-items:center;padding:18px 0;border-bottom:1px solid #e2e8dd;font-family:'Mona Sans','Be Vietnam Pro',sans-serif;font-weight:500;font-size:21px;color:#0f2a1a">Về VBFA <span style="font-family:'Bebas SemiExp','Bebas',sans-serif;font-size:14px;letter-spacing:.14em;color:#b07d17">02</span></a>
+<a href="#focus" onClick="{{ closeModal }}" style="display:flex;justify-content:space-between;align-items:center;padding:18px 0;border-bottom:1px solid #e2e8dd;font-family:'Mona Sans','Be Vietnam Pro',sans-serif;font-weight:500;font-size:21px;color:#0f2a1a">Lĩnh vực <span style="font-family:'Bebas SemiExp','Bebas',sans-serif;font-size:14px;letter-spacing:.14em;color:#b07d17">03</span></a>
+<a href="#news" onClick="{{ closeModal }}" style="display:flex;justify-content:space-between;align-items:center;padding:18px 0;border-bottom:1px solid #e2e8dd;font-family:'Mona Sans','Be Vietnam Pro',sans-serif;font-weight:500;font-size:21px;color:#0f2a1a">Tin tức <span style="font-family:'Bebas SemiExp','Bebas',sans-serif;font-size:14px;letter-spacing:.14em;color:#b07d17">04</span></a>
+<a href="#resources" onClick="{{ closeModal }}" style="display:flex;justify-content:space-between;align-items:center;padding:18px 0;border-bottom:1px solid #e2e8dd;font-family:'Mona Sans','Be Vietnam Pro',sans-serif;font-weight:500;font-size:21px;color:#0f2a1a">Thư viện <span style="font-family:'Bebas SemiExp','Bebas',sans-serif;font-size:14px;letter-spacing:.14em;color:#b07d17">05</span></a>
+<a href="#contact" onClick="{{ closeModal }}" style="display:flex;justify-content:space-between;align-items:center;padding:18px 0;border-bottom:1px solid #e2e8dd;font-family:'Mona Sans','Be Vietnam Pro',sans-serif;font-weight:500;font-size:21px;color:#0f2a1a">Liên hệ <span style="font-family:'Bebas SemiExp','Bebas',sans-serif;font-size:14px;letter-spacing:.14em;color:#b07d17">06</span></a>
+</nav>
+<button data-btn type="button" onClick="{{ openJoin }}" style="display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:54px;margin-top:auto;padding:0 20px;border-radius:6px;border:0;background:#1f5329;color:#fff;font-size:15px;font-weight:600;cursor:pointer">Đăng ký quan tâm hội viên <svg data-ar width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M7 17L17 7M8 7h9v9"></path></svg></button>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ showSearch }}" hint-placeholder-val="{{ false }}">
+<div onClick="{{ overlayClick }}" style="position:fixed;inset:0;z-index:100;background:rgba(6,26,15,.66);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);display:flex;align-items:flex-start;justify-content:center;padding:clamp(40px,12vh,120px) 20px 20px;overflow:auto;animation:vbfaFade .25s ease both">
+<div data-trap role="dialog" aria-modal="true" aria-labelledby="search-title" style="position:relative;width:min(100%,660px);background:#fff;border-radius:14px;box-shadow:0 40px 90px rgba(0,0,0,.35);padding:clamp(24px,4vw,40px);animation:vbfaPop .4s cubic-bezier(.2,.8,.2,1) both">
+<button type="button" aria-label="Đóng" onClick="{{ closeModal }}" style="position:absolute;top:16px;right:16px;width:44px;height:44px;border-radius:50%;border:1px solid #d2dcce;background:#fff;color:#1f5329;display:inline-flex;align-items:center;justify-content:center;cursor:pointer" style-hover="background:#eef3e1"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+<span style="display:inline-flex;align-items:center;gap:14px;font-family:'Bebas SemiExp','Bebas',Impact,sans-serif;font-weight:700;font-size:14px;line-height:1;letter-spacing:.22em;text-transform:uppercase;color:#1f5329"><span aria-hidden="true" style="width:34px;height:2px;background:#e3a63a"></span>VBFA</span>
+<h2 id="search-title" style="margin:16px 56px 0 0;font-family:'Mona Sans SemiExp','Mona Sans','Be Vietnam Pro',sans-serif;font-weight:600;font-size:clamp(24px,2.4vw,30px);line-height:1.25;letter-spacing:-.02em;color:#0f2a1a">Tìm kiếm nội dung</h2>
+<p style="margin:10px 0 0;font-size:15px;line-height:1.7;color:#435448">Tìm chủ đề, tài liệu và các khu vực thông tin trên website.</p>
+<form onSubmit="{{ noSubmit }}" style="margin-top:24px">
+<label for="search-input" style="display:block;margin-bottom:8px;font-size:13px;font-weight:600;color:#0f2a1a">Từ khóa</label>
+<div style="position:relative">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5a6b5e" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style="position:absolute;left:16px;top:50%;transform:translateY(-50%)"><circle cx="11" cy="11" r="6.5"></circle><path d="M16 16l4.5 4.5"></path></svg>
+<input id="search-input" data-autofocus type="search" autoComplete="off" value="{{ q }}" onChange="{{ onSearch }}" placeholder="Ví dụ: hội viên, chính sách, tin tức" style="width:100%;min-height:54px;padding:0 16px 0 48px;border:1px solid #c5d2c3;border-radius:8px;background:#fff;font-size:16px;color:#11271a" style-focus="border-color:#1f5329;box-shadow:0 0 0 3px rgba(150,185,73,.4)">
+</div>
+</form>
+<div aria-live="polite" style="margin-top:18px;border-bottom:1px solid #e3e9de">
+<sc-for list="{{ results }}" as="r" hint-placeholder-count="3">
+<a href="{{ r.href }}" onClick="{{ closeModal }}" style="display:flex;justify-content:space-between;align-items:center;gap:16px;padding:16px 6px;border-top:1px solid #e3e9de;font-family:'Mona Sans','Be Vietnam Pro',sans-serif;font-weight:500;font-size:17px;line-height:1.4;color:#0f2a1a" style-hover="background:#f4f6ec;color:#1f5329"><span>{{ r.label }}</span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1f5329" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M7 17L17 7M8 7h9v9"></path></svg></a>
+</sc-for>
+<sc-if value="{{ noResults }}" hint-placeholder-val="{{ false }}">
+<p style="margin:0;padding:18px 6px;border-top:1px solid #e3e9de;font-size:15px;color:#435448">Không thấy khu vực phù hợp trong bản mẫu.</p>
+</sc-if>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ showJoin }}" hint-placeholder-val="{{ false }}">
+<div onClick="{{ overlayClick }}" style="position:fixed;inset:0;z-index:100;background:rgba(6,26,15,.66);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:20px;overflow:auto;animation:vbfaFade .25s ease both">
+<div data-r="join-dialog" data-trap role="dialog" aria-modal="true" aria-labelledby="join-title" style="position:relative;width:min(100%,980px);max-height:calc(100dvh - 40px);display:grid;grid-template-columns:minmax(0,.78fr) minmax(0,1.5fr);background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 40px 90px rgba(0,0,0,.35);animation:vbfaPop .4s cubic-bezier(.2,.8,.2,1) both">
+<div data-r="join-side" aria-hidden="true" style="position:relative;background:#0b2616;color:#fff;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;padding:36px 32px;isolation:isolate">
+<div style="position:absolute;inset:0;z-index:-1;background:radial-gradient(70% 60% at 60% 42%,rgba(150,185,73,.28),transparent 70%),linear-gradient(160deg,#0a2314,#154026)"></div>
+<svg viewBox="0 0 620 620" fill="none" style="position:absolute;left:50%;top:44%;width:560px;height:560px;transform:translate(-50%,-50%);z-index:-1"><circle cx="310" cy="310" r="120" stroke="#96b949" strokeOpacity=".4"></circle><circle cx="310" cy="310" r="190" stroke="#96b949" strokeOpacity=".25"></circle><circle cx="310" cy="310" r="260" stroke="#96b949" strokeOpacity=".14"></circle><circle cx="310" cy="310" r="306" stroke="#e3a63a" strokeOpacity=".4" strokeDasharray="2 9" strokeLinecap="round"></circle></svg>
+<span style="font-family:'Bebas SemiExp','Bebas',sans-serif;font-weight:700;font-size:13px;letter-spacing:.24em;color:#b2d25a">VIETNAM BIOFUELS ASSOCIATION</span>
+<img src="assets/vbfa-drop-solid.png" alt="" width="618" height="888" style="align-self:center;height:230px;width:auto;filter:drop-shadow(0 24px 30px rgba(0,0,0,.4))">
+<span style="font-family:'Primark','Segoe Script',cursive;font-size:32px;line-height:1.4;color:#f2cf75">vì tương lai bền vững</span>
+</div>
+<div style="padding:clamp(24px,3.4vw,44px);overflow:auto;max-height:calc(100dvh - 40px)">
+<button type="button" aria-label="Đóng" onClick="{{ closeModal }}" style="position:absolute;top:16px;right:16px;width:44px;height:44px;border-radius:50%;border:1px solid #d2dcce;background:#fff;color:#1f5329;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;z-index:2" style-hover="background:#eef3e1"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+<h2 id="join-title" style="margin:0 56px 0 0;font-family:'Mona Sans SemiExp','Mona Sans','Be Vietnam Pro',sans-serif;font-weight:600;font-size:clamp(24px,2.4vw,32px);line-height:1.25;letter-spacing:-.02em;color:#0f2a1a">Kết nối cùng VBFA</h2>
+<p style="margin:10px 0 0;font-size:15px;line-height:1.7;color:#435448">Chia sẻ nhu cầu kết nối để tìm hiểu thêm về hoạt động hội viên.</p>
+<form onSubmit="{{ onJoin }}" style="margin-top:26px">
+<div data-r="join-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+<div style="display:flex;flex-direction:column;gap:8px"><label for="person" style="font-size:13px;font-weight:600;color:#0f2a1a">Họ và tên *</label><input id="person" data-autofocus name="name" required="{{ true }}" maxLength="120" placeholder="Nguyễn Văn A" style="width:100%;min-height:48px;padding:0 14px;border:1px solid #c5d2c3;border-radius:6px;background:#fff;font-size:15px;color:#11271a" style-focus="border-color:#1f5329;box-shadow:0 0 0 3px rgba(150,185,73,.4)"></div>
+<div style="display:flex;flex-direction:column;gap:8px"><label for="company" style="font-size:13px;font-weight:600;color:#0f2a1a">Tổ chức / Doanh nghiệp *</label><input id="company" name="company" required="{{ true }}" maxLength="160" placeholder="Tên doanh nghiệp" style="width:100%;min-height:48px;padding:0 14px;border:1px solid #c5d2c3;border-radius:6px;background:#fff;font-size:15px;color:#11271a" style-focus="border-color:#1f5329;box-shadow:0 0 0 3px rgba(150,185,73,.4)"></div>
+<div style="display:flex;flex-direction:column;gap:8px"><label for="email" style="font-size:13px;font-weight:600;color:#0f2a1a">Email công việc *</label><input id="email" name="email" type="email" required="{{ true }}" placeholder="name@company.com" style="width:100%;min-height:48px;padding:0 14px;border:1px solid #c5d2c3;border-radius:6px;background:#fff;font-size:15px;color:#11271a" style-focus="border-color:#1f5329;box-shadow:0 0 0 3px rgba(150,185,73,.4)"></div>
+<div style="display:flex;flex-direction:column;gap:8px"><label for="phone" style="font-size:13px;font-weight:600;color:#0f2a1a">Số điện thoại</label><input id="phone" name="phone" type="tel" placeholder="(+84) ..." style="width:100%;min-height:48px;padding:0 14px;border:1px solid #c5d2c3;border-radius:6px;background:#fff;font-size:15px;color:#11271a" style-focus="border-color:#1f5329;box-shadow:0 0 0 3px rgba(150,185,73,.4)"></div>
+<div style="grid-column:1/-1;display:flex;flex-direction:column;gap:8px"><label for="interest" style="font-size:13px;font-weight:600;color:#0f2a1a">Nhu cầu kết nối</label><select id="interest" name="interest" style="width:100%;min-height:48px;padding:0 12px;border:1px solid #c5d2c3;border-radius:6px;background:#fff;font-size:15px;color:#11271a" style-focus="border-color:#1f5329;box-shadow:0 0 0 3px rgba(150,185,73,.4)"><option>Quan tâm hội viên</option><option>Hợp tác chuyên môn</option><option>Đề nghị cung cấp thông tin</option><option>Khác</option></select></div>
+<div style="grid-column:1/-1;display:flex;flex-direction:column;gap:8px"><label for="message" style="font-size:13px;font-weight:600;color:#0f2a1a">Nội dung thêm</label><textarea id="message" name="message" maxLength="1000" placeholder="Chia sẻ ngắn về nhu cầu của bạn..." style="width:100%;min-height:104px;padding:12px 14px;border:1px solid #c5d2c3;border-radius:6px;background:#fff;font-size:15px;color:#11271a;resize:vertical" style-focus="border-color:#1f5329;box-shadow:0 0 0 3px rgba(150,185,73,.4)"></textarea></div>
+<label style="grid-column:1/-1;display:flex;gap:12px;align-items:flex-start;font-size:13.5px;line-height:1.6;color:#435448"><input type="checkbox" required="{{ true }}" style="flex:none;width:18px;height:18px;margin:2px 0 0;accent-color:#1f5329"><span>Tôi đồng ý sử dụng thông tin này cho mục đích liên hệ khi hệ thống chính thức được vận hành.</span></label>
+<div style="grid-column:1/-1;display:flex;justify-content:flex-end"><button data-btn type="submit" style="display:inline-flex;align-items:center;justify-content:center;gap:12px;min-height:52px;padding:0 28px;border-radius:6px;border:1px solid #1f5329;background:#1f5329;color:#fff;font-size:15px;font-weight:600;white-space:nowrap;cursor:pointer" style-hover="background:#17441f;border-color:#17441f">Gửi thông tin đăng ký <svg data-ar width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M7 17L17 7M8 7h9v9"></path></svg></button></div>
+</div>
+</form>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ hasToast }}" hint-placeholder-val="{{ false }}">
+<div role="status" style="position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:130;width:max-content;max-width:min(92vw,560px);display:flex;gap:14px;align-items:flex-start;background:#0b2616;color:#fff;padding:16px 20px;border-radius:10px;box-shadow:0 20px 50px rgba(0,0,0,.32);font-size:14.5px;line-height:1.6;animation:vbfaToast .4s cubic-bezier(.2,.8,.2,1) both">
+<span aria-hidden="true" style="flex:none;width:26px;height:26px;border-radius:50%;background:#b2d25a;color:#0b2616;display:inline-flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></span>
+<span>{{ toastText }}</span>
+</div>
+</sc-if>
+
+<button type="button" aria-label="Về đầu trang" onClick="{{ toTop }}" style="position:fixed;right:clamp(14px,2vw,28px);bottom:clamp(16px,2vw,28px);z-index:70;width:48px;height:48px;border-radius:50%;border:1px solid #2f6a3a;background:#0f3a22;color:#fff;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 12px 28px rgba(8,38,20,.3);opacity:{{ topOpacity }};transform:translateY({{ topY }});pointer-events:{{ topPe }};transition:opacity .35s,transform .35s cubic-bezier(.2,.8,.2,1),background-color .3s" style-hover="background:#1f5329"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 20V4M6 10l6-6 6 6"></path></svg></button>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;heroVisual&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;ripple&quot;,&quot;photo&quot;],&quot;default&quot;:&quot;ripple&quot;,&quot;tsType&quot;:&quot;'ripple' | 'photo'&quot;,&quot;section&quot;:&quot;Hero&quot;},&quot;showUtilityBar&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Header&quot;},&quot;filterMode&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dim&quot;,&quot;hide&quot;],&quot;default&quot;:&quot;dim&quot;,&quot;tsType&quot;:&quot;'dim' | 'hide'&quot;,&quot;section&quot;:&quot;News&quot;}}">
+class Component extends DCLogic {
+  state = { menu: false, modal: null, scrolled: false, showTop: false, active: 'top', filter: 'all', q: '', toast: '' };
+  pages = [['Trang chủ', '#top'], ['Giới thiệu VBFA', '#about'], ['Chính sách và pháp lý', '#focus'], ['Thị trường và đầu tư', '#focus'], ['Công nghệ và đổi mới', '#focus'], ['Phát triển bền vững', '#focus'], ['Hội viên và kết nối', '#membership'], ['Tin tức và hoạt động', '#news'], ['Thư viện và báo cáo', '#resources'], ['Liên hệ', '#contact']];
+
+  embed = typeof location !== 'undefined' && /[?&]embed/.test(location.search);
+  setRoot = (el) => { this.root = el; };
+  setBar = (el) => { this.bar = el; };
+
+  componentDidMount() {
+    const sp = new URLSearchParams(location.search);
+    this.embed = sp.has('embed');
+    if (this.embed) { document.documentElement.style.overflow = 'hidden'; document.documentElement.style.background = '#0b2616'; }
+    const m = sp.get('modal');
+    if (m === 'join' || m === 'search') this.setState({ modal: m });
+    if (sp.has('menu')) this.setState({ menu: true });
+    this.onScroll = () => {
+      if (this.ticking) return;
+      this.ticking = true;
+      requestAnimationFrame(() => {
+        this.ticking = false;
+        const y = window.scrollY || 0;
+        const max = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+        if (this.bar) this.bar.style.transform = 'scaleX(' + Math.min(1, y / max) + ')';
+        const scrolled = y > 12, showTop = y > 640;
+        if (scrolled !== this.state.scrolled || showTop !== this.state.showTop) this.setState({ scrolled, showTop });
+      });
+    };
+    window.addEventListener('scroll', this.onScroll, { passive: true });
+    window.addEventListener('resize', this.onScroll, { passive: true });
+    document.addEventListener('keydown', this.onKey);
+    if (!this.embed && 'IntersectionObserver' in window) {
+      this.io = new IntersectionObserver((es) => es.forEach((en) => {
+        if (en.isIntersecting && en.target.id !== this.state.active) this.setState({ active: en.target.id });
+      }), { rootMargin: '-30% 0px -60% 0px' });
+      ['top', 'about', 'focus', 'news', 'membership', 'resources', 'contact'].forEach((id) => { const el = document.getElementById(id); if (el) this.io.observe(el); });
+    }
+    if (this.embed && window.parent !== window && window.ResizeObserver) {
+      const post = () => { if (this.root) window.parent.postMessage({ type: 'vbfa-height', key: sp.get('embed'), h: Math.ceil(this.root.getBoundingClientRect().height) + 1 }, '*'); };
+      this.ro = new ResizeObserver(post);
+      this.ro.observe(this.root);
+      window.addEventListener('load', post);
+      post();
+    }
+    this.onScroll();
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener('scroll', this.onScroll);
+    window.removeEventListener('resize', this.onScroll);
+    document.removeEventListener('keydown', this.onKey);
+    if (this.io) this.io.disconnect();
+    if (this.ro) this.ro.disconnect();
+    clearTimeout(this.tt);
+    document.body.style.overflow = '';
+  }
+
+  componentDidUpdate() {
+    const s = this.state, prev = this.ps || {};
+    const open = !!(s.modal || s.menu), was = !!(prev.modal || prev.menu);
+    if (open !== was) document.body.style.overflow = open ? 'hidden' : '';
+    if (!this.embed && ((s.modal && s.modal !== prev.modal) || (s.menu && !prev.menu))) {
+      setTimeout(() => { const el = document.querySelector('[data-autofocus]'); if (el) el.focus(); }, 70);
+    }
+    if (!open && was && this.prevFocus && this.prevFocus.focus && !this.embed) this.prevFocus.focus();
+    this.ps = { modal: s.modal, menu: s.menu };
+  }
+
+  onKey = (e) => {
+    if (e.key === 'Escape' && (this.state.modal || this.state.menu)) { this.closeModal(); return; }
+    if (e.key !== 'Tab') return;
+    const box = document.querySelector('[data-trap]');
+    if (!box) return;
+    const nodes = Array.from(box.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select,textarea')).filter((n) => n.getClientRects().length);
+    if (!nodes.length) return;
+    const a = nodes[0], b = nodes[nodes.length - 1];
+    if (e.shiftKey && document.activeElement === a) { e.preventDefault(); b.focus(); }
+    else if (!e.shiftKey && document.activeElement === b) { e.preventDefault(); a.focus(); }
+  };
+
+  open(modal) { this.prevFocus = this.prevFocus || document.activeElement; this.setState({ modal, menu: false, q: modal === 'search' ? '' : this.state.q }); }
+  openSearch = () => { this.prevFocus = document.activeElement; this.open('search'); };
+  openJoin = () => { if (!this.state.menu) this.prevFocus = document.activeElement; this.open('join'); };
+  openMenu = () => { this.prevFocus = document.activeElement; this.setState({ menu: true }); };
+  closeModal = () => this.setState({ modal: null, menu: false });
+  overlayClick = (e) => { if (e.target === e.currentTarget) this.closeModal(); };
+  onSearch = (e) => this.setState({ q: e.target.value });
+  noSubmit = (e) => e.preventDefault();
+  setFilter = (k) => () => this.setState({ filter: k });
+  toTop = () => window.scrollTo({ top: 0, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+
+  toast(t) {
+    clearTimeout(this.tt);
+    this.setState({ toast: t });
+    this.tt = setTimeout(() => this.setState({ toast: '' }), 4500);
+  }
+  onJoin = (e) => {
+    e.preventDefault();
+    const f = e.currentTarget;
+    if (!f.reportValidity()) return;
+    f.reset();
+    this.prevFocus = null;
+    this.closeModal();
+    this.toast('Form thử nghiệm hợp lệ. Chưa có dữ liệu nào được gửi hoặc lưu.');
+  };
+  onNews = (e) => {
+    e.preventDefault();
+    const f = e.currentTarget;
+    if (!f.reportValidity()) return;
+    f.reset();
+    this.toast('Đã kiểm tra thao tác đăng ký. Chưa kết nối hệ thống gửi bản tin.');
+  };
+
+  renderVals() {
+    const s = this.state, f = s.filter, a = s.active, p = this.props;
+    const hide = (p.filterMode ?? 'dim') === 'hide';
+    const hv = p.heroVisual ?? 'ripple';
+    const cur = (id) => (a === id ? 'location' : undefined);
+    const chip = (k) => { const on = f === k; return { bg: on ? '#1f5329' : '#fff', fg: on ? '#fff' : '#1f5329', bd: on ? '#1f5329' : '#c5d2c3', pressed: String(on), click: this.setFilter(k) }; };
+    const card = (k) => { const on = f === 'all' || f === k; return { o: on ? 1 : 0.28, pe: on ? 'auto' : 'none', tab: on ? 0 : -1, hid: on ? undefined : 'true', gs: on ? 'none' : 'grayscale(1)', disp: hide && !on ? 'none' : 'flex' }; };
+    const q = s.q.trim().toLocaleLowerCase('vi');
+    const list = q ? this.pages.filter((x) => x[0].toLocaleLowerCase('vi').includes(q)) : this.pages.slice(0, 5);
+    return {
+      headerShadow: s.scrolled ? '0 12px 32px rgba(11,38,22,.09)' : '0 0 0 rgba(0,0,0,0)',
+      embedAttr: this.embed ? '1' : undefined,
+      showUtility: p.showUtilityBar ?? true,
+      heroRipple: hv !== 'photo',
+      heroPhoto: hv === 'photo',
+      cur: { top: cur('top'), about: cur('about'), focus: cur('focus'), news: cur('news'), resources: cur('resources'), contact: cur('contact') },
+      menuExpanded: String(s.menu),
+      menuOpen: s.menu,
+      showSearch: s.modal === 'search',
+      showJoin: s.modal === 'join',
+      hasToast: !!s.toast,
+      toastText: s.toast,
+      q: s.q,
+      results: list.map((x) => ({ label: x[0], href: x[1] })),
+      noResults: list.length === 0,
+      chip: { all: chip('all'), news: chip('news'), activity: chip('activity'), policy: chip('policy') },
+      d1: card('news'), d2: card('activity'), d3: card('policy'),
+      year: new Date().getFullYear(),
+      topOpacity: s.showTop ? 1 : 0,
+      topY: s.showTop ? '0px' : '16px',
+      topPe: s.showTop ? 'auto' : 'none',
+      openSearch: this.openSearch, openJoin: this.openJoin, openMenu: this.openMenu, closeModal: this.closeModal,
+      overlayClick: this.overlayClick, onSearch: this.onSearch, noSubmit: this.noSubmit, onJoin: this.onJoin, onNews: this.onNews, toTop: this.toTop,
+      setRoot: this.setRoot, setBar: this.setBar
+    };
+  }
+}
+</script>
+</body>
+</html>
