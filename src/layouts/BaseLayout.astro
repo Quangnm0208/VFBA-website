@@ -2,6 +2,7 @@
 interface Props {title?:string;description?:string;image?:string;noindex?:boolean}
 const {title='VBFA | Hiệp hội Nhiên liệu Sinh học Việt Nam',description='Thông tin, tri thức và kết nối trong lĩnh vực nhiên liệu sinh học Việt Nam.',image,noindex=false}=Astro.props;
 const current=Astro.url;
+const isPreviewHost = /\\.vercel\\.app$/.test(current.hostname);
 ---
 <!doctype html>
 <html lang="vi">
@@ -9,7 +10,7 @@ const current=Astro.url;
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="theme-color" content="#19492B" />
-{noindex && <meta name="robots" content="noindex,nofollow" />}
+{(noindex || isPreviewHost) && <meta name="robots" content="noindex,nofollow" />}
 <title>{title}</title>
 <meta name="description" content={description} />
 <meta property="og:type" content="website" />
