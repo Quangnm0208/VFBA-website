@@ -1,0 +1,66 @@
+---
+interface Props {title?:string;description?:string;image?:string;noindex?:boolean}
+const {title='VBFA | Hiệp hội Nhiên liệu Sinh học Việt Nam',description='Thông tin, tri thức và kết nối trong lĩnh vực nhiên liệu sinh học Việt Nam.',image,noindex=false}=Astro.props;
+const current=Astro.url;
+---
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="theme-color" content="#19492B" />
+{noindex && <meta name="robots" content="noindex,nofollow" />}
+<title>{title}</title>
+<meta name="description" content={description} />
+<meta property="og:type" content="website" />
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+{image && <meta property="og:image" content={image} />}
+<meta property="og:locale" content="vi_VN" />
+<link rel="canonical" href={current.toString()} />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+</head>
+<body>
+<a class="skip-link" href="#main">Bỏ qua điều hướng</a>
+<slot/>
+<script>
+const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const header=document.querySelector<HTMLElement>('[data-header]');
+const nav=document.querySelector<HTMLElement>('[data-mobile-nav]');
+const menu=document.querySelector<HTMLButtonElement>('[data-menu-toggle]');
+const setMenu=(open:boolean)=>{menu?.setAttribute('aria-expanded',String(open));if(nav)nav.hidden=!open;document.body.classList.toggle('nav-open',open);};
+menu?.addEventListener('click',()=>setMenu(menu.getAttribute('aria-expanded')!=='true'));
+nav?.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>setMenu(false)));
+document.addEventListener('keydown',e=>{if(e.key==='Escape')setMenu(false)});
+const update=()=>header?.classList.toggle('is-scrolled',window.scrollY>16);
+addEventListener('scroll',update,{passive:true});update();
+if(!reduced&&'IntersectionObserver'in window){
+const obs=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('is-visible');obs.unobserve(e.target);}}),{threshold:.08});
+document.querySelectorAll('[data-reveal]').forEach(e=>obs.observe(e));
+}else{document.querySelectorAll('[data-reveal]').forEach(e=>e.classList.add('is-visible'))}
+document.querySelectorAll<HTMLButtonElement>('[data-news-filter]').forEach(btn=>btn.addEventListener('click',()=>{
+ const category=btn.dataset.newsFilter||'all';
+ document.querySelectorAll<HTMLButtonElement>('[data-news-filter]').forEach(b=>b.setAttribute('aria-pressed',String(b===btn)));
+ document.querySelectorAll<HTMLElement>('[data-news-item]').forEach(card=>card.hidden=category!=='all'&&card.dataset.newsItem!==category);
+}));
+const form=document.querySelector<HTMLFormElement>('[data-lead-form]');
+form?.addEventListener('submit',async event=>{
+ event.preventDefault();if(!form.reportValidity())return;
+ const status=document.querySelector<HTMLElement>('[data-form-status]');
+ const submit=form.querySelector<HTMLButtonElement>('button[type=submit]');
+ const data=new FormData(form);
+ if(!data.get('consent')){if(status)status.textContent='Vui lòng đồng ý với thông tin xử lý dữ liệu.';return}
+ submit?.setAttribute('disabled','');if(status)status.textContent='Đang xử lý...';
+ try{
+  const response=await fetch('/api/lead',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.fromEntries(data.entries()))});
+  const body=await response.json();if(status)status.textContent=body.message||'Không thể gửi yêu cầu lúc này.';
+  if(response.ok)form.reset();
+ }catch{if(status)status.textContent='Kết nối gián đoạn. Vui lòng thử lại sau.'}
+ finally{submit?.removeAttribute('disabled')}
+});
+</script>
+</body>
+</html>
