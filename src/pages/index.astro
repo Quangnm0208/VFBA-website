@@ -1,0 +1,77 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import {getContent} from '../lib/content';
+import '../styles/site.css';
+const data=await getContent();
+const {settings,home,focus,articles,resources,events}=data;
+const image=(url?:string)=>url?url+'?auto=format&fit=crop&w=1000&q=85':null;
+const categories=['Tất cả','Tin ngành','Hoạt động','Chính sách','Góc nhìn'];
+const sitekey=import.meta.env.PUBLIC_TURNSTILE_SITE_KEY||'';
+---
+<BaseLayout title="VBFA | Hiệp hội Nhiên liệu Sinh học Việt Nam" description={home.subheadline||'Thông tin và kết nối ngành nhiên liệu sinh học Việt Nam'}>
+<header class="site-header" data-header>
+ <div class="container header-inner">
+  <a href="#top" class="brand" aria-label="VBFA - Trang chủ">
+   {settings.logoUrl ? <img src={settings.logoUrl} alt="VBFA" width="148" height="57"/> : <span class="brand-emblem" aria-hidden="true">◈</span>}
+   <span class="brand-type"><strong>VBFA</strong><small>HIỆP HỘI NHIÊN LIỆU SINH HỌC VIỆT NAM</small></span>
+  </a>
+  <nav class="desktop-nav" aria-label="Điều hướng chính">
+   <a href="#top">Trang chủ</a><a href="#about">Về VBFA</a><a href="#focus">Lĩnh vực</a><a href="#news">Tin tức</a><a href="#resources">Thư viện</a><a href="#contact">Liên hệ</a>
+  </nav>
+  <div class="nav-actions"><a class="button button-dark header-cta" href="#membership">Trở thành hội viên <span aria-hidden="true">↗</span></a><button class="menu-toggle" type="button" aria-expanded="false" aria-controls="mobile-navigation" aria-label="Mở menu" data-menu-toggle><span></span><span></span><span></span></button></div>
+ </div>
+ <nav class="mobile-nav" id="mobile-navigation" aria-label="Menu mobile" data-mobile-nav hidden>
+  <a href="#top">Trang chủ</a><a href="#about">Về VBFA</a><a href="#focus">Lĩnh vực</a><a href="#news">Tin tức</a><a href="#resources">Thư viện</a><a href="#contact">Liên hệ</a><a href="#membership" class="mobile-highlight">Trở thành hội viên ↗</a>
+ </nav>
+</header>
+<main id="main">
+<section class="hero" id="top">
+ <div class="hero-glow"></div><div class="container hero-grid">
+  <div class="hero-copy" data-reveal><div class="eyebrow light"><span class="eyebrow-line"></span>{home.eyebrow||'VIETNAM BIOFUELS ASSOCIATION'}</div>
+   <h1>{home.headline}</h1><p class="hero-description">{home.subheadline}</p>
+   <div class="hero-actions"><a class="button button-gold" href="#about">Tìm hiểu về VBFA <span>↗</span></a><a class="text-link light-link" href="#membership">{home.primaryCta||'Kết nối cùng VBFA'} <span>↗</span></a></div>
+   <div class="hero-signature"><span class="signature-line"></span><span>KẾT NỐI · TRI THỨC · HỢP TÁC</span></div>
+  </div>
+  <div class="hero-art" aria-hidden="true"><div class="art-orbit orbit-one"></div><div class="art-orbit orbit-two"></div><div class="art-sun"></div><div class="art-horizon"></div><div class="art-field field-one"></div><div class="art-field field-two"></div><div class="art-leaf leaf-one"></div><div class="art-leaf leaf-two"></div><div class="art-label"><span class="art-dot"></span> TƯƠNG LAI NĂNG LƯỢNG BỀN VỮNG</div></div>
+ </div>
+ <div class="hero-bottom container"><span>01 / VIETNAM BIOFUELS ASSOCIATION</span><a href="#about" aria-label="Cuộn tới giới thiệu">CUỘN ĐỂ KHÁM PHÁ <span aria-hidden="true">↓</span></a></div>
+</section>
+<section class="section about-section" id="about">
+ <div class="container about-grid">
+  <div data-reveal><div class="eyebrow"><span class="eyebrow-line"></span> VỀ HIỆP HỘI</div><h2>{home.aboutTitle}</h2></div>
+  <div class="about-right" data-reveal><p class="lead">{home.aboutDescription}</p><p>VBFA hướng đến một không gian trao đổi có cấu trúc, nơi các tổ chức và doanh nghiệp quan tâm có thể tiếp cận thông tin, kết nối chuyên môn và khám phá các chủ đề của ngành.</p><a class="text-link" href="#focus">Khám phá các lĩnh vực <span>↗</span></a></div>
+ </div>
+</section>
+<section class="section focus-section" id="focus">
+ <div class="container">
+  <div class="section-intro" data-reveal><div><div class="eyebrow"><span class="eyebrow-line"></span> HỆ SINH THÁI NGÀNH</div><h2>Những lĩnh vực tạo nên <em>chuyển động ngành.</em></h2></div><p>Tiếp cận các nội dung trọng tâm từ chính sách, thị trường đến công nghệ, phát triển bền vững và hợp tác.</p></div>
+  <div class="focus-grid">{focus.map((item,i)=><a class="focus-card" href="#contact" data-reveal><span class="card-top"><span class="card-index">{String(item.number||i+1).padStart(2,'0')}</span><span class="card-arrow">↗</span></span><div class="focus-mark" aria-hidden="true">{['◌','◇','✳','❋','◎','⟡'][i%6]}</div><h3>{item.title}</h3><p>{item.description}</p><span class="card-foot">Tìm hiểu thêm <span>↗</span></span></a>)}</div>
+ </div>
+</section>
+<section class="section editorial-section" id="news">
+ <div class="container"><div class="section-intro" data-reveal><div><div class="eyebrow"><span class="eyebrow-line"></span> TIN TỨC & GÓC NHÌN</div><h2>Chuyển động ngành, <em>góc nhìn mới.</em></h2></div><p>Thông tin và những bài viết chuyên đề được biên tập theo từng nhóm nội dung.</p></div>
+ <div class="filter-row" role="group" aria-label="Lọc tin tức">{categories.map((cat,i)=><button type="button" data-news-filter={i===0?'all':cat} aria-pressed={i===0?'true':'false'}>{cat}</button>)}</div>
+ {articles.length ? <div class="news-grid">{articles.slice(0,6).map((a,i)=><a class:list={['news-card',{'news-featured':i===0}]} href={'/tin-tuc/'+encodeURIComponent(a.slug||'')} data-news-item={a.category||'Tin ngành'} data-reveal><div class="news-media">{a.coverUrl ? <img src={image(a.coverUrl)||''} alt={a.title} loading="lazy"/> : <span class="news-illustration">VBFA / INSIGHTS</span>}</div><div class="news-details"><div class="eyebrow small">{a.category||'TIN NGÀNH'}{a.publishedAt?' · '+new Intl.DateTimeFormat('vi-VN').format(new Date(a.publishedAt)):''}</div><h3>{a.title}</h3><p>{a.excerpt||''}</p><span class="text-link">Đọc bài viết <span>↗</span></span></div></a>)}</div> : <div class="empty-editorial" data-reveal><span class="empty-icon">↗</span><div><h3>Chuyên mục tin tức & tri thức</h3><p>Thông tin ngành, hoạt động hiệp hội và văn bản tham khảo sẽ được hiển thị tại đây khi được biên tập và xuất bản.</p></div></div>}
+ </div>
+</section>
+<section class="membership-section" id="membership"><div class="container membership-layout"><div data-reveal><div class="eyebrow light"><span class="eyebrow-line"></span> CỘNG ĐỒNG VBFA</div><h2>Cùng xây dựng một mạng lưới hợp tác có giá trị dài hạn.</h2></div><div class="membership-action" data-reveal><p>Kết nối và chia sẻ thông tin với cộng đồng doanh nghiệp, tổ chức và chuyên gia quan tâm đến nhiên liệu sinh học.</p><a class="button button-gold" href="#contact">Tìm hiểu cơ hội hội viên <span>↗</span></a></div></div></section>
+<section class="section resources-section" id="resources"><div class="container"><div class="section-intro" data-reveal><div><div class="eyebrow"><span class="eyebrow-line"></span> THƯ VIỆN TRI THỨC</div><h2>Thông tin đáng tham khảo. <em>Dễ dàng tiếp cận.</em></h2></div><p>Khám phá những tài liệu và nguồn thông tin được tổng hợp theo lĩnh vực.</p></div>
+ {resources.length ? <div class="resource-list">{resources.map((r)=><a class="resource-item" href={r.url||'#resources'} target={r.url?'_blank':undefined} rel={r.url?'noopener noreferrer':undefined}><span class="resource-icon">↗</span><span><small>{r.category||'TÀI LIỆU'}</small><strong>{r.title}</strong><span>{r.description}</span></span><span class="resource-arrow">↗</span></a>)}</div> : <div class="resource-grid"><div class="resource-feature" data-reveal><span class="resource-no">01 / KNOWLEDGE</span><div><h3>Tài liệu & báo cáo</h3><p>Thư viện nghiên cứu, ấn phẩm và tài liệu chuyên đề.</p></div></div><div class="resource-feature alternate" data-reveal><span class="resource-no">02 / POLICY</span><div><h3>Văn bản & thông tin ngành</h3><p>Tập hợp các nội dung tham khảo liên quan đến ngành nhiên liệu sinh học.</p></div></div></div>}
+ {events.length>0 && <div class="events-inline"><div class="eyebrow">HOẠT ĐỘNG MỚI</div>{events.slice(0,3).map(ev=><p><strong>{ev.title}</strong> — {ev.summary}</p>)}</div>}
+ </div></section>
+<section class="contact-section section" id="contact"><div class="container contact-layout"><div data-reveal><div class="eyebrow"><span class="eyebrow-line"></span> KẾT NỐI VBFA</div><h2>Đồng hành cùng <em>những kết nối mới.</em></h2><p>Để lại thông tin khi bạn quan tâm đến hội viên, hoạt động hợp tác hoặc trao đổi chuyên môn.</p><p class="contact-detail">{settings.email||'Thông tin liên hệ chính thức sẽ được cập nhật qua hệ thống quản trị.'}</p></div>
+ <form class="contact-form" data-lead-form data-reveal>
+ <label for="lead-kind">Nhu cầu của bạn</label><select id="lead-kind" name="kind" required><option value="membership">Tìm hiểu hội viên</option><option value="contact">Liên hệ hợp tác</option><option value="newsletter">Nhận tin cập nhật</option></select>
+ <div class="form-two"><div><label for="lead-name">Họ và tên</label><input id="lead-name" name="name" required maxlength="160" autocomplete="name" placeholder="Họ và tên"/></div><div><label for="lead-email">Email</label><input id="lead-email" type="email" name="email" required maxlength="254" autocomplete="email" placeholder="Email công việc"/></div></div>
+ <div class="form-two"><div><label for="lead-company">Tổ chức / Doanh nghiệp</label><input id="lead-company" name="company" maxlength="180" autocomplete="organization" placeholder="Tên tổ chức"/></div><div><label for="lead-phone">Số điện thoại</label><input id="lead-phone" name="phone" maxlength="50" autocomplete="tel" placeholder="+84..."/></div></div>
+ <label for="lead-message">Nội dung quan tâm</label><textarea id="lead-message" name="message" rows="3" maxlength="2000" placeholder="Bạn muốn trao đổi nội dung gì?"></textarea>
+ <div class="visually-hidden" aria-hidden="true"><label for="lead-website">Website</label><input id="lead-website" type="text" name="website" tabindex="-1" autocomplete="off"/></div>
+ <input type="hidden" name="source_page" value="/"/>
+ <label class="consent"><input type="checkbox" name="consent" required/><span>Tôi đồng ý để VBFA xử lý thông tin này nhằm phản hồi yêu cầu liên hệ của tôi.</span></label>
+ {sitekey ? <div class="cf-turnstile" data-sitekey={sitekey} data-response-field-name="turnstileToken"></div> : <p class="form-note">Biểu mẫu chưa được kích hoạt gửi dữ liệu ở môi trường xem trước.</p>}
+ <button class="button button-dark submit-button" type="submit">Gửi yêu cầu <span>↗</span></button><p data-form-status role="status" aria-live="polite" class="form-status"></p>
+ </form></div></section>
+</main>
+<footer class="site-footer"><div class="container footer-top"><div><div class="brand footer-brand"><span class="brand-emblem">◈</span><span class="brand-type"><strong>VBFA</strong><small>HIỆP HỘI NHIÊN LIỆU SINH HỌC VIỆT NAM</small></span></div><p>Thông tin · Tri thức · Kết nối</p></div><nav aria-label="Liên kết chân trang"><a href="#about">Về VBFA</a><a href="#focus">Lĩnh vực</a><a href="#news">Tin tức</a><a href="#resources">Thư viện</a><a href="#contact">Liên hệ</a></nav></div><div class="container footer-bottom"><span>© {new Date().getFullYear()} VBFA. All rights reserved.</span><a href="#top">Trở lên đầu trang ↑</a></div></footer>
+{sitekey && <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>}
+</BaseLayout>
