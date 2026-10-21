@@ -1,0 +1,16 @@
+{
+  "name": "vbfa-sanity-studio",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "sanity dev",
+    "build": "sanity build",
+    "deploy": "sanity deploy"
+  },
+  "dependencies": {
+    "sanity": "^4.0.0",
+    "@sanity/vision": "^4.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  }
+}
