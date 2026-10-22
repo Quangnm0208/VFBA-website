@@ -14,11 +14,14 @@
 <script>document.documentElement.classList.add('js')</script>
 <link rel="stylesheet" href="assets/css/tokens.css">
 <link rel="stylesheet" href="assets/css/site.css">
+<link rel="icon" type="image/png" href="assets/img/vbfa-logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 </head>
 <body data-page="home" data-root="">
 <div class="progress" aria-hidden="true"></div>
 <a class="skip-link" href="#main">Bỏ qua đến nội dung</a>
-<div class="utility"><div class="container utility__in"><strong>VBFA · Hiệp hội Nhiên liệu Sinh học Việt Nam</strong><span>Không gian thông tin &amp; kết nối ngành</span></div></div>
+<div class="utility"><div class="container utility__in"><strong>VBFA · Hiệp hội Nhiên liệu Sinh học Việt Nam</strong><span>TRI THỨC · KẾT NỐI · HỢP TÁC</span></div></div>
 <header class="site-header">
 <div class="container site-header__in">
 <a class="logo" href="#top"><img src="assets/img/vbfa-logo.png" alt="VBFA - Hiệp hội Nhiên liệu Sinh học Việt Nam" width="1255" height="516"></a>
@@ -116,7 +119,8 @@
 <div class="chips news-tools" data-rv data-d="2" role="group" aria-label="Lọc tin tức">
 <button class="chip" type="button" data-filter="all" aria-pressed="true">Tất cả</button><button class="chip" type="button" data-filter="news" aria-pressed="false">Tin ngành</button><button class="chip" type="button" data-filter="activity" aria-pressed="false">Hoạt động</button><button class="chip" type="button" data-filter="policy" aria-pressed="false">Chính sách</button>
 </div>
-<div class="nh-grid" id="nh-grid" data-filter-mode="dim">
+<p class="sr-only" id="news-filter-status" aria-live="polite"></p>
+<div class="nh-grid" id="nh-grid" data-filter-mode="hide">
 <article class="ncard nh-feat" data-rv data-d="0" data-cat="news">
 <div class="media g-a"><div class="media__zoom"><img src="assets/img/vbfa-industry.webp" alt="Minh họa nhà máy sản xuất nhiên liệu sinh học và cánh đồng nguyên liệu" width="1200" height="800" fetchpriority="high" loading="eager" decoding="async"></div><span class="badge">VBFA / INSIGHTS</span></div>
 <div class="ncard__body">

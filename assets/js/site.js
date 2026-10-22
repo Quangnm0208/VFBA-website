@@ -33,7 +33,7 @@
         rvo.unobserve(en.target);
         en.target.setAttribute('data-in', '');
         setTimeout(() => finish(en.target), 2000);
-      }), { threshold: 0.2, rootMargin: '0px 0px -8% 0px' });
+      }), { threshold: 0.12, rootMargin: '0px 0px -6% 0px' });
       rv.forEach((el) => rvo.observe(el));
     }
   }
@@ -48,15 +48,15 @@
       ticking = false;
       const y = window.scrollY || 0;
       const max = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
-      bar.style.transform = 'scaleX(' + Math.min(1, y / max) + ')';
-      header.classList.toggle('is-scrolled', y > 12);
-      topBtn.classList.toggle('is-on', y > 640);
+      if (bar) bar.style.transform = 'scaleX(' + Math.min(1, y / max) + ')';
+      if (header) header.classList.toggle('is-scrolled', y > 12);
+      if (topBtn) { const on = y > 640; topBtn.classList.toggle('is-on', on); topBtn.tabIndex = on ? 0 : -1; topBtn.setAttribute('aria-hidden', String(!on)); }
     });
   };
   window.addEventListener('scroll', onScroll, { passive: true });
   window.addEventListener('resize', onScroll, { passive: true });
   onScroll();
-  topBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: mq('(prefers-reduced-motion: reduce)') ? 'auto' : 'smooth' }));
+  if (topBtn) topBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: mq('(prefers-reduced-motion: reduce)') ? 'auto' : 'smooth' }));
 
   /* ---------- Toast ---------- */
   const toastEl = $('.toast');
@@ -118,7 +118,7 @@
     ['Trang chủ', here('#top')], ['Giới thiệu VBFA', here('#about')], ['Chính sách và pháp lý', here('#focus')],
     ['Thị trường và đầu tư', here('#focus')], ['Công nghệ và đổi mới', here('#focus')], ['Phát triển bền vững', here('#focus')],
     ['Hội viên và kết nối', here('#membership')], ['Tin tức và hoạt động', root + 'tin-tuc/index.html'],
-    ['Thư viện và báo cáo', here('#resources')], ['Liên hệ', '#contact']
+    ['Thư viện và báo cáo', here('#resources')], ['Liên hệ', here('#contact')]
   ];
   const index = pageIndex.concat(articles.map((a) => [a.title, root + 'tin-tuc/' + a.id + '/index.html']));
   const searchInput = $('#search-input'), results = $('.results');
@@ -128,7 +128,7 @@
     const list = q ? index.filter((x) => norm(x[0]).includes(q)) : pageIndex.slice(0, 5);
     results.innerHTML = list.length
       ? list.map((x) => '<a href="' + esc(x[1]) + '"><span>' + esc(x[0]) + '</span>' + ARROW + '</a>').join('')
-      : '<p>Không thấy khu vực phù hợp trong bản mẫu.</p>';
+      : '<p>Không tìm thấy nội dung phù hợp với từ khóa.</p>';
   }
   if (searchInput) searchInput.addEventListener('input', renderResults);
   const searchForm = $('#search-form');
@@ -160,13 +160,17 @@
     chips.forEach((ch) => ch.addEventListener('click', () => {
       const k = ch.dataset.filter;
       chips.forEach((c) => c.setAttribute('aria-pressed', String(c === ch)));
+      let matching = 0;
       $$('.ncard', grid).forEach((card) => {
         const on = k === 'all' || card.dataset.cat === k;
+        if (on) matching++;
         card.classList.toggle('is-dim', !on && mode === 'dim');
         card.hidden = !on && mode === 'hide';
         if (on) card.removeAttribute('aria-hidden'); else card.setAttribute('aria-hidden', 'true');
         $$('a', card).forEach((a) => { a.tabIndex = on ? 0 : -1; });
       });
+      const message = $('#news-filter-status');
+      if (message) message.textContent = matching + ' bài viết trong danh mục đã chọn.';
     }));
 
     /* Đánh dấu mục menu theo section đang xem */
@@ -247,7 +251,7 @@
     $$('[data-toc]').forEach((a) => a.addEventListener('click', (e) => {
       e.preventDefault();
       const el = document.getElementById(a.dataset.toc);
-      if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 104, behavior: 'smooth' });
+      if (el) { window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 104, behavior: mq('(prefers-reduced-motion: reduce)') ? 'auto' : 'smooth' }); el.setAttribute('tabindex','-1'); el.focus({ preventScroll: true }); }
     }));
     const copy = $('#copy-link');
     if (copy) copy.addEventListener('click', () => {
