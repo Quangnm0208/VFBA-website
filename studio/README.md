@@ -14,6 +14,7 @@ Mã nguồn CMS chính thức cho website VBFA. Studio là một ứng dụng ri
    ```
 5. Cài và kiểm tra:
    ```bash
+   npm install              # ở thư mục gốc: cần để Vite resolve Astro monorepo tsconfig
    cd studio
    npm install
    npm run dev
