@@ -39,6 +39,6 @@ export async function getContent():Promise<Content>{
 }
 export async function getArticle(slug:string){
  if(!client||!slug)return null;
- try{return await client.fetch<Article|null>(`*[_type=="article" && slug.current==$slug && defined(publishedAt) && publishedAt <= now()][0]{_id,title,"slug":slug.current,excerpt,category,publishedAt,"coverUrl":cover.asset->url,seoTitle,seoDescription,body}`,{slug});}
+ try{return await client.fetch<Article|null>(`*[_type=="article" && slug.current==$slug && defined(publishedAt) && publishedAt <= now()][0]{_id,title,"slug":slug.current,excerpt,category,publishedAt,"coverUrl":cover.asset->url,seoTitle,seoDescription,body[]{...,_type=="image"=>{"assetUrl":asset->url}}}`,{slug});}
  catch{return null;}
 }
