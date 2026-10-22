@@ -1,0 +1,41 @@
+name: VBFA Production Live Smoke
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify-live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Confirm Vercel production has the approved frontend
+        env:
+          LIVE_URL: https://vfba-website-alpha.vercel.app
+        run: |
+          python - <<'PY'
+          import os, time, urllib.request
+          root=os.environ["LIVE_URL"].rstrip("/")
+          checks=[
+            ("/index.html",["data-filter-mode=\"hide\"","news-filter-status"]),
+            ("/assets/js/site.js",["$$('.ncard', grid).forEach","$$('a', card).forEach"]),
+            ("/assets/css/tokens.css",["--font-display:'Be Vietnam Pro'"]),
+            ("/tin-tuc/index.html",["<html lang=\"vi\""]),
+          ]
+          for attempt in range(24):
+            missing=[]
+            for path,needles in checks:
+              try:
+                req=urllib.request.Request(root+path+"?vbfa_qacheck="+str(time.time_ns()),headers={"User-Agent":"VBFA-CI-Live-Audit/1.0","Cache-Control":"no-cache"})
+                with urllib.request.urlopen(req,timeout=15) as r: content=r.read().decode("utf-8","replace")
+                for item in needles:
+                  if item not in content: missing.append(f"{path}: missing {item[:35]}")
+              except Exception as e: missing.append(f"{path}: {e}")
+            if not missing:
+              print("PASS: Live deployment serves merged frontend across 4 endpoints")
+              break
+            print(f"Attempt {attempt+1}/24: "+"; ".join(missing)[:650],flush=True)
+            if attempt==23:raise SystemExit("FAIL: Production has not deployed verified frontend.")
+            time.sleep(10)
+          PY
