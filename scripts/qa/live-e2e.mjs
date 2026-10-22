@@ -80,9 +80,10 @@ for (const route of ['/api/join/', '/api/newsletter/']) {
   check(`${route} malformed JSON -> 400`, (await call(route, { raw: '{not json' })).status === 400);
 }
 
-/* 2. Bots: answered "ok", never stored (the printed SQL proves it) */
+/* 2. Honeypot hits are answered "ok"; instant submissions get an honest 429. Neither is stored (the printed SQL proves it) */
 check('join: honeypot filled -> 200 and silently dropped', (await call('/api/join/', { body: member({ email: email('honeypot'), website: 'http://spam.example' }) })).status === 200);
-check('join: submitted faster than a person can type -> 200 and silently dropped', (await call('/api/join/', { body: member({ email: email('toofast'), openedAt: Date.now() }) })).status === 200);
+const instant = await call('/api/join/', { body: member({ email: email('toofast'), openedAt: Date.now() }) });
+check('join: submitted faster than a person can type -> 429 too_fast (never a false "saved") and not stored', instant.status === 429 && instant.json?.code === 'too_fast', `${instant.status} ${instant.text.slice(0, 80)}`);
 
 /* 3. Validation and consent: 400 and never stored */
 const badEmail = await call('/api/join/', { body: member({ email: 'not-an-email' }) });

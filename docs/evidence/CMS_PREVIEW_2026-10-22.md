@@ -111,7 +111,7 @@ perspective, no API CDN).
 
 ```bash
 export PUBLIC_TURNSTILE_SITE_KEY=1x00000000000000000000AA   # Cloudflare public test key, build-time only
-npm test                                   # 93 tests
+npm test                                   # 94 tests
 npm run check && npm run build && python3 scripts/check_site.py
 VERCEL_ENV=production npm run build        # must fail: no CMS project configured
 (cd studio && SANITY_STUDIO_PROJECT_ID=iqyx5ttc npm run typecheck && SANITY_STUDIO_PROJECT_ID=iqyx5ttc npm run validate)

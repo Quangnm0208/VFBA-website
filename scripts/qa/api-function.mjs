@@ -206,7 +206,8 @@ async function main() {
     check('join: missing consent -> 400 and NO row', (await host.call('/api/join/', { body: member({ consent: false }) })).status === 400 && rows.length === before);
     const silent = await host.call('/api/join/', { body: member({ website: 'bot' }) });
     const instant = await host.call('/api/join/', { body: member({ openedAt: Date.now() - 200 }) });
-    check('bots: honeypot and instant submissions get 200, NOTHING is stored and the database is not touched', silent.status === 200 && instant.status === 200 && rows.length === before && seen.requests.length === callsBefore);
+    check('bots: a filled honeypot gets 200 ok, NOTHING is stored and the database is not touched', silent.status === 200 && rows.length === before && seen.requests.length === callsBefore);
+    check('people: an instant submission gets an honest 429 too_fast (never a false "saved"), NOTHING is stored and the database is not touched', instant.status === 429 && instant.json?.code === 'too_fast' && rows.length === before && seen.requests.length === callsBefore, `${instant.status} ${instant.text.slice(0, 80)}`);
 
     const withQuery = await host.call('/api/newsletter/', { body: news({ email: 'path@example.invalid', sourcePath: '/tin-tuc/?email=a@b.c&t=1#x' }), ip: '203.0.113.19' });
     check('source path is stored without its query string or fragment', withQuery.status === 200 && rows.find((r) => r.email === 'path@example.invalid')?.source_path === '/tin-tuc/');

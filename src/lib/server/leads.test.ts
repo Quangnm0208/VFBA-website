@@ -101,13 +101,31 @@ describe('handleLead — membership', () => {
     expect(store.rows).toHaveLength(0);
   });
 
-  it('silently drops honeypot hits and instant submissions (no signal to bots, nothing stored)', async () => {
+  it('silently drops honeypot hits: answers ok, stores nothing, touches no database (no signal to bots)', async () => {
     const { d, store } = deps();
     const bot = await handleLead(post({ ...join, website: 'http://spam.example' }), 'membership', undefined, d);
-    const fast = await handleLead(post({ ...join, openedAt: NOW - 300 }), 'membership', undefined, d);
-    expect([bot.status, fast.status]).toEqual([200, 200]);
+    expect(bot.status).toBe(200);
     expect(await json(bot)).toEqual({ ok: true });
     expect(store.rows).toHaveLength(0);
+    expect(store.attempts).toHaveLength(0);
+  });
+
+  it('never claims "saved" for an instant submission: 429 too_fast with Retry-After, nothing stored, no database call', async () => {
+    const { d, store, lines } = deps();
+    const fast = await handleLead(post({ ...join, openedAt: NOW - 300 }), 'membership', undefined, d);
+    expect(fast.status).toBe(429);
+    expect(fast.headers.get('retry-after')).toBe('3');
+    expect(fast.headers.get('cache-control')).toBe('no-store');
+    const body = await json(fast);
+    expect(body).toMatchObject({ ok: false, code: 'too_fast' });
+    expect(body.message).toMatch(/gửi lại sau vài giây/);
+    expect(store.rows).toHaveLength(0);
+    expect(store.attempts).toHaveLength(0);
+    expect(lines.join('\n')).toContain('lead.too_fast');
+    // The same person, a few seconds later, is accepted: the guard is a delay, not a block.
+    const later = await handleLead(post({ ...join, openedAt: NOW - 2500 }), 'membership', undefined, d);
+    expect(later.status).toBe(200);
+    expect(store.rows).toHaveLength(1);
   });
 
   it('fails closed (503) when Supabase is not configured', async () => {
