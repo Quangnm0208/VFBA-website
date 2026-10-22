@@ -463,7 +463,7 @@ textarea.input{min-height:104px;padding:12px 14px;resize:vertical}
 
 /* Giảm chuyển động theo cài đặt hệ điều hành */
 @media (prefers-reduced-motion:reduce){
-  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+  *,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
 }
 
 /* ---------- Nền graphic: dải nền trắng và chân trang để sạch; mỗi dải nền màu một hình ---------- */

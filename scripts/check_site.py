@@ -3,6 +3,7 @@
 from html.parser import HTMLParser
 from pathlib import Path
 from urllib.parse import urlsplit
+import re
 import sys
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -38,9 +39,13 @@ for page in pages:
         if file.is_dir():file=file/"index.html"
         if not file.exists():
             errors.append(f"{page.relative_to(ROOT)}: broken {tag} path {url}")
-for path in ROOT.rglob("*"):
-    if path.is_file() and path.suffix.lower() in {".otf",".ttf"}:
-        errors.append(f"Unlicensed binary font unexpectedly included: {path}")
+tokens=(ROOT/"assets/css/tokens.css").read_text(encoding="utf-8")
+fonts=re.findall(r"url\(([^)]+)\)",tokens)
+if len(fonts)!=12:errors.append(f"tokens.css should declare 12 self-hosted fonts; found {len(fonts)}")
+for ref in fonts:
+    if not (ROOT/"assets/css"/ref).resolve().is_file():errors.append(f"tokens.css: missing font file {ref}")
+if "fonts.googleapis.com" in tokens or "fonts.gstatic.com" in tokens:
+    errors.append("tokens.css must self-host fonts (no Google Fonts)")
 robots=ROOT/"robots.txt"
 if not robots.is_file() or "Disallow: /" not in robots.read_text():
     errors.append("Review protection robots.txt missing")
@@ -48,4 +53,4 @@ print(f"Validated {len(pages)} routes and static asset references.")
 if errors:
     print("\n".join(errors[:100]),file=sys.stderr)
     sys.exit(1)
-print("PASS: route/asset integrity, review robots, and font license packaging.")
+print("PASS: route/asset integrity, review robots, self-hosted fonts.")

@@ -1,7 +1,7 @@
 name: VBFA Frontend Static QA
 on:
   push:
-    branches: [feat/vbfa-static-motion-handoff]
+    branches: [main, "claude/**"]
   pull_request:
     branches: [main]
 permissions:

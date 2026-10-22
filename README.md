@@ -1,6 +1,6 @@
 # VBFA Frontend Motion — Vercel-ready Review Build
 
-Built from the 2026-10-22 handoff `UI mockups for website (3).zip` — `design_handoff_vbfa_website/code/`.
+Rebuilt to match the 2026-10-22 handoff (`design_handoff_vbfa_website`: README guide + `code/` reference) `UI mockups for website (3).zip` — `design_handoff_vbfa_website/code/`.
 
 ## Scope
 - **12 static routes:** `/`, `/tin-tuc/`, and ten article detail routes `/tin-tuc/<slug>/`.
@@ -9,7 +9,7 @@ Built from the 2026-10-22 handoff `UI mockups for website (3).zip` — `design_h
 - Three photo/illustration categories now appear throughout article cards, serving responsive WebP images generated for this project. **Images are illustrative; they do not document a specific VBFA event or policy.**
 - Demo forms validate only; no data collection. No CMS/database required for frontend review.
 - Client-review protection: `noindex,nofollow` HTML meta + `robots.txt` Disallow all. **Remove/update both before public SEO launch on official domain.**
-- Supplied font binaries have been **omitted** due to unverified redistribution rights. Fonts use open/licensed web hosting (Be Vietnam Pro, Mona Sans, Bebas Neue, Caveat), so typography may differ subtly from the handoff. Licensed font files can be deployed by the rights holder later.
+- **Typography follows the handoff exactly, self-hosted (no Google Fonts / CDN):** Mona Sans (+ SemiExpanded) for headings, SVN-Bebas Neue Pro SemiExpanded for eyebrows/kickers/badges, SVN-Primark for the handwritten signature lines, Be Vietnam Pro for body text — 12 files in `assets/fonts/`, declared in `assets/css/tokens.css`. **Licence to confirm before public launch:** Mona Sans and Be Vietnam Pro are SIL OFL; SVN-Bebas Neue Pro and SVN-Primark need confirmation from the rights holder for web self-hosting (fallback per the guide: Bebas Neue + a similar handwriting font).
 
 ## Deploy to Vercel
 1. Upload/commit the full *contents* of this directory to the `main` branch of `Quangnm0208/VFBA-website` after reviewing that it replaces existing frontend entrypoints.
@@ -23,12 +23,13 @@ Built from the 2026-10-22 handoff `UI mockups for website (3).zip` — `design_h
 - Replace sample titles, publication dates and repeated article body with approved editorial content; connect media to Sanity Assets CDN.
 - Implement real opt-in forms via Vercel API + anti-spam + dedicated Supabase project with RLS before public collection.
 - Configure real contact info, sitemap, canonical/OG, privacy and consent. Remove `noindex` and `robots.txt` Disallow for production indexing after content approval.
-- Confirm licensing and final brand palette before public launch.
+- Confirm web-font licensing (SVN-Bebas Neue Pro, SVN-Primark) and the final brand palette before public launch.
 
 ## Local QA
 ```
 python3 -m http.server 8765
 # http://localhost:8765/
+python3 scripts/check_site.py   # routes, assets, self-hosted fonts, noindex
 ```
 
 No npm, React, Next.js, or Astro runtime is required for this design review build.
