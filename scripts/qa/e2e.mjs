@@ -174,6 +174,8 @@ for (const width of [320, 390, 720, 721, 834, 1040, 1041, 1440]) {
     check('turnstile: the newsletter widget renders on first interaction and is invisible unless challenged', await page.evaluate(() => window.__tsOpts.at(-1).appearance === 'interaction-only'));
     check('turnstile: the script is requested at most once for both forms', turnstileRequests - requestsBeforeNewsletter === 0 || turnstileRequests === 1, `${turnstileRequests}`);
   }
+  await page.check('.newsletter .consent input');
+  check('newsletter: separate explicit consent checkbox is present and required', (await page.getAttribute('.newsletter .consent input', 'required')) !== null);
   await page.waitForTimeout(2300);
   await page.click('.newsletter button[type=submit]');
   await page.waitForSelector('.toast:not([hidden])');
