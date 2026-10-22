@@ -45,3 +45,10 @@ Không lưu: IP thô, user-agent. Website không đặt cookie. Trình duyệt c
 2. Câu đồng ý hội viên và bản tin được duyệt; cập nhật phiên bản (`join-v3`, `newsletter-v2`...) khi sửa chữ.
 3. Thời hạn lưu hàng lead và quy trình yêu cầu của người có dữ liệu được ghi thành văn bản.
 4. Danh sách bên xử lý ở mục 2 được pháp lý xác nhận (kể cả chuyển dữ liệu xuyên biên giới).
+
+## 6. Tài liệu đi kèm (bản nháp để duyệt, chưa có hiệu lực)
+
+- `PRIVACY_POLICY_DRAFT.vi.md`: Chính sách bảo mật soạn từ tài liệu này.
+- `CONSENT_TEXTS.vi.md`: sổ phiên bản câu đồng ý và hai câu đề xuất (`join-v3`, `newsletter-v2`).
+- `RETENTION_PROPOSAL.vi.md`: thời hạn lưu hàng lead đề xuất và bản nháp migration (chưa áp dụng).
+- `DATA_SUBJECT_REQUESTS.vi.md`: quy trình tiếp nhận và xử lý yêu cầu truy cập / chỉnh sửa / xoá / rút lại đồng ý.
