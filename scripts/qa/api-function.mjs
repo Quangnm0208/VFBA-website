@@ -28,6 +28,19 @@ const SELF = fileURLToPath(import.meta.url);
 
 /* ───────── host mode: expose the compiled function over plain HTTP ───────── */
 if (process.argv[2] === '--host') {
+  // Only this QA harness intercepts Turnstile. The deployed Function still calls the real Siteverify API.
+  if (process.env.VBFA_QA_STUB_TURNSTILE === '1') {
+    const fetchReal = globalThis.fetch;
+    globalThis.fetch = async (input, init) => {
+      if (String(input).startsWith('https://challenges.cloudflare.com/turnstile/v0/siteverify')) {
+        const params = new URLSearchParams(init?.body);
+        const ok = params.get('secret') === '1x0000000000000000000000000000000AA' &&
+          params.get('response') === 'XXXX.DUMMY.TOKEN.XXXX';
+        return new Response(JSON.stringify({ success: ok }), { status: 200, headers: { 'content-type': 'application/json' } });
+      }
+      return fetchReal(input, init);
+    };
+  }
   const entry = (await import(pathToFileURL(ENTRY).href)).default;
   const server = http.createServer(async (req, res) => {
     const chunks = [];
@@ -85,8 +98,8 @@ async function main() {
     return { call, logs, stop: () => child.kill() };
   }
 
-  const member = (over = {}) => ({ kind: 'membership', name: 'Nguyễn Văn Test', company: 'Công ty Kiểm thử', email: 'Test.User@Example.INVALID', phone: '+84 90 000 0000', interest: 'Quan tâm hội viên', message: 'Xin thông tin.', consent: true, consentVersion: 'join-v2', sourcePath: '/', openedAt: Date.now() - 30_000, website: '', utm: { utm_source: 'smoke', utm_medium: 'qa', secret_field: 'must-not-be-stored' }, ...over });
-  const news = (over = {}) => ({ kind: 'newsletter', email: 'reader@example.invalid', sourcePath: '/tin-tuc/', openedAt: Date.now() - 30_000, website: '', ...over });
+  const member = (over = {}) => ({ kind: 'membership', name: 'Nguyễn Văn Test', company: 'Công ty Kiểm thử', email: 'Test.User@Example.INVALID', phone: '+84 90 000 0000', interest: 'Quan tâm hội viên', message: 'Xin thông tin.', consent: true, consentVersion: 'join-v2', turnstileToken: 'XXXX.DUMMY.TOKEN.XXXX', sourcePath: '/', openedAt: Date.now() - 30_000, website: '', utm: { utm_source: 'smoke', utm_medium: 'qa', secret_field: 'must-not-be-stored' }, ...over });
+  const news = (over = {}) => ({ kind: 'newsletter', consent: true, consentVersion: 'newsletter-v1', turnstileToken: 'XXXX.DUMMY.TOKEN.XXXX', email: 'reader@example.invalid', sourcePath: '/tin-tuc/', openedAt: Date.now() - 30_000, website: '', ...over });
 
   /* ───────── scenario 1: no credentials -> fail closed ───────── */
   {
@@ -152,7 +165,7 @@ async function main() {
   }
   const SERVICE_KEY = 'service-role-key-for-tests-only';
   const SALT = 'salt-for-tests-only';
-  const configured = (emulator, extra = {}) => ({ SUPABASE_URL: emulator.url, SUPABASE_SERVICE_ROLE_KEY: SERVICE_KEY, IP_HASH_SALT: SALT, LEADS_ENABLED: 'true', TURNSTILE_SECRET_KEY: '', NODE_TLS_REJECT_UNAUTHORIZED: '0', ...extra });
+  const configured = (emulator, extra = {}) => ({ SUPABASE_URL: emulator.url, SUPABASE_SERVICE_ROLE_KEY: SERVICE_KEY, IP_HASH_SALT: SALT, LEADS_ENABLED: 'true', TURNSTILE_SECRET_KEY: '1x0000000000000000000000000000000AA', VBFA_QA_STUB_TURNSTILE: '1', NODE_TLS_REJECT_UNAUTHORIZED: '0', ...extra });
 
   /* ───────── scenario 2: the go-live switch and the salt are both required ───────── */
   {
@@ -181,6 +194,11 @@ async function main() {
     check('join: IP is stored only as a 128-bit salted HMAC (32 hex), never raw', /^[0-9a-f]{32}$/.test(row?.ip_hash ?? '') && !JSON.stringify(row).includes('203.0.113.10'));
     check('every database call authenticates with the service-role key and only that key (server side)', seen.requests.length > 0 && seen.requests.every((q) => q.apikey === SERVICE_KEY && q.auth === `Bearer ${SERVICE_KEY}`));
     check('a successful submission costs exactly two database calls (attempt check + insert)', seen.requests.length === 2, `${seen.requests.length}: ${seen.requests.map((q) => q.method + ' ' + new URL(q.url, 'https://x').pathname.split('/').pop()).join(', ')}`);
+
+    const noConsent = await host.call('/api/newsletter/', { body: news({ consent: false }) });
+    check('newsletter: no explicit consent -> 400, no newsletter row', noConsent.status === 400 && rows.filter((r) => r.kind === 'newsletter').length === 0);
+    const wrongVersion = await host.call('/api/newsletter/', { body: news({ consentVersion: 'unreviewed-v99' }) });
+    check('newsletter: unapproved consent version -> 400', wrongVersion.status === 400);
 
     const before = rows.length;
     const callsBefore = seen.requests.length;

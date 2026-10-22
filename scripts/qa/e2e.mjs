@@ -133,7 +133,7 @@ for (const width of [320, 390, 720, 721, 834, 1040, 1041, 1440]) {
   if (hasTurnstile) check('turnstile: nothing from challenges.cloudflare.com is requested on page load', turnstileRequests === 0, String(turnstileRequests));
   const fill = async () => {
     await page.fill('#person', 'Nguyễn Văn A'); await page.fill('#company', 'Công ty ABC'); await page.fill('#email', 'a@abc.vn');
-    await page.check('.consent input');
+    await page.check('#join-form .consent input');
   };
   await page.click('.site-header [data-open="join"]');
   await fill();
@@ -166,6 +166,9 @@ for (const width of [320, 390, 720, 721, 834, 1040, 1041, 1440]) {
   await page.waitForFunction(() => /Chưa thể gửi/.test(document.querySelector('[data-status]')?.textContent || ''));
   check('join: network failure shows a retry message without losing input', (await page.inputValue('#company')) === 'Công ty ABC');
   await page.keyboard.press('Escape');
+  const joinDismissed = await page.isHidden('[data-overlay="join"]');
+  check('join: Escape closes modal after a server/network error', joinDismissed);
+  if (!joinDismissed) await page.click('.dialog.join [data-close]');
   const requestsBeforeNewsletter = turnstileRequests;
   const widgetsBefore = hasTurnstile ? await page.evaluate(() => (window.__tsOpts || []).length) : 0;
   await page.fill('.newsletter input[type=email]', 'news@abc.vn');
@@ -174,6 +177,8 @@ for (const width of [320, 390, 720, 721, 834, 1040, 1041, 1440]) {
     check('turnstile: the newsletter widget renders on first interaction and is invisible unless challenged', await page.evaluate(() => window.__tsOpts.at(-1).appearance === 'interaction-only'));
     check('turnstile: the script is requested at most once for both forms', turnstileRequests - requestsBeforeNewsletter === 0 || turnstileRequests === 1, `${turnstileRequests}`);
   }
+  await page.check('.newsletter .consent input');
+  check('newsletter: separate explicit consent checkbox is present and required', (await page.getAttribute('.newsletter .consent input', 'required')) !== null);
   await page.waitForTimeout(2300);
   await page.click('.newsletter button[type=submit]');
   await page.waitForSelector('.toast:not([hidden])');

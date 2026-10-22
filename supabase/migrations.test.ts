@@ -22,10 +22,14 @@ beforeAll(async () => {
   // Supabase ships these roles; PGlite does not.
   await db.exec(`create role anon nologin; create role authenticated nologin; create role service_role nologin bypassrls;`);
   for (const sql of migrations) await db.exec(sql);
-  await db.exec(`grant usage on schema public to anon, authenticated, service_role; grant all on public.website_leads to service_role;`);
+  await db.exec(`grant usage on schema public to anon, authenticated, service_role; grant select on public.website_leads to service_role;`);
 });
 
 describe('website_leads migration', () => {
+  it('grants INSERT explicitly for Vercel service role', async () => {
+    const q = await db.query<{ allowed: boolean }>("select has_table_privilege('service_role','public.website_leads','INSERT') as allowed");
+    expect(q.rows[0]?.allowed).toBe(true);
+  });
   it('stores a membership lead with defaults', async () => {
     await insert();
     const { rows } = await db.query<{ status: string; utm: unknown; source_path: string; consent_at: string }>('select status, utm, source_path, consent_at from public.website_leads');

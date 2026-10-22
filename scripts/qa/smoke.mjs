@@ -203,7 +203,7 @@ if (apiMode === 'skip') {
   });
   if (apiMode === 'unconfigured') {
     await check('valid submission fails closed with 503 when credentials are absent', async () => {
-      const res = await post('/api/newsletter/', JSON.stringify({ kind: 'newsletter', email: 'smoke@example.invalid', openedAt: Date.now() - 60_000 }));
+      const res = await post('/api/newsletter/', JSON.stringify({ kind: 'newsletter', email: 'smoke@example.invalid', consent: true, consentVersion: 'newsletter-v1', openedAt: Date.now() - 60_000 }));
       must(res.status === 503, `HTTP ${res.status} ${res.body.slice(0, 120)}`);
       must(JSON.parse(res.body).code === 'unavailable', 'not the unavailable code');
     });

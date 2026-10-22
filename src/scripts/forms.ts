@@ -44,7 +44,7 @@ function payload(form: HTMLFormElement): Record<string, unknown> {
     phone: text('phone'),
     interest: text('interest'),
     message: text('message'),
-    consent: data.get('consent') === 'on' || form.dataset.kind === 'newsletter',
+    consent: data.get('consent') === 'on',
     consentVersion: form.dataset.consentVersion,
     website: text('website'),
     openedAt: Number(form.dataset.openedAt) || Date.now() - 5000,

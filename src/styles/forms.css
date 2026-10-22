@@ -18,3 +18,8 @@
 
 /* Generic CMS page: single reading column (no table of contents) */
 .article-grid--single{grid-template-columns:minmax(0,720px)}
+
+/* Newsletter consent must be visible, keyboard-accessible and clearly associated with opt-in. */
+.newsletter .consent--newsletter{flex:1 1 100%;max-width:580px;margin:1px 0 3px;font-size:12.5px;line-height:1.65;color:var(--vbfa-text-body)}
+.newsletter .consent--newsletter span{flex:1;min-width:0}
+.newsletter .consent--newsletter input{width:18px;height:18px;flex:none;margin:2px 0 0}

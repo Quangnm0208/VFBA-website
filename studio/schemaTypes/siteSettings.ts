@@ -57,7 +57,7 @@ export const siteSettings = defineType({
       fields: [
         defineField({ name: 'joinTitle', title: 'Tiêu đề biểu mẫu hội viên', type: 'string', validation: (r) => r.required() }),
         defineField({ name: 'joinIntro', title: 'Mô tả biểu mẫu', type: 'text', rows: 2, validation: (r) => r.required() }),
-        defineField({ name: 'consentText', title: 'Câu đồng ý sử dụng thông tin', type: 'text', rows: 3, description: 'Cần bộ phận pháp lý rà soát (Nghị định 13/2023/NĐ-CP). Mỗi lần sửa nội dung, hãy tăng "Phiên bản" bên dưới.', validation: (r) => r.required() }),
+        defineField({ name: 'consentText', title: 'Câu đồng ý sử dụng thông tin', type: 'text', rows: 3, description: 'Cần pháp chế rà soát theo Luật Bảo vệ dữ liệu cá nhân 91/2025/QH15 và Nghị định 356/2025/NĐ-CP (hiệu lực 01/01/2026). Mỗi lần sửa nội dung, hãy tăng "Phiên bản" bên dưới.', validation: (r) => r.required() }),
         defineField({ name: 'consentVersion', title: 'Phiên bản câu đồng ý', type: 'string', description: 'Ví dụ: join-v2 → join-v3. Được lưu cùng mỗi lượt đăng ký để chứng minh người dùng đã đồng ý nội dung nào.', validation: (r) => r.required().max(40) }),
         defineField({ name: 'joinSuccess', title: 'Thông báo khi gửi biểu mẫu thành công', type: 'string', validation: (r) => r.required() }),
         defineField({ name: 'newsletterSuccess', title: 'Thông báo khi đăng ký bản tin thành công', type: 'string', validation: (r) => r.required() }),
