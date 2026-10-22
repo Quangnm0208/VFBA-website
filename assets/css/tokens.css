@@ -1,15 +1,11 @@
-/* Review distribution: supplied font binaries omitted. Replace with licensed local fonts at launch if approved. */
-@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Bebas+Neue&family=Caveat:wght@500;600;700&display=swap');
-/* Mona Sans: GitHub OFL 1.1; Vietnamese + Latin subsets served from pinned Fontsource CDN. */
-@font-face {font-family:'Mona Sans';src:url('https://cdn.jsdelivr.net/fontsource/fonts/mona-sans:vf@5.3.0/vietnamese-wght-normal.woff2') format('woff2');font-weight:200 900;font-display:swap;unicode-range:U+0102-0103,U+0110-0111,U+0128-0129,U+0168-0169,U+01A0-01A1,U+01AF-01B0,U+0300-0301,U+0303-0304,U+0308-0309,U+0323,U+0329,U+1EA0-1EF9,U+20AB;}
-@font-face {font-family:'Mona Sans';src:url('https://cdn.jsdelivr.net/fontsource/fonts/mona-sans:vf@5.3.0/latin-wght-normal.woff2') format('woff2');font-weight:200 900;font-display:swap;}
-@font-face {font-family:'Mona Sans SemiExp';src:url('https://cdn.jsdelivr.net/fontsource/fonts/mona-sans:vf@5.3.0/latin-wght-normal.woff2') format('woff2');font-weight:200 900;font-display:swap;font-stretch:112.5%;}
-@font-face {font-family:'Mona Sans SemiExp';src:url('https://cdn.jsdelivr.net/fontsource/fonts/mona-sans:vf@5.3.0/vietnamese-wght-normal.woff2') format('woff2');font-weight:200 900;font-display:swap;font-stretch:112.5%;unicode-range:U+0102-0103,U+0110-0111,U+0128-0129,U+0168-0169,U+01A0-01A1,U+01AF-01B0,U+0300-0301,U+0303-0304,U+0308-0309,U+0323,U+0329,U+1EA0-1EF9,U+20AB;}
-@font-face {font-family:'Bebas SemiExp';src:local('Bebas Neue');font-weight:400 700;font-display:swap;}
-@font-face {font-family:'Bebas';src:local('Bebas Neue');font-weight:700;font-display:swap;}
-@font-face {font-family:'Primark';src:local('Caveat');font-weight:400 700;font-display:swap;}
+/* VBFA visual system — Brand Guideline 2026.
+ * Source-backed: horizontal/vertical logo rules, Be Vietnam Pro for website/digital,
+ * green and gold visual direction. UI spacing, radii, elevations and motion remain
+ * implementation tokens proposed for web (not dictated by the guideline).
+ * Do not commit/distribute supplied proprietary font files.
+ */
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500;1,600&family=Bebas+Neue&display=swap');
 
-/* Fallback mappings to already imported hosted, open-source fonts. */
 :root{--font-label:'Bebas Neue',Impact,sans-serif;--font-hand:'Caveat',cursive;}
 
 :root{
@@ -76,10 +72,10 @@
   --vbfa-grad-image-c:linear-gradient(135deg,#e6ecd6,#d3dfb4);
 
   /* ---------- Typography ---------- */
-  --font-display:'Mona Sans SemiExp','Mona Sans','Be Vietnam Pro',sans-serif; /* H1, H2 */
-  --font-heading:'Mona Sans','Be Vietnam Pro',sans-serif;                     /* H3, tiêu đề hàng, tiêu đề thẻ */
-  --font-label:'Bebas SemiExp','Bebas',Impact,sans-serif;                     /* eyebrow, kicker, badge, chỉ mục */
-  --font-script:'Primark','Segoe Script',cursive;                             /* câu ký, chỉ từ 28px trở lên */
+  --font-display:'Be Vietnam Pro',Arial,sans-serif; /* Website/digital primary face */
+  --font-heading:'Be Vietnam Pro',Arial,sans-serif; /* Website/digital headings */
+  --font-label:'Bebas Neue',Impact,sans-serif; /* Open-source review substitute for SVN Bebas */
+  --font-script:'Be Vietnam Pro',Arial,sans-serif; /* Digital-compliant emphasis until licensed Primark */
   --font-body:'Be Vietnam Pro',Arial,sans-serif;                              /* văn bản web */
 
   --fs-h1-hero:clamp(32px,4.1vw,60px);   /* line-height 1.18, letter-spacing -.025em, weight 600 */
@@ -140,5 +136,4 @@
   --z-header:60; --z-top-btn:70; --z-overlay:100; --z-toast:130; --z-progress:140; --z-skip:200;
 }
 
-/* Web-safe fallback: restricted handoff font binaries excluded from deployment package. */
-:root{--font-label:'Bebas Neue',Impact,sans-serif;--font-hand:'Caveat',cursive;}
+/* Do not publish supplied font binaries without confirmed licensing. */
