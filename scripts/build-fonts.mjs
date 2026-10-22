@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 /**
- * Convert the SIL-OFL web fonts (Mona Sans, Be Vietnam Pro) from TTF to subsetted WOFF2.
+ * Convert the SIL-OFL web fonts (Be Vietnam Pro, Mona Sans, Barlow Condensed, Dancing Script) from TTF to
+ * subsetted WOFF2.
  *
- *   node scripts/build-fonts.mjs --src <dir with the original .ttf files>
+ *   node scripts/build-fonts.mjs --src <dir with the original .ttf files> [--only Name,Name]
  *
- * The SVN-Bebas Neue Pro and SVN-Primark files are NOT converted here: their web-font
- * licence still has to be confirmed with the rights holder (see docs/OPERATIONS.md), so
- * they are shipped untouched as OTF in src/assets/fonts.
+ * Sources and licences are recorded in docs/design/FONTS.md. Only fonts with a verified open licence may be
+ * added here: the proprietary SVN-Bebas Neue Pro and SVN-Primark files must not be committed or served
+ * (scripts/check_site.py fails the build if they appear).
  *
  * The subset covers Basic Latin, Latin-1, Latin Extended-A/B, Vietnamese (Latin Extended
  * Additional), combining marks, general punctuation, currency, arrows and basic maths.
@@ -18,6 +19,7 @@ import subsetFont from 'subset-font';
 
 const args = process.argv.slice(2);
 const srcDir = resolve(args[args.indexOf('--src') + 1] || 'design-sources/fonts');
+const only = args.includes('--only') ? args[args.indexOf('--only') + 1].split(',') : null;
 const outDir = resolve('src/assets/fonts');
 
 const ranges = [
@@ -30,7 +32,8 @@ const text = ranges.flatMap(([a, b]) => Array.from({ length: b - a + 1 }, (_, i)
 const files = [
   'BeVietnamPro-Regular', 'BeVietnamPro-Medium', 'BeVietnamPro-SemiBold', 'BeVietnamPro-Bold',
   'MonaSans-Regular', 'MonaSans-Medium', 'MonaSans-Bold', 'MonaSans-SemiExpanded-SemiBold',
-];
+  'BarlowCondensed-Medium', 'BarlowCondensed-Bold', 'DancingScript-Medium',
+].filter((name) => !only || only.includes(name));
 
 await mkdir(outDir, { recursive: true });
 for (const name of files) {

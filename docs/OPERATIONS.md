@@ -54,7 +54,7 @@ Preview **không** nên có `SUPABASE_SERVICE_ROLE_KEY`: form ở preview sẽ t
 
 - [ ] Nội dung, ảnh, thông tin liên hệ và câu đồng ý được chủ dự án duyệt (nội dung mẫu bài 4–10 đã thay bằng nội dung thật; ảnh minh hoạ thay bằng ảnh có bản quyền rõ ràng).
 - [ ] Trang *Chính sách bảo mật* đã xuất bản và được liên kết từ biểu mẫu.
-- [ ] Giấy phép web font **SVN-Bebas Neue Pro** và **SVN-Primark** đã xác nhận (xem `docs/design/HANDOFF.md`, Open items). Nếu không được phép: thay bằng Bebas Neue và một font viết tay tương tự trong `astro.config.ts`.
+- [ ] Font: bản dựng chỉ dùng font SIL OFL (Be Vietnam Pro, Mona Sans, Barlow Condensed, Dancing Script; xem `docs/design/FONTS.md`). Marketing duyệt hiển thị nhãn/câu viết tay; nếu VBFA có giấy phép web cho SVN-Bebas Neue Pro / SVN-Primark thì làm theo mục "Quay lại font SVN" trong tài liệu đó.
 - [ ] Domain đã trỏ về Vercel; `PUBLIC_SITE_URL` = domain chính thức.
 - [ ] Gửi thử form hội viên và bản tin trên bản production → có hàng mới trong `website_leads`; gửi lại cùng email bản tin không tạo hàng thứ hai.
 - [ ] Turnstile bật; thử gửi nhanh liên tiếp để thấy giới hạn tốc độ.

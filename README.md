@@ -25,4 +25,4 @@ Cần Node 24 (xem `.nvmrc`; tối thiểu 22.23.4 để chạy cục bộ).
 
 - Bản **review**: mọi trang có `noindex` và `robots.txt` chặn công cụ tìm kiếm cho tới khi đặt `PUBLIC_SITE_INDEXING=on`.
 - Không cấu hình Sanity/Supabase thì website vẫn build và chạy bằng nội dung seed; form trả `503` thay vì mất dữ liệu.
-- Nội dung bài 4–10, ngày đăng và ảnh minh hoạ là mẫu. Giấy phép web font SVN-Bebas Neue Pro / SVN-Primark cần xác nhận trước khi ra mắt.
+- Nội dung bài 4–10, ngày đăng và ảnh minh hoạ là mẫu. Font SVN-Bebas Neue Pro / SVN-Primark (giấy phép web chưa xác nhận) **đã bị loại khỏi mã nguồn**, thay bằng Barlow Condensed / Dancing Script (SIL OFL) — xem `docs/design/FONTS.md`; Marketing cần duyệt lại hiển thị nhãn và câu viết tay.

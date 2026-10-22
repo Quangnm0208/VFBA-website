@@ -13,6 +13,7 @@ import Popup from '~/components/layout/Popup.astro';
 import Icon from '~/components/ui/Icon.astro';
 import { getContent } from '~/lib/content';
 import { organizationJsonLd, websiteJsonLd } from '~/lib/seo';
+import { BUILD_SHA } from '~/lib/build-info';
 import type { Media, Seo as SeoFields } from '~/lib/content';
 
 export type PageKind = 'home' | 'news' | 'article' | 'page' | 'notfound';
@@ -40,6 +41,7 @@ const pagePopups = popups.filter((p) => p.pages.includes(page as 'home' | 'news'
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="vbfa-build" content={BUILD_SHA} />
     <Seo
       title={title}
       description={description ?? site.seo.description ?? ''}
@@ -57,9 +59,9 @@ const pagePopups = popups.filter((p) => p.pages.includes(page as 'home' | 'news'
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <Font cssVariable="--font-mona-semiexp" preload />
     <Font cssVariable="--font-be-vietnam" preload={[{ weight: 400 }, { weight: 600 }]} />
-    <Font cssVariable="--font-bebas-semiexp" preload={[{ weight: 700 }]} />
+    <Font cssVariable="--font-barlow-condensed" preload={[{ weight: 700 }]} />
     <Font cssVariable="--font-mona" />
-    <Font cssVariable="--font-primark" />
+    <Font cssVariable="--font-dancing-script" />
   </head>
   <body data-page={page}>
     <div class="progress" aria-hidden="true"></div>

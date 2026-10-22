@@ -16,7 +16,8 @@ const GRADIENT = ['g-a', 'g-b', 'g-c'] as const;
       <button class="chip" type="button" data-filter="all" aria-pressed="true">Tất cả</button>
       {(Object.keys(CATEGORIES) as Array<keyof typeof CATEGORIES>).map((key) => <button class="chip" type="button" data-filter={key} aria-pressed="false">{CATEGORIES[key].label}</button>)}
     </div>
-    <div class="nh-grid" id="nh-grid" data-filter-mode="dim">
+    <p class="sr-only" id="news-filter-status" aria-live="polite"></p>
+    <div class="nh-grid" id="nh-grid" data-filter-mode="hide">
       {picks.map(({ pick, article }, i) => (
         <article class:list={['ncard', i === 0 ? 'nh-feat' : 'ncard--row']} data-rv data-d={String(i)} data-cat={article.category}>
           <div class:list={['media', GRADIENT[i]]}><div class="media__zoom"><Media media={article.cover} sizes={i === 0 ? '(min-width: 1040px) 50vw, 100vw' : '(min-width: 1040px) 20vw, 100vw'} /></div><span class="badge">{CATEGORIES[article.category].badge}</span></div>

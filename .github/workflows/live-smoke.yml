@@ -1,0 +1,36 @@
+name: Deployed site smoke
+# Black-box check of a live deployment: real Vercel headers (CSP on every page incl. the 404), redirects and the
+# real Vercel Function. After a push to main it waits until production serves that exact commit.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: Origin to test (production alias or a preview URL)
+        default: https://vfba-website-alpha.vercel.app
+      expect_indexing:
+        description: 'Must search engines be allowed? (off until the launch is approved)'
+        default: 'off'
+        type: choice
+        options: ['off', 'on']
+permissions:
+  contents: read
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Smoke test
+        env:
+          SMOKE_BASE_URL: ${{ inputs.base_url || 'https://vfba-website-alpha.vercel.app' }}
+          SMOKE_EXPECT_INDEXING: ${{ inputs.expect_indexing || 'off' }}
+          # On push, wait for production to serve exactly this commit before judging it.
+          SMOKE_EXPECT_SHA: ${{ github.event_name == 'push' && github.sha || '' }}
+          # Optional repository secret for protected previews; empty for the public production alias.
+          VERCEL_PROTECTION_BYPASS: ${{ secrets.VERCEL_PROTECTION_BYPASS }}
+        run: node scripts/qa/smoke.mjs

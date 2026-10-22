@@ -28,7 +28,7 @@ export function initSearch(): void {
     const list = q ? all.filter(([label]) => norm(label).includes(q)) : data.pages.slice(0, 5);
     results.innerHTML = list.length
       ? list.map(([label, href]) => `<a href="${esc(href)}"><span>${esc(label)}</span>${ARROW_SVG}</a>`).join('')
-      : '<p>Không tìm thấy nội dung phù hợp.</p>';
+      : '<p>Không tìm thấy nội dung phù hợp với từ khóa.</p>';
   };
   input.addEventListener('input', () => void render());
   document.addEventListener('vbfa:overlay-open', (event) => {

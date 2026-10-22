@@ -36,7 +36,7 @@ export default defineConfig({
     maxDuration: 10,
     staticHeaders: true,
   }),
-  // Self-hosted brand fonts (handoff README, "Design Tokens"). Astro emits the @font-face rules,
+  // Self-hosted open-licence (SIL OFL 1.1) fonts. Astro emits the @font-face rules,
   // preload links and metric-matched fallbacks; files are fingerprinted and cached immutably.
   fonts: [
     font('Be Vietnam Pro', '--font-be-vietnam', [
@@ -51,11 +51,14 @@ export default defineConfig({
       face('MonaSans-Bold.woff2', 700),
     ], ['Be Vietnam Pro', 'sans-serif']),
     font('Mona Sans SemiExp', '--font-mona-semiexp', [face('MonaSans-SemiExpanded-SemiBold.woff2', 600)], ['Mona Sans', 'sans-serif']),
-    font('Bebas SemiExp', '--font-bebas-semiexp', [
-      face('BebasNeuePro-SemiExpandedRegular.otf', 400),
-      face('BebasNeuePro-SemiExpandedBold.otf', 700),
+    // Label face (eyebrow, kicker, badge, index numerals). Replaces the proprietary SVN-Bebas Neue Pro, whose web
+    // licence is unverified. Chosen for full Vietnamese coverage and matching width (docs/design/FONTS.md).
+    font('Barlow Condensed', '--font-barlow-condensed', [
+      face('BarlowCondensed-Medium.woff2', 500),
+      face('BarlowCondensed-Bold.woff2', 700),
     ], ['Impact', 'sans-serif']),
-    font('Primark', '--font-primark', [face('SVN-Primark.otf', 400)], ['Segoe Script', 'cursive']),
+    // Signature script (28px and up). Replaces the proprietary SVN-Primark.
+    font('Dancing Script', '--font-dancing-script', [face('DancingScript-Medium.woff2', 500)], ['Segoe Script', 'cursive']),
   ],
   env: {
     schema: {

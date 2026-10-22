@@ -6,7 +6,7 @@ export const siteSeed: SiteSettings = {
   legalName: 'Hiệp hội Nhiên liệu Sinh học Việt Nam',
   englishName: 'Vietnam Biofuels Association',
   utilityLeft: 'VBFA · Hiệp hội Nhiên liệu Sinh học Việt Nam',
-  utilityRight: 'Không gian thông tin & kết nối ngành',
+  utilityRight: 'TRI THỨC · KẾT NỐI · HỢP TÁC',
   footerBlurb: 'Nền tảng thông tin và kết nối dành cho cộng đồng nhiên liệu sinh học Việt Nam.',
   footerContact: 'Để trao đổi về hợp tác hoặc thông tin ngành, vui lòng gửi yêu cầu qua biểu mẫu kết nối.',
   footerContactCta: 'Mở biểu mẫu kết nối',

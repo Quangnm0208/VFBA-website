@@ -96,6 +96,7 @@ for (const width of [320, 390, 720, 721, 834, 1040, 1041, 1440]) {
   await page.waitForTimeout(1200);
   const top = await page.evaluate(() => Math.round(document.querySelectorAll('.prose h2')[1].getBoundingClientRect().top));
   check('article: TOC scrolls H2 below the sticky header (~104px)', top >= 90 && top <= 120, `top=${top}`);
+  check('article: TOC moves keyboard focus to the target heading', await page.evaluate(() => document.activeElement === document.querySelectorAll('.prose h2')[1]));
   await page.click('#copy-link');
   await page.waitForSelector('.toast:not([hidden])');
   check('article: copy link shows toast', true);
@@ -199,6 +200,52 @@ if (withPopup) {
   await rm.goto(base + '/', { waitUntil: 'load' }); await rm.waitForTimeout(150);
   check('motion: reduced motion shows everything immediately', await rm.evaluate(() => [...document.querySelectorAll('[data-rv]')].every((e) => e.hasAttribute('data-in')) && +getComputedStyle(document.querySelector('.hero__pts li')).opacity === 1));
   await rm.context().close();
+}
+
+/* ───────── H. Accessibility details: home filter, back-to-top ───────── */
+{
+  const page = await newPage(1440);
+  await page.goto(base + '/', { waitUntil: 'networkidle' });
+  const shown = () => page.$$eval('#nh-grid .ncard', (els) => els.filter((e) => !e.hidden && getComputedStyle(e).display !== 'none').length);
+  const total = await page.$$eval('#nh-grid .ncard', (e) => e.length);
+  const policy = await page.$$eval('#nh-grid .ncard[data-cat="policy"]', (e) => e.length);
+  check('home filter: all cards shown initially', (await shown()) === total, `${await shown()}/${total}`);
+  await page.click('#news [data-filter="policy"]');
+  check('home filter: non-matching cards are hidden, not only dimmed', (await shown()) === policy, `${await shown()} shown, ${policy} expected`);
+  check('home filter: hidden cards leave the tab order and the accessibility tree', await page.$$eval('#nh-grid .ncard:not([data-cat="policy"])', (els) => els.every((e) => e.hidden && e.getAttribute('aria-hidden') === 'true' && [...e.querySelectorAll('a')].every((a) => a.tabIndex === -1))));
+  check('home filter: screen readers get the result count (aria-live)', /^\d+ bài viết/.test((await page.textContent('#news-filter-status')) || '') && (await page.getAttribute('#news-filter-status', 'aria-live')) === 'polite');
+  await page.click('#news [data-filter="all"]');
+  check('home filter: "Tất cả" restores every card and its links', (await shown()) === total && (await page.$$eval('#nh-grid .ncard a', (a) => a.every((x) => x.tabIndex === 0))));
+
+  const topBtn = () => page.evaluate(() => { const b = document.querySelector('.back-top'); return { visibility: getComputedStyle(b).visibility, hidden: b.getAttribute('aria-hidden') }; });
+  await page.evaluate(() => scrollTo({ top: 0, behavior: 'instant' }));
+  await page.waitForFunction(() => getComputedStyle(document.querySelector('.back-top')).visibility === 'hidden');
+  const atTop = await topBtn();
+  check('back-to-top: not focusable at the top of the page', atTop.visibility === 'hidden' && atTop.hidden === 'true', JSON.stringify(atTop));
+  await page.keyboard.press('Tab'); await page.keyboard.press('Tab');
+  check('back-to-top: keyboard focus never lands on the hidden button', await page.evaluate(() => !document.activeElement?.classList.contains('back-top')));
+  await page.evaluate(() => scrollTo({ top: 1400, behavior: 'instant' }));
+  await page.waitForFunction(() => getComputedStyle(document.querySelector('.back-top')).visibility === 'visible');
+  const scrolled = await topBtn();
+  check('back-to-top: appears (visible, exposed) after scrolling', scrolled.visibility === 'visible' && scrolled.hidden === 'false', JSON.stringify(scrolled));
+  noErrors('a11y details', page);
+  await page.context().close();
+}
+
+/* ───────── I. Unknown route: real 404 response with CSP ───────── */
+{
+  const page = await newPage(390);
+  const res = await page.goto(base + '/trang-khong-ton-tai/', { waitUntil: 'networkidle' });
+  const csp = res.headers()['content-security-policy'] || '';
+  check('404: unknown route answers HTTP 404', res.status() === 404, String(res.status()));
+  check('404: response carries a strict CSP (no unsafe-inline/eval)', csp.includes("default-src 'self'") && !/unsafe-(inline|eval)/.test(csp), csp.slice(0, 80));
+  check('404: branded page, noindex, link back home', (await page.textContent('h1')).includes('Không tìm thấy trang') && /noindex/.test(await page.getAttribute('meta[name=robots]', 'content')) && (await page.isVisible('.notfound__actions a[href="/"]')));
+  check('404: no CSP violations or script errors (the document 404 itself is expected)', page.errors.every((e) => /Failed to load resource: the server responded with a status of 404/.test(e)), page.errors.join(' | '));
+  const nested = await page.goto(base + '/tin-tuc/bai-khong-ton-tai/', { waitUntil: 'networkidle' });
+  check('404: unknown article slug also answers 404 with CSP', nested.status() === 404 && !!nested.headers()['content-security-policy']);
+  const noSlash = await page.goto(base + '/tin-tuc', { waitUntil: 'networkidle' });
+  check('routing: /tin-tuc redirects to /tin-tuc/ and keeps the CSP', new URL(noSlash.url()).pathname === '/tin-tuc/' && !!noSlash.headers()['content-security-policy']);
+  await page.context().close();
 }
 
 await browser.close();

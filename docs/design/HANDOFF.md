@@ -1,3 +1,5 @@
+> **Ghi chú triển khai (2026-10-22):** tài liệu này là bản handoff gốc của thiết kế, giữ nguyên làm tham chiếu. Nơi tài liệu nêu **SVN-Bebas Neue Pro / SVN-Primark**, bản dựng dùng **Barlow Condensed / Dancing Script** (SIL OFL) vì giấy phép web của font SVN chưa được xác nhận — xem `docs/design/FONTS.md`.
+
 # Handoff: Website VBFA (Hiệp hội Nhiên liệu Sinh học Việt Nam)
 
 ## Overview

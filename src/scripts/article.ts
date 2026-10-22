@@ -7,7 +7,11 @@ export function initArticle(): void {
     a.addEventListener('click', (event) => {
       event.preventDefault();
       const el = document.getElementById(a.dataset.toc ?? '');
-      if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 104, behavior: mq('(prefers-reduced-motion: reduce)') ? 'auto' : 'smooth' });
+      if (!el) return;
+      window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 104, behavior: mq('(prefers-reduced-motion: reduce)') ? 'auto' : 'smooth' });
+      // Keep keyboard / screen-reader position in sync with the scroll.
+      el.setAttribute('tabindex', '-1');
+      el.focus({ preventScroll: true });
     }),
   );
 

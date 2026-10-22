@@ -107,7 +107,7 @@ Chưa tạo `resource`, `event`, `partner`: guide thiết kế ghi các trang Th
 
 ## 7. Hiệu năng và chuyển động
 
-- Font tự host qua **Astro Fonts API**: WOFF2 (đã subset Latin + tiếng Việt) cho Mona Sans / Be Vietnam Pro, OTF cho SVN-Bebas/Primark; fingerprint + `immutable`; preload 4 font quan trọng; font dự phòng có số đo khớp để giảm CLS.
+- Font tự host qua **Astro Fonts API**: WOFF2 (đã subset Latin + tiếng Việt), toàn bộ SIL OFL — Be Vietnam Pro, Mona Sans, Barlow Condensed (nhãn), Dancing Script (câu viết tay); fingerprint + `immutable`; preload các font quan trọng; font dự phòng tự canh số đo để tránh dịch chuyển bố cục. Font độc quyền SVN không được commit/phát hành (`scripts/check_site.py` chặn).
 - Ảnh thương hiệu WebP (giọt hero 312 KB → 37 KB). Ảnh bài viết từ Sanity: `srcset` + `auto=format`.
 - Hoạt ảnh chỉ dùng `transform`/`opacity`/`clip-path`; các hoạt ảnh vô hạn của hero **tạm dừng khi hero ra khỏi màn hình**; `prefers-reduced-motion` hiện nội dung ngay.
 - Ngân sách kiểm trong `scripts/check_site.py` (ảnh ≤ 260 KB, HTML ≤ 120 KB, CSS ≤ 90 KB, JS ≤ 120 KB).

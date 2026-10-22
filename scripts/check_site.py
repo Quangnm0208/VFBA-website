@@ -177,6 +177,13 @@ if len(font_files) < 11:
 home = (STATIC / "index.html").read_text(encoding="utf-8")
 if re.search(r"fonts\.(googleapis|gstatic)\.com|cdn\.jsdelivr", home):
     err("home page references a third-party font host")
+# Proprietary fonts (SVN-Bebas Neue Pro, SVN-Primark) have no verified web licence: they must not be committed or served.
+restricted = re.compile(r"svn[-_]|bebasneue|primark", re.I)
+for font in [*(OUT / "static").rglob("*"), *Path("src/assets/fonts").glob("*")]:
+    if font.is_file() and restricted.search(font.name):
+        err(f"restricted font file present: {font}")
+if any(restricted.search(css.read_text(encoding="utf-8")) for css in (STATIC / "_astro").glob("*.css")) or restricted.search(home):
+    err("built CSS/HTML still references a restricted font")
 
 # CSP on every prerendered route (written by the Vercel adapter into config.json)
 config = json.loads((OUT / "config.json").read_text(encoding="utf-8"))

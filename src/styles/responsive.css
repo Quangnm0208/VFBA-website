@@ -24,5 +24,8 @@
 
 /* Giảm chuyển động theo cài đặt hệ điều hành */
 @media (prefers-reduced-motion:reduce){
-  *,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+  /* Switch animations off instead of shrinking them to 0.01ms: even a 0.01ms animation renders at least one frame
+     of its `from` state (hero text blinked out for ~100-400ms). Every animated element has its final look as its
+     base style, so with no animation it simply appears. */
+  *,*::before,*::after{animation:none!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
 }

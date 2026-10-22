@@ -16,7 +16,7 @@
   --vbfa-amber:#e3a63a;             /* sampled: giọt. Đường kẻ eyebrow, focus ring, cuối thanh tiến trình */
   --vbfa-amber-text:#8a5f0a;        /* amber cho chữ nhỏ trên nền sáng: 5.64:1 trên trắng */
   --vbfa-amber-numeral:#b07d17;     /* chỉ dùng cho số lớn từ 24px: 3.63:1 trên trắng */
-  --vbfa-gold:#f2cf75;              /* chữ viết tay (Primark) trên nền tối */
+  --vbfa-gold:#f2cf75;              /* chữ viết tay (Dancing Script) trên nền tối */
 
   /* ---------- Surfaces ---------- */
   --vbfa-white:#ffffff;
@@ -69,8 +69,8 @@
   /* ---------- Typography ---------- */
   --font-display:var(--font-mona-semiexp); /* H1, H2 */
   --font-heading:var(--font-mona);                     /* H3, tiêu đề hàng, tiêu đề thẻ */
-  --font-label:var(--font-bebas-semiexp);                     /* eyebrow, kicker, badge, chỉ mục */
-  --font-script:var(--font-primark);                             /* câu ký, chỉ từ 28px trở lên */
+  --font-label:var(--font-barlow-condensed);                     /* eyebrow, kicker, badge, chỉ mục */
+  --font-script:var(--font-dancing-script);                             /* câu ký, chỉ từ 28px trở lên */
   --font-body:var(--font-be-vietnam);                              /* văn bản web */
 
   --fs-h1-hero:clamp(32px,4.1vw,60px);   /* line-height 1.18, letter-spacing -.025em, weight 600 */
@@ -86,7 +86,7 @@
   --fs-body-article:17px;                /* line-height 1.95 */
   --fs-ui:15px;                          /* nút, link; 14.5px cho nav và link nhỏ */
   --fs-small:14px;
-  --fs-label:14px;                       /* Bebas: eyebrow 700 / .22em, kicker 400 / .2em, badge 13px / .18em */
+  --fs-label:14px;                       /* Barlow Condensed: eyebrow 700 / .22em, kicker 400 (=500) / .2em, badge 13px / .18em */
 
   /* ---------- Layout ---------- */
   --container:1280px;

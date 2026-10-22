@@ -19,7 +19,11 @@ export function initChrome(): void {
       const max = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
       if (bar) bar.style.transform = `scaleX(${Math.min(1, y / max)})`;
       header?.classList.toggle('is-scrolled', y > 12);
-      topBtn?.classList.toggle('is-on', y > 640);
+      if (topBtn) {
+        const on = y > 640;
+        topBtn.classList.toggle('is-on', on);
+        topBtn.setAttribute('aria-hidden', String(!on));
+      }
     });
   };
   window.addEventListener('scroll', onScroll, { passive: true });
