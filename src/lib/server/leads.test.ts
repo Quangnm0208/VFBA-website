@@ -138,7 +138,7 @@ describe('handleLead — membership', () => {
 
   it('counts attempts that store nothing: repeated duplicates are throttled too', async () => {
     const { d, store } = deps();
-    const dup = { kind: 'newsletter', email: 'same@b.vn', website: '', openedAt: NOW - 20_000 };
+    const dup = { kind: 'newsletter', email: 'same@b.vn', website: '', openedAt: NOW - 20_000, consent: true, consentVersion: 'newsletter-v1' };
     const statuses: number[] = [];
     for (let i = 0; i < LIMITS.maxAttempts + 2; i++) statuses.push((await handleLead(post(dup), 'newsletter', '203.0.113.9', d)).status);
     expect(statuses.slice(0, LIMITS.maxAttempts).every((x) => x === 200)).toBe(true);
