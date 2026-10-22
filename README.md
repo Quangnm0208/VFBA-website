@@ -1,28 +1,34 @@
-# VBFA Website — Marketing UAT
+# VBFA Frontend Motion — Vercel-ready Review Build
 
-This repository hosts the **Vietnam Biofuels Association (VBFA)** website preview for Marketing review. It is **not** the official production website.
+Built from the 2026-10-22 handoff `UI mockups for website (3).zip` — `design_handoff_vbfa_website/code/`.
 
-## Preview scope
-- Responsive website based on the UI/UX team's `UI mockups for website.zip`.
-- Static, review-only web page, supplied as a self-contained `index.html` derived from the team's source.
-- Interactive UI is powered by the team's design runtime and requires access to public CDNs for React, ReactDOM, Babel, and Google Fonts.
-- Forms are **simulations**: no user submissions are sent or saved. Do not enter sensitive data.
-- Article copy, images, and organization statements should be editorially reviewed before publication.
+## Scope
+- **12 static routes:** `/`, `/tin-tuc/`, and ten article detail routes `/tin-tuc/<slug>/`.
+- Responsive 390/834/1440px (also test 320/375/430/768/1024/1920px).
+- Fully accessible baseline motion: hero entrance, hover transitions, reveal-on-scroll, cursor parallax, `prefers-reduced-motion` support, mobile drawer, search dialog, membership modal, filtering and history query parameters, table of contents and share links.
+- Three photo/illustration categories now appear throughout article cards, serving responsive WebP images generated for this project. **Images are illustrative; they do not document a specific VBFA event or policy.**
+- Demo forms validate only; no data collection. No CMS/database required for frontend review.
+- Client-review protection: `noindex,nofollow` HTML meta + `robots.txt` Disallow all. **Remove/update both before public SEO launch on official domain.**
+- Supplied font binaries have been **omitted** due to unverified redistribution rights. Fonts use open/licensed web hosting (Be Vietnam Pro, Mona Sans, Bebas Neue, Caveat), so typography may differ subtly from the handoff. Licensed font files can be deployed by the rights holder later.
 
-## How to review
-Open the preview deployment URL from Vercel, test desktop/mobile menu, section navigation, tab/filter controls, and form validation. Report UI issues with device, viewport, steps to reproduce, and screenshots.
+## Deploy to Vercel
+1. Upload/commit the full *contents* of this directory to the `main` branch of `Quangnm0208/VFBA-website` after reviewing that it replaces existing frontend entrypoints.
+2. In Vercel, `Add New > Project > Import Git Repository`, select `Quangnm0208/VFBA-website` and branch `main`.
+3. Choose **Other** framework preset; Project Root `./`; **no install/build command and no output directory**. Vercel serves static `index.html` plus `tin-tuc/**/index.html`.
+4. Deploy and verify `/`, `/tin-tuc/`, `/tin-tuc/dong-luc-tuong-lai/`, overlays, tab filtering, the mobile menu, and uploaded images.
+5. DO NOT set up Sanity or Supabase credentials yet; forms intentionally stay in demo mode.
 
-## Deployment
-Connect this GitHub repository to a dedicated Vercel project. Use the **Other** framework preset with no build command; `index.html` is served as a static page. This repository is for review only. No Supabase, CMS, or production domain is connected.
+## After client review
+- Astro + Sanity + Supabase branches exist separately in GitHub. Port these static templates into Astro components and restore Sanity content sources; avoid replacing the high-fidelity UI with the older Astro scaffold.
+- Replace sample titles, publication dates and repeated article body with approved editorial content; connect media to Sanity Assets CDN.
+- Implement real opt-in forms via Vercel API + anti-spam + dedicated Supabase project with RLS before public collection.
+- Configure real contact info, sitemap, canonical/OG, privacy and consent. Remove `noindex` and `robots.txt` Disallow for production indexing after content approval.
+- Confirm licensing and final brand palette before public launch.
 
-## Source provenance
-Source archive: `UI mockups for website.zip`, provided by the VBFA design team on 2026-10-21. The entry page was packaged into one portable HTML file for UAT and contains inlined styles, JavaScript runtime, and visual assets.
+## Local QA
+```
+python3 -m http.server 8765
+# http://localhost:8765/
+```
 
-## Acceptance gates
-1. Real Vercel HTTPS URL can be opened by Marketing.
-2. Desktop and mobile layouts verified.
-3. UI interaction tests recorded.
-4. Final content, media licensing, typography, and contact forms reviewed before production.
-
-## Known limitations
-Browser-side runtime and CDN dependencies mean this is **not a production-optimized app**. For production, replace the design runtime with maintainable, compiled application code and connect form submissions to a secure backend.
+No npm, React, Next.js, or Astro runtime is required for this design review build.
