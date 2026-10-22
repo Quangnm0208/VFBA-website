@@ -1,15 +1,20 @@
 {
   "name": "vbfa-sanity-studio",
   "private": true,
+  "version": "0.1.0",
   "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
-    "dev": "sanity dev",
+    "dev": "sanity dev --host 0.0.0.0",
     "build": "sanity build",
-    "deploy": "sanity deploy"
+    "deploy": "sanity deploy",
+    "deploy:dry-run": "sanity deploy --dry-run",
+    "schema:extract": "sanity schema extract"
   },
   "dependencies": {
-    "sanity": "^4.0.0",
-    "@sanity/vision": "^4.0.0",
+    "sanity": "^6.17.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   }
