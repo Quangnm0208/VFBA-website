@@ -37,6 +37,8 @@ class Page(HTMLParser):
         self._in_ld = False
         self.preloads: list[tuple[str, dict]] = []
         self.lang = ""
+        self.text = ""
+        self._skip = 0
 
     def handle_starttag(self, tag, attrs):
         a = dict(attrs)
@@ -46,6 +48,8 @@ class Page(HTMLParser):
             self.h1 += 1
         if tag == "title":
             self._in_title = True
+        if tag in {"script", "style"}:
+            self._skip += 1
         if tag == "meta":
             key = a.get("name") or a.get("property")
             if key:
@@ -69,10 +73,14 @@ class Page(HTMLParser):
     def handle_endtag(self, tag):
         if tag == "title":
             self._in_title = False
+        if tag in {"script", "style"}:
+            self._skip = max(0, self._skip - 1)
         if tag == "script":
             self._in_ld = False
 
     def handle_data(self, data):
+        if not self._skip:
+            self.text += data
         if self._in_title:
             self.title += data
         if self._in_ld and self.jsonld:
@@ -184,6 +192,24 @@ for font in [*(OUT / "static").rglob("*"), *Path("src/assets/fonts").glob("*")]:
         err(f"restricted font file present: {font}")
 if any(restricted.search(css.read_text(encoding="utf-8")) for css in (STATIC / "_astro").glob("*.css")) or restricted.search(home):
     err("built CSS/HTML still references a restricted font")
+
+# The web-font subsets keep only Latin + Vietnamese + the symbols the site uses (scripts/font-ranges.json).
+# Every character the pages (and the search index) display must be inside them, otherwise it silently falls back to a
+# system font. NFC-normalised first: composed Vietnamese letters are in range, and decomposed input is covered too.
+import unicodedata
+ranges = json.loads((Path(__file__).parent / "font-ranges.json").read_text(encoding="utf-8"))["ranges"]
+in_subset = lambda cp: any(a <= cp <= b for a, b in ranges)
+texts = {p.relative_to(STATIC).as_posix(): pg.text + pg.title for p, pg in parsed.items()}
+index_file = STATIC / "search-index.json"
+if index_file.exists():
+    texts["search-index.json"] = " ".join(str(x) for group in json.loads(index_file.read_text(encoding="utf-8")).values() for pair in group for x in pair)
+outside: dict[str, set[str]] = {}
+for where, text in texts.items():
+    for ch in set(unicodedata.normalize("NFC", text)):
+        if not ch.isspace() and not in_subset(ord(ch)):
+            outside.setdefault(ch, set()).add(where)
+for ch, where in sorted(outside.items()):
+    err(f"U+{ord(ch):04X} {ch!r} is outside the web-font subset (falls back to a system font); used in {sorted(where)[:3]}")
 
 # CSP on every prerendered route (written by the Vercel adapter into config.json)
 config = json.loads((OUT / "config.json").read_text(encoding="utf-8"))

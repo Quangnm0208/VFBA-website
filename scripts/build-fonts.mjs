@@ -9,9 +9,10 @@
  * added here: the proprietary SVN-Bebas Neue Pro and SVN-Primark files must not be committed or served
  * (scripts/check_site.py fails the build if they appear).
  *
- * The subset covers Basic Latin, Latin-1, Latin Extended-A/B, Vietnamese (Latin Extended
- * Additional), combining marks, general punctuation, currency, arrows and basic maths.
- * OpenType layout features (mark positioning for Vietnamese diacritics) are retained.
+ * The subset (scripts/font-ranges.json) covers Basic Latin, Latin-1, Vietnamese and the punctuation/symbols the site
+ * uses; OpenType layout features (mark positioning for Vietnamese diacritics) are retained. The input may be the
+ * original .ttf or an already built .woff2, so the files in src/assets/fonts can be re-subset in place:
+ *   node scripts/build-fonts.mjs --src src/assets/fonts
  */
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
@@ -22,11 +23,8 @@ const srcDir = resolve(args[args.indexOf('--src') + 1] || 'design-sources/fonts'
 const only = args.includes('--only') ? args[args.indexOf('--only') + 1].split(',') : null;
 const outDir = resolve('src/assets/fonts');
 
-const ranges = [
-  [0x0020, 0x007e], [0x00a0, 0x00ff], [0x0100, 0x024f], [0x0300, 0x036f],
-  [0x1e00, 0x1eff], [0x2000, 0x206f], [0x20a0, 0x20bf], [0x2100, 0x214f],
-  [0x2190, 0x21ff], [0x2212, 0x2212], [0x2248, 0x2248], [0x2260, 0x2265],
-];
+// Single source of truth shared with scripts/check_site.py.
+const { ranges } = JSON.parse(await readFile(new URL('./font-ranges.json', import.meta.url), 'utf8'));
 const text = ranges.flatMap(([a, b]) => Array.from({ length: b - a + 1 }, (_, i) => String.fromCodePoint(a + i))).join('');
 
 const files = [
@@ -37,8 +35,9 @@ const files = [
 
 await mkdir(outDir, { recursive: true });
 for (const name of files) {
-  const input = await readFile(join(srcDir, `${name}.ttf`));
+  const source = [`${name}.ttf`, `${name}.woff2`].map((f) => join(srcDir, f));
+  const input = await readFile(source[0]).catch(() => readFile(source[1]));
   const output = await subsetFont(input, text, { targetFormat: 'woff2' });
   await writeFile(join(outDir, `${name}.woff2`), output);
-  console.log(`${name}.ttf ${Math.round(input.length / 1024)}KB -> ${name}.woff2 ${Math.round(output.length / 1024)}KB`);
+  console.log(`${name}: ${Math.round(input.length / 1024)}KB -> ${name}.woff2 ${Math.round(output.length / 1024)}KB`);
 }

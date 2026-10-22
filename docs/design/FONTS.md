@@ -12,17 +12,21 @@ Status: 2026-10-22. Applies to the Astro implementation. All fonts that ship wit
 | Labels: eyebrow, kicker, badge, index numerals | **Barlow Condensed** | 500 / 700 | OFL 1.1 | npm `@expo-google-fonts/barlow-condensed` (Google Fonts static TTF) |
 | Signature script, 28 px and up | **Dancing Script** | 500 | OFL 1.1 | npm `@expo-google-fonts/dancing-script` (Google Fonts static TTF) |
 
-Files are WOFF2 subsets (Basic Latin, Latin-1, Latin Extended-A/B, Vietnamese, general punctuation) produced by
-`scripts/build-fonts.mjs` and self-hosted through the Astro Fonts API (fingerprinted, `immutable`, preloaded where it
-matters, metric-matched fallbacks). No third-party font host is contacted (`scripts/check_site.py` enforces this).
+Files are WOFF2 subsets (Basic Latin, Latin-1, Vietnamese, the punctuation/symbols the site uses; ranges in
+`scripts/font-ranges.json`) produced by `scripts/build-fonts.mjs` and self-hosted through the Astro Fonts API (fingerprinted, `immutable`, preloaded where it
+matters, metric-matched fallbacks). No third-party font host is contacted and every character shown on a page must be inside
+the subset (`scripts/check_site.py` enforces both). The tight subset cut each file from ~35 KB to ~28 KB (11 files:
+~385 KB -> ~315 KB), which is what moved the mobile LCP under 2.5 s (see `docs/QA.md`). Characters outside the ranges
+(for example Polish or Czech letters in a partner's name) would render in a system font: extend the ranges and re-run the
+script if the content needs them.
 
 Provenance of the files added on 2026-10-22 (reproduce with `node scripts/build-fonts.mjs --src <dir> --only …`):
 
 | Output (`src/assets/fonts/`) | sha256 of output | sha256 of source TTF |
 |---|---|---|
-| `BarlowCondensed-Medium.woff2` | `72b6997886d6a3a30c5b6ea9032625e0307fc29852950a96da88c43da42f38ef` | `27d58d15cead6f7679ec21d7dd23852f22f63babe80540ca2bb45e7dd7a22ddb` |
-| `BarlowCondensed-Bold.woff2` | `938401c5f86367f33e9dbfc3dcb234e1aad3022f0af841d21d674d90ed551d87` | `53550669f93c07de6221e051905462f862066459eb50148268b5628104a58a30` |
-| `DancingScript-Medium.woff2` | `ec92d3c0dd34ead31b9383be741b8c862fac309443f8c1901604da6b9b4aa5ca` | `d120f83f589938fa9412792d122d86f4c4c63fcce7186ddc8c7142cc094a269e` |
+| `BarlowCondensed-Medium.woff2` | `677634ef80ec91c8d3ec9d86fe7ea124e2214aad756b413a9363665c38a83e5a` | `27d58d15cead6f7679ec21d7dd23852f22f63babe80540ca2bb45e7dd7a22ddb` |
+| `BarlowCondensed-Bold.woff2` | `9d60cebdbc72eeef3c12282442cf353d61eee6d4b2df85bb3e2dc0b248484cfe` | `53550669f93c07de6221e051905462f862066459eb50148268b5628104a58a30` |
+| `DancingScript-Medium.woff2` | `62179b61b7a095e8b351cccc86e8231ca34d03e75a90c6115ef00c76140da988` | `d120f83f589938fa9412792d122d86f4c4c63fcce7186ddc8c7142cc094a269e` |
 
 ## Why the SVN fonts were removed
 
