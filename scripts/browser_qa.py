@@ -21,7 +21,13 @@ def inspect_page(page,ctx):
     }""")
     if measured["docWidth"]>measured["viewport"]+5 or measured["bodyWidth"]>measured["viewport"]+5:
         fail(ctx,"horizontal document overflow: "+json.dumps(measured,ensure_ascii=False))
-    bad=page.locator('img').evaluate_all("""els => els.filter(i=>i.offsetParent!==null && (!i.complete || i.naturalWidth===0)).map(i=>i.getAttribute('src'))""")
+    # Force below-fold lazy images into the test load queue before marking errors.
+    page.evaluate("""async () => {
+      const images=[...document.images];
+      images.forEach(i=>i.loading='eager');
+      await Promise.race([Promise.all(images.map(i=>i.decode().catch(()=>null))),new Promise(resolve=>setTimeout(resolve,3000))]);
+    }""")
+    bad=page.locator('img').evaluate_all("""els => els.filter(i=>i.offsetParent!==null && i.complete && i.naturalWidth===0).map(i=>i.getAttribute('src'))""")
     if bad:fail(ctx,"broken visible images: "+str(bad))
     return measured
 with sync_playwright() as p:
@@ -50,7 +56,9 @@ with sync_playwright() as p:
     page.locator('[data-filter="policy"]').click()
     visible=page.locator('#nh-grid .ncard:visible').count()
     expected=page.locator('#nh-grid .ncard[data-cat="policy"]').count()
-    if visible!=expected: fail("home filter",f"visible {visible}, expected {expected} of {card_count}")
+    if visible!=expected:
+        states=page.locator('#nh-grid .ncard').evaluate_all("""els=>els.map(x=>({cat:x.dataset.cat,hidden:x.hidden,display:getComputedStyle(x).display,classes:x.className,rects:x.getClientRects().length}))""")
+        fail("home filter",f"visible {visible}, expected {expected} of {card_count}; states: {states}")
     page.locator('[data-filter="all"]').click()
     if page.locator('#nh-grid .ncard:visible').count()!=card_count:fail("home filter","reset did not restore cards")
     # Search: from nested route, the contact result must resolve to homepage.
