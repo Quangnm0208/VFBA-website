@@ -9,7 +9,7 @@ Website của **Hiệp hội Nhiên liệu Sinh học Việt Nam**. Giao diện 
 | Biểu mẫu | **Vercel Functions** `/api/join`, `/api/newsletter` → **Supabase PostgreSQL** (`website_leads`) |
 | Giám sát | Vercel logs (kỹ thuật, không có dữ liệu khách), tách biệt hoàn toàn với dữ liệu lead |
 
-Đọc: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) (kiến trúc, ranh giới dữ liệu, SEO, pop-up) [`docs/OPERATIONS.md`](docs/OPERATIONS.md) (thiết lập, biến môi trường, danh sách ra mắt) và [`docs/QA.md`](docs/QA.md) (các bộ kiểm thử, điều kiện đo, kết quả Core Web Vitals/responsive, giới hạn).
+Đọc: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) (kiến trúc, ranh giới dữ liệu, SEO, pop-up) [`docs/OPERATIONS.md`](docs/OPERATIONS.md) (thiết lập, biến môi trường, danh sách ra mắt) [`docs/QA.md`](docs/QA.md) (các bộ kiểm thử, điều kiện đo, kết quả Core Web Vitals/responsive, giới hạn) và [`docs/RELEASE.md`](docs/RELEASE.md) (hiện trạng production/rollback, cổng go/no-go, đăng ký nội dung, font và pháp lý).
 
 ## Chạy thử
 
