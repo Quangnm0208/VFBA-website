@@ -3,6 +3,7 @@
 Studio biên tập nội dung cho website. **Do Sanity lưu trữ** (`sanity deploy` → `https://<host>.sanity.studio`), không chạy trên Vercel.
 
 ```bash
+# Một lần, ở thư mục gốc repo: npm install   (Studio dùng chung tsconfig.json gốc)
 cp .env.example .env          # điền SANITY_STUDIO_PROJECT_ID
 npm install
 npm run dev                   # http://localhost:3333

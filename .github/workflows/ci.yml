@@ -51,7 +51,14 @@ jobs:
         with:
           node-version: 24
           cache: npm
-          cache-dependency-path: studio/package-lock.json
+          cache-dependency-path: |
+            package-lock.json
+            studio/package-lock.json
+      # The Studio lives inside the Astro project: the Sanity CLI (Vite) also resolves the root tsconfig.json, which
+      # extends astro/tsconfigs/strict, so the root dependencies must be installed as well.
+      - name: Install root dependencies (tsconfig resolution)
+        run: npm ci
+        working-directory: .
       - run: npm ci
       - run: npm run typecheck
       - run: npm run validate

@@ -6,7 +6,7 @@ Mọi thứ dưới đây cần quyền của chủ dự án (tài khoản Sanit
 
 ### A. Sanity (nội dung)
 1. Tạo project tại sanity.io (tên gợi ý `VBFA`), dataset `production`. Ghi lại **Project ID**.
-2. Trong `studio/`: sao chép `studio/.env.example` thành `studio/.env`, điền `SANITY_STUDIO_PROJECT_ID`.
+2. Ở thư mục gốc repo chạy `npm install` (Studio dùng chung `tsconfig.json` gốc nên cần cài cả hai nơi; thiếu bước này `sanity` báo `Tsconfig not found astro/tsconfigs/strict`). Trong `studio/`: sao chép `studio/.env.example` thành `studio/.env`, điền `SANITY_STUDIO_PROJECT_ID`.
 3. `npm run studio:install` rồi `cd studio && npm run deploy` (lần đầu hỏi tên host, ví dụ `vbfa` → `https://vbfa.sanity.studio`). Studio do Sanity lưu trữ, không đi qua Vercel.
 4. Mời biên tập viên: sanity.io/manage → project → Members (vai trò *Editor*; *Administrator* chỉ cho người quản trị).
 5. Nhập nội dung ban đầu (giống hệt website hiện tại):
