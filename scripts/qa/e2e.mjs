@@ -166,6 +166,9 @@ for (const width of [320, 390, 720, 721, 834, 1040, 1041, 1440]) {
   await page.waitForFunction(() => /Chưa thể gửi/.test(document.querySelector('[data-status]')?.textContent || ''));
   check('join: network failure shows a retry message without losing input', (await page.inputValue('#company')) === 'Công ty ABC');
   await page.keyboard.press('Escape');
+  const joinDismissed = await page.isHidden('[data-overlay="join"]');
+  check('join: Escape closes modal after a server/network error', joinDismissed);
+  if (!joinDismissed) await page.click('.dialog.join [data-close]');
   const requestsBeforeNewsletter = turnstileRequests;
   const widgetsBefore = hasTurnstile ? await page.evaluate(() => (window.__tsOpts || []).length) : 0;
   await page.fill('.newsletter input[type=email]', 'news@abc.vn');
