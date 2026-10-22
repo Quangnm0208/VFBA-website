@@ -43,6 +43,8 @@ export const newsletterSchema = z.object({
   ...common,
   kind: z.literal('newsletter'),
   email,
+  consent: z.literal(true, { error: 'Vui lòng đồng ý nhận bản tin và xử lý địa chỉ email.' }),
+  consentVersion: z.literal('newsletter-v1', { error: 'Phiên bản chấp thuận không hợp lệ.' }),
 });
 
 export type JoinInput = z.infer<typeof joinSchema>;
