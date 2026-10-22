@@ -79,6 +79,13 @@ the first costs brand fidelity on slow first visits and the second adds a visibl
 
 ## Known limits
 
+- Dependency advisories (`npm audit --omit=dev`, 2026-10-22): the website reports **3 high**, all one chain: `path-to-regexp`
+  (backtracking regular expression, GHSA-9wv6-86v2-598j) <- `@vercel/routing-utils` <- `@astrojs/vercel@11.0.16` (the latest
+  published adapter). `npm audit` offers `@astrojs/vercel@8.0.4`, which is a downgrade of three majors, so it is not a fix. The
+  package is used by the adapter at build time to rewrite the route table; it is absent from the built Function bundle
+  (`grep -r path-to-regexp .vercel/output/functions` finds nothing) and handles no visitor input. Track the upstream release. The Studio reports 18 (9 moderate, 9 high), all transitive
+  inside `sanity`; the Studio is built to static files and served by Sanity, nothing from it runs on our servers. Re-run
+  `npm audit` before the release and after each dependency update.
 - Synthetic lab data; nothing here replaces real-device testing (iOS Safari, Android Chrome) or screen-reader testing.
 - Lighthouse's simulation models HTTP/2 priorities; real Vercel behaviour (HTTP/3, CDN, `fetchpriority`) should be at
   least as good, but that is an expectation, not a measurement.
