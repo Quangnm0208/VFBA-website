@@ -133,7 +133,7 @@ for (const width of [320, 390, 720, 721, 834, 1040, 1041, 1440]) {
   if (hasTurnstile) check('turnstile: nothing from challenges.cloudflare.com is requested on page load', turnstileRequests === 0, String(turnstileRequests));
   const fill = async () => {
     await page.fill('#person', 'Nguyễn Văn A'); await page.fill('#company', 'Công ty ABC'); await page.fill('#email', 'a@abc.vn');
-    await page.check('.consent input');
+    await page.check('#join-form .consent input');
   };
   await page.click('.site-header [data-open="join"]');
   await fill();
