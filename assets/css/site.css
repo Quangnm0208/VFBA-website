@@ -494,3 +494,113 @@ textarea.input{min-height:104px;padding:12px 14px;resize:vertical}
 .cover>img{position:absolute}
 .media__zoom:hover>img{transform:scale(1.035)}
 @media(prefers-reduced-motion:reduce){.media__zoom>img,.cover>img{transition:none!important;transform:none!important}}
+
+
+/* ============================================================
+   VBFA FRONTEND REFINEMENT 2026 — brand guideline / responsive
+   Digital type: Be Vietnam Pro; component radii/spacing proposed.
+   ============================================================ */
+:root{
+  --vbfa-forest:#1f5329;
+  --vbfa-deep:#0b2616;
+  --vbfa-leaf:#96b949;
+  --vbfa-amber:#e3a63a;
+  --vbfa-paper:#f7f9f2;
+  --r-card:12px;
+  --section-y:clamp(64px,7.6vw,110px);
+  --section-y-band:clamp(48px,5.5vw,76px);
+}
+body{font-family:var(--font-body);overflow-wrap:break-word}
+h1,h2,h3{font-family:var(--font-heading);font-synthesis:none}
+.h1,.h2,.page-head h1,.article-head h1{font-family:var(--font-display);font-weight:700;letter-spacing:-.025em}
+.script{font-family:var(--font-script);font-style:italic;font-weight:600;letter-spacing:-.035em}
+.utility__in{font-family:var(--font-body);font-size:11px;letter-spacing:.09em;font-weight:500}
+.utility__in strong{font-weight:600}
+.nav a,.drawer__nav a{font-family:var(--font-body)}
+.site-header__in{min-width:0}
+.logo img{object-fit:contain;max-width:min(235px,38vw)}
+.ncard,.fcard,.rcard{min-width:0}
+.ncard__p,.card-p,.sec-head__p{overflow-wrap:anywhere}
+.nh-grid .ncard{height:100%}
+.ncard__t{font-size:clamp(18px,1.55vw,20px);line-height:1.43}
+.ncard__body{min-width:0}
+.ncard__foot{margin-top:auto}
+.media__zoom>img,.cover>img{object-position:center}
+.media__zoom{will-change:auto}
+.ncard:hover .media__zoom,.nfeat:hover .media__zoom{transform:scale(1.035)}
+.btn:focus-visible,.icon-btn:focus-visible,.pill-btn:focus-visible,.chip:focus-visible,.back-top:focus-visible{outline:var(--outline-focus);outline-offset:3px}
+.btn,.icon-btn,.pill-btn,.chip{touch-action:manipulation}
+.btn:hover{transform:translateY(-1px)}
+.hero__actions .btn{min-height:54px}
+.page-head h1 em{white-space:normal}
+.overlay--center{overscroll-behavior:contain}
+.overlay--top{overscroll-behavior:contain}
+.drawer{overscroll-behavior:contain}
+.join__body{overscroll-behavior:contain}
+.dialog__sub,.field label,.consent{overflow-wrap:break-word}
+.results a{font-size:15px}
+.ncard[hidden],.ncard.is-filtered-out{display:none!important}
+.back-top:not(.is-on){visibility:hidden}
+.back-top.is-on{visibility:visible}
+.prose img{max-width:100%;height:auto}
+.prose figure .media{max-width:100%}
+@media(max-width:1040px){
+  .site-header__actions{gap:8px}
+  .header-cta{display:none}
+  .hero__art{pointer-events:none}
+}
+@media(max-width:900px){
+  .sec-head{gap:18px 24px}
+  .sec-head__p{flex:1 1 100%;max-width:700px}
+  .article-head h1{max-width:100%}
+  .article-grid{max-width:850px}
+}
+@media(max-width:720px){
+  :root{--gutter:20px;--header-h:72px;--section-y:65px}
+  .logo img{height:48px;max-width:min(195px,59vw)}
+  .site-header__actions .icon-btn,.burger{width:44px;height:44px;min-width:44px}
+  .hero{isolation:isolate}
+  .hero h1,.page-head h1,.article-head h1{font-size:clamp(31px,8.8vw,45px);line-height:1.22;overflow-wrap:normal;word-break:normal}
+  .hero__actions{gap:13px}
+  .hero__actions .btn{width:100%;max-width:100%}
+  .hero__art{width:340px;right:-140px;opacity:.2}
+  .sec-head{margin-bottom:30px}
+  .nh-grid,.res-grid,.news-grid{grid-template-columns:minmax(0,1fr);gap:18px}
+  .ncard--row{flex-direction:column}
+  .ncard--row .media{flex:none;min-height:0;aspect-ratio:16/10}
+  .ncard--row .ncard__body{flex:1}
+  .page-head__in{padding-bottom:60px}
+  .page-head h1 em{white-space:normal}
+  .page-head__art{opacity:.18}
+  .newsletter__in{gap:22px}
+  .newsletter form{flex-basis:100%}
+  .newsletter .input{min-width:0;flex-basis:100%}
+  .newsletter .btn{width:100%}
+  .footer__grid{grid-template-columns:minmax(0,1fr);gap:32px}
+  .footer__brand,.footer__contact{grid-column:auto}
+  .cover{border-radius:0 54px 0 54px}
+  .article-grid{display:block}
+  .prose h2{display:block}
+  .dialog--search{padding:26px 20px}
+  .overlay--top{padding:24px 12px}
+  .overlay--center{align-items:flex-start;overflow-y:auto;padding:12px}
+  .dialog.join{max-height:none;margin:auto;grid-template-columns:minmax(0,1fr)}
+  .join__body{max-height:none;overflow:visible;padding:28px 20px}
+  .drawer{padding:20px 22px}
+  .drawer__nav a{font-size:18px}
+  .form-actions{justify-content:stretch}
+  .form-actions .btn{width:100%;white-space:normal}
+  .toast{bottom:14px;padding:13px 15px}
+}
+@media(max-width:375px){
+  .site-header__in{gap:6px}
+  .logo img{height:42px;max-width:52vw}
+  .site-header__actions{gap:4px}
+  .hero h1,.page-head h1,.article-head h1{font-size:clamp(29px,9vw,36px)}
+  .hero__actions .btn{white-space:normal}
+  .badge{max-width:calc(100% - 26px);overflow:hidden;text-overflow:ellipsis}
+}
+@media(prefers-reduced-motion:reduce){
+  .hero__art,.wave,.gfx-dots,.page-head__art-in{animation:none!important;transform:none!important}
+  .page-head h1 .mask>span,.page-head .crumb,.page-head .lead{animation:none!important}
+}
