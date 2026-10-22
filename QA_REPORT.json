@@ -17,27 +17,27 @@
         "industry",
         "community",
         "knowledge",
-        "industry",
-        "knowledge",
-        "community",
-        "industry",
-        "industry",
-        "community",
+        "feedstock",
+        "analytics",
+        "networking",
+        "plant",
+        "logistics",
+        "networking",
         "knowledge"
       ]
     },
     "tin-tuc/chuoi-gia-tri/index.html": {
       "placeholder_replaced": 2,
       "images": [
-        "industry",
-        "industry"
+        "feedstock",
+        "feedstock"
       ]
     },
     "tin-tuc/cong-nghe-doi-moi/index.html": {
       "placeholder_replaced": 2,
       "images": [
-        "industry",
-        "industry"
+        "plant",
+        "plant"
       ]
     },
     "tin-tuc/dong-luc-tuong-lai/index.html": {
@@ -50,8 +50,8 @@
     "tin-tuc/hop-tac-quoc-te/index.html": {
       "placeholder_replaced": 2,
       "images": [
-        "community",
-        "community"
+        "networking",
+        "networking"
       ]
     },
     "tin-tuc/khong-gian-doi-thoai/index.html": {
@@ -64,22 +64,22 @@
     "tin-tuc/noi-dung-chinh-sach/index.html": {
       "placeholder_replaced": 2,
       "images": [
-        "knowledge",
-        "knowledge"
+        "analytics",
+        "analytics"
       ]
     },
     "tin-tuc/phat-trien-ben-vung-esg/index.html": {
       "placeholder_replaced": 2,
       "images": [
-        "industry",
-        "industry"
+        "logistics",
+        "logistics"
       ]
     },
     "tin-tuc/toa-dam-chuyen-mon/index.html": {
       "placeholder_replaced": 2,
       "images": [
-        "community",
-        "community"
+        "networking",
+        "networking"
       ]
     },
     "tin-tuc/tong-hop-chinh-sach/index.html": {
