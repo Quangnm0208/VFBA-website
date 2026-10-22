@@ -75,4 +75,13 @@ export const body = defineType({
 });
 
 export const coverImage = (name = 'cover', title = 'Ảnh bìa') =>
-  defineField({ name, title, type: 'image', options: { hotspot: true }, fields: [alt], validation: (r) => r.required(), description: 'Ảnh ngang, tối thiểu 1600px. Có hotspot để cắt đúng chủ thể ở thẻ 16:10 và ảnh bìa rộng.' });
+  defineField({
+    name,
+    title,
+    type: 'image',
+    options: { hotspot: true },
+    fields: [alt],
+    // `required()` alone accepts an image object that has an alt text but no uploaded file: check the asset itself.
+    validation: (r) => r.required().custom((value) => ((value as { asset?: { _ref?: string } } | undefined)?.asset?._ref ? true : 'Hãy tải lên ảnh bìa. Nếu để trống, website dùng ảnh mặc định của VBFA.')),
+    description: 'Ảnh ngang, tối thiểu 1600px. Có hotspot để cắt đúng chủ thể ở thẻ 16:10 và ảnh bìa rộng.',
+  });

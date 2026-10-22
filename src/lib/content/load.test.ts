@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { articlesSeed } from './seed/articles';
+import { DEFAULT_COVER } from './media';
 import { ARTICLES_QUERY, HOME_QUERY, NEWS_PAGE_QUERY, PAGES_QUERY, POPUPS_QUERY, SITE_QUERY } from './queries';
 
 /**
@@ -89,6 +90,20 @@ describe('loadFromSanity (fake Content Lake)', () => {
     set(articlesSeed.slice(0, 4).map((a, i) => rawArticle(a, { id: `real-${i}`, slug: `bai-that-${i}` })));
     const content = await loadFromSanity();
     expect(content.home.news.picks.map((p) => p.slug)).toEqual(['bai-that-0', 'bai-that-1', 'bai-that-2']);
+  });
+
+  it('does not fail the build for an article without a cover image: it shows the brand image and warns', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      set([rawArticle(articlesSeed[0]!, { id: 'no-cover', slug: 'test', cover: null })]);
+      const content = await loadFromSanity();
+      expect(content.articles).toHaveLength(1);
+      expect(content.articles[0]!.cover).toEqual(DEFAULT_COVER);
+      expect(content.home.news.picks.map((p) => p.slug)).toEqual(['test']);
+      expect(warn.mock.calls.flat().join(' ')).toMatch(/article "test" has no cover image/);
+    } finally {
+      warn.mockRestore();
+    }
   });
 
   it('supports a young CMS: one or two published articles give one or two home picks, never invented ones', async () => {

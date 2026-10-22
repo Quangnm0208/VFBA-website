@@ -21,12 +21,28 @@ describe('sanityClient', () => {
     expect(sanityConfigured()).toBe(true);
     sanityClient();
     expect(createClient).toHaveBeenCalledTimes(1);
-    expect(createClient.mock.calls[0]![0]).toMatchObject({ projectId: 'iqyx5ttc', dataset: 'production', apiVersion: '2026-10-01', useCdn: false, perspective: 'published' });
+    const [options] = createClient.mock.calls[0] as unknown as [Record<string, unknown>];
+    expect(options).toMatchObject({ projectId: 'iqyx5ttc', dataset: 'production', apiVersion: '2026-10-01', useCdn: false, perspective: 'published' });
   });
 
   it('is created once and reused', async () => {
     const { sanityClient } = await import('./sanity');
     expect(sanityClient()).toBe(sanityClient());
     expect(createClient).toHaveBeenCalledTimes(1);
+  });
+
+  it('toMedia: no asset or an unreadable asset reference means "no image" (the loader then falls back to the default cover)', async () => {
+    const { toMedia } = await import('./sanity');
+    expect(toMedia(undefined)).toBeUndefined();
+    expect(toMedia({ alt: 'only alt text, nothing uploaded' })).toBeUndefined();
+    expect(toMedia({ asset: { _ref: 'not-an-image-reference' }, alt: 'x' })).toBeUndefined();
+  });
+
+  it('toMedia: a real asset reference becomes a Sanity Assets CDN URL with a srcset and the right proportions', async () => {
+    const { toMedia } = await import('./sanity');
+    const media = toMedia({ asset: { _ref: 'image-Tb9Ew8CXIwaY6R1kjMvI0uRR-2000x1000-jpg' }, alt: 'Ảnh thử' });
+    expect(media).toMatchObject({ width: 1600, height: 800, alt: 'Ảnh thử' });
+    expect(media!.src).toMatch(/^https:\/\/cdn\.sanity\.io\/images\/iqyx5ttc\/production\/Tb9Ew8CXIwaY6R1kjMvI0uRR-2000x1000\.jpg/);
+    expect(media!.srcset).toContain('400w');
   });
 });

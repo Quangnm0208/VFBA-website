@@ -18,7 +18,7 @@ export const article = defineType({
   ],
   fields: [
     defineField({ name: 'title', title: 'Tiêu đề', type: 'string', group: 'content', validation: (r) => r.required().min(8).max(160) }),
-    defineField({ name: 'slug', title: 'Đường dẫn (URL)', type: 'slug', group: 'content', options: { source: 'title', maxLength: 90, slugify: (input: string) => input.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/gi, 'd').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 90) }, description: 'Chữ thường không dấu, ngăn cách bằng dấu gạch ngang. Đổi sau khi đã xuất bản sẽ làm hỏng liên kết cũ.', validation: (r) => r.required() }),
+    defineField({ name: 'slug', title: 'Đường dẫn (URL)', type: 'slug', group: 'content', options: { source: 'title', maxLength: 90, slugify: (input: string) => input.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/gi, 'd').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 90) }, description: 'Chữ thường không dấu, ngăn cách bằng dấu gạch ngang. Đổi sau khi đã xuất bản sẽ làm hỏng liên kết cũ.', validation: (r) => r.required().custom((v) => (!v?.current || /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(v.current) ? true : 'Chỉ dùng chữ thường không dấu, số và dấu gạch ngang (ví dụ: dong-luc-tuong-lai).')) }),
     defineField({ name: 'excerpt', title: 'Tóm tắt', type: 'text', rows: 3, group: 'content', description: 'Hiện trên thẻ danh sách, đầu bài viết và khi chia sẻ.', validation: (r) => r.required().min(30).max(320) }),
     { ...coverImage(), group: 'content' },
     defineField({ name: 'body', title: 'Nội dung', type: 'articleBody', group: 'content', validation: (r) => r.required().min(1) }),
