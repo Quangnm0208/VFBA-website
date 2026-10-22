@@ -55,6 +55,8 @@ create trigger website_leads_touch before update on public.website_leads
 -- Deny by default.
 alter table public.website_leads enable row level security;
 revoke all on public.website_leads from anon, authenticated;
+-- Explicit service-role grant: do not depend on changing project default privileges.
+grant insert on public.website_leads to service_role;
 
 -- Retention: drop the rate-limiting fingerprint after a short window (default 30 days).
 -- Schedule with pg_cron or Supabase Scheduled Functions, e.g. select public.purge_lead_metadata();
