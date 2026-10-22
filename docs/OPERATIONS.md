@@ -25,7 +25,7 @@ Mọi thứ dưới đây cần quyền của chủ dự án (tài khoản Sanit
 5. Xác minh quyền: bằng khoá **anon** (Settings → API) gọi `GET /rest/v1/website_leads` và `/rest/v1/form_attempts` phải trả `401/403` hoặc mảng rỗng không có dữ liệu, và `POST /rest/v1/rpc/register_attempt` phải bị từ chối.
 6. Yêu cầu truy cập/xoá dữ liệu của khách: tìm theo email (`select * from public.website_leads where lower(email) = lower('…')`), xoá bằng `delete from public.website_leads where lower(email) = lower('…')`. Bộ đếm `form_attempts` không chứa dữ liệu cá nhân. Thời hạn lưu giữ lead do chủ dự án và bộ phận pháp lý quyết định (chưa có trong code).
 
-### C. Cloudflare Turnstile (khuyến nghị)
+### C. Cloudflare Turnstile (bắt buộc khi bật form)
 Tạo widget (Managed) cho domain website → lấy **Site key** và **Secret key**. Cả form hội viên và form bản tin sẽ hiện widget khi có `PUBLIC_TURNSTILE_SITE_KEY` (bản tin ở chế độ vô hình, nạp khi người dùng bắt đầu nhập) và server bắt buộc token cho cả hai khi có `TURNSTILE_SECRET_KEY`. Thêm mọi hostname sẽ dùng (domain chính thức, `*.vercel.app` của bản Preview cần test) vào danh sách **Hostname** của widget; khi gắn tên miền riêng, cập nhật danh sách này trước khi chuyển DNS.
 
 ### D. Vercel
