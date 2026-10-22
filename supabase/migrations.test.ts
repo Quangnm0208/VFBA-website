@@ -22,7 +22,7 @@ beforeAll(async () => {
   // Supabase ships these roles; PGlite does not.
   await db.exec(`create role anon nologin; create role authenticated nologin; create role service_role nologin bypassrls;`);
   for (const sql of migrations) await db.exec(sql);
-  await db.exec(`grant usage on schema public to anon, authenticated, service_role; grant all on public.website_leads to service_role;`);
+  await db.exec(`grant usage on schema public to anon, authenticated, service_role; grant select on public.website_leads to service_role;`);
 });
 
 describe('website_leads migration', () => {
