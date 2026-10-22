@@ -91,6 +91,16 @@ describe('loadFromSanity (fake Content Lake)', () => {
     expect(content.home.news.picks.map((p) => p.slug)).toEqual(['bai-that-0', 'bai-that-1', 'bai-that-2']);
   });
 
+  it('supports a young CMS: one or two published articles give one or two home picks, never invented ones', async () => {
+    for (const count of [1, 2]) {
+      set(articlesSeed.slice(0, count).map((a, i) => rawArticle(a, { id: `real-${i}`, slug: i === 0 ? 'test' : `bai-thu-${i}` })));
+      const content = await loadFromSanity();
+      expect(content.articles).toHaveLength(count);
+      expect(content.home.news.picks).toHaveLength(count);
+      for (const pick of content.home.news.picks) expect(content.articles.some((a) => a.slug === pick.slug)).toBe(true);
+    }
+  });
+
   it('completes the three home picks with the newest articles when an editor unpublished a highlighted one', async () => {
     const [first, ...rest] = articlesSeed;
     set(rest.map((a) => rawArticle(a)));
