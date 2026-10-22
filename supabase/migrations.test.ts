@@ -26,6 +26,10 @@ beforeAll(async () => {
 });
 
 describe('website_leads migration', () => {
+  it('grants INSERT explicitly for Vercel service role', async () => {
+    const q = await db.query<{ allowed: boolean }>("select has_table_privilege('service_role','public.website_leads','INSERT') as allowed");
+    expect(q.rows[0]?.allowed).toBe(true);
+  });
   it('stores a membership lead with defaults', async () => {
     await insert();
     const { rows } = await db.query<{ status: string; utm: unknown; source_path: string; consent_at: string }>('select status, utm, source_path, consent_at from public.website_leads');
