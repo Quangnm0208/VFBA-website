@@ -1,0 +1,58 @@
+---
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import ArticleHead from '~/components/article/ArticleHead.astro';
+import Toc from '~/components/article/Toc.astro';
+import PortableText from '~/components/article/PortableText.astro';
+import ShareBar from '~/components/article/ShareBar.astro';
+import PrevNext from '~/components/article/PrevNext.astro';
+import RelatedArticles from '~/components/article/RelatedArticles.astro';
+import Media from '~/components/ui/Media.astro';
+import { extractHeadings } from '~/lib/article';
+import { articleJsonLd, breadcrumbJsonLd } from '~/lib/seo';
+import { articlePath } from '~/lib/url';
+import { CATEGORIES, getContent, getNeighbours, getRelated, type Article } from '~/lib/content';
+
+export async function getStaticPaths() {
+  const { articles } = await getContent();
+  return articles.map((article) => ({ params: { slug: article.slug }, props: { article } }));
+}
+
+interface Props { article: Article }
+const { article } = Astro.props;
+const { site, articles } = await getContent();
+const { prev, next } = getNeighbours(articles, article.slug);
+const related = getRelated(articles, article);
+const headings = extractHeadings(article.body);
+const path = articlePath(article.slug);
+---
+<BaseLayout
+  page="article"
+  title={`${article.title} | ${site.name}`}
+  description={article.excerpt}
+  path={path}
+  seo={article.seo}
+  ogType="article"
+  ogImage={article.cover}
+  publishedAt={article.publishedAt}
+  modifiedAt={article.updatedAt ?? article.publishedAt}
+  newsCurrent="true"
+  jsonLd={[
+    articleJsonLd(article),
+    breadcrumbJsonLd([{ name: 'Trang chủ', path: '/' }, { name: 'Tin tức', path: '/tin-tuc/' }, { name: CATEGORIES[article.category].label, path }]),
+  ]}
+>
+  <article aria-labelledby="art-title">
+    <ArticleHead article={article} source={site.name} />
+    <div class="container cover-wrap"><div class="cover"><Media media={article.cover} priority sizes="(min-width: 1280px) 1184px, 100vw" /></div></div>
+    <div class="container article-grid">
+      <Toc headings={headings} />
+      <div class="prose">
+        <p class="lede">{article.excerpt}</p>
+        <PortableText body={article.body} />
+        <ShareBar title={article.title} />
+        <PrevNext prev={prev} next={next} />
+      </div>
+    </div>
+  </article>
+  <RelatedArticles articles={related} />
+</BaseLayout>

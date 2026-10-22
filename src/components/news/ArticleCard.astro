@@ -1,0 +1,25 @@
+---
+import Icon from '../ui/Icon.astro';
+import Media from '../ui/Media.astro';
+import { formatDate, normVi } from '~/lib/format';
+import { articlePath } from '~/lib/url';
+import { CATEGORIES, type Article } from '~/lib/content';
+
+interface Props {
+  article: Article;
+  index: number;
+  hidden?: boolean;
+}
+const { article, index, hidden = false } = Astro.props;
+const GRADIENT = ['g-a', 'g-b', 'g-c'] as const;
+const href = articlePath(article.slug);
+---
+<article class="ncard" data-card data-cat={article.category} data-text={normVi(`${article.title} ${article.excerpt}`)} hidden={hidden}>
+  <div class:list={['media', GRADIENT[index % 3]]}><div class="media__zoom"><Media media={article.cover} sizes="(min-width: 1040px) 33vw, (min-width: 720px) 50vw, 100vw" /></div><span class="badge">{CATEGORIES[article.category].badge}</span></div>
+  <div class="ncard__body">
+    <div class="kicker kicker--amber">{article.kicker}</div>
+    <h3 class="ncard__t"><a href={href}>{article.title}</a></h3>
+    <p class="ncard__p ncard__p--3">{article.excerpt}</p>
+    <div class="ncard__foot"><span class="meta">{formatDate(article.publishedAt)} · {article.readingMinutes} phút đọc</span><a class="link" href={href} aria-label={`Đọc tiếp: ${article.title}`}>Đọc tiếp <Icon name="arrow" class="ar" size={16} /></a></div>
+  </div>
+</article>

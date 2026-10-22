@@ -1,0 +1,25 @@
+---
+import tiles from '~/assets/brand/tiles-corner.svg';
+import Icon from '../ui/Icon.astro';
+import type { HomeContent } from '~/lib/content';
+
+interface Props { membership: HomeContent['membership'] }
+const { membership } = Astro.props;
+---
+<section class="sec membership" id="membership" aria-labelledby="member-title">
+  <img class="gfx gfx-img gfx-tiles" data-gfx="tiles" src={tiles.src} alt="" width="1024" height="554" aria-hidden="true" />
+  <div class="container membership__grid">
+    <div>
+      <span class="eyebrow eyebrow--lime" data-rv data-d="0">{membership.eyebrow}</span>
+      <h2 class="h2 h2--on-dark" id="member-title" data-rv data-d="1">{membership.title}</h2>
+      <p class="lead membership__p" data-rv data-d="2">{membership.description}</p>
+      <button class="btn btn--lime" data-rv data-d="3" type="button" data-open="join">{membership.cta} <Icon name="arrow" class="ar" size={18} /></button>
+    </div>
+    <div>
+      {membership.points.map((point, i) => (
+        <div class="tick" data-rv data-d={String(i + 1)}><span class="tick__ic"><Icon name="check" size={18} sw={2.2} /></span><div><strong>{point.title}</strong><p>{point.description}</p></div></div>
+      ))}
+      <p class="script" data-rv="wipe" data-d="4">{membership.signature}</p>
+    </div>
+  </div>
+</section>

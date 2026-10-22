@@ -1,0 +1,47 @@
+---
+import Icon from '../ui/Icon.astro';
+import Media from '../ui/Media.astro';
+import Marks from './Marks.astro';
+import { extractHeadings } from '~/lib/article';
+import { pad2 } from '~/lib/format';
+import type { PortableBlock, PortableBody } from '~/lib/content';
+
+interface Props { body: PortableBody }
+const { body } = Astro.props;
+const headings = extractHeadings(body);
+
+// Group consecutive bullet items into one <ul>.
+type Node =
+  | { kind: 'block'; block: PortableBlock }
+  | { kind: 'list'; items: PortableBlock[] }
+  | { kind: 'other'; block: Exclude<PortableBody[number], PortableBlock> };
+const nodes: Node[] = [];
+for (const b of body) {
+  if (b._type !== 'block') nodes.push({ kind: 'other', block: b });
+  else if (b.listItem) {
+    const last = nodes[nodes.length - 1];
+    if (last?.kind === 'list') last.items.push(b);
+    else nodes.push({ kind: 'list', items: [b] });
+  } else nodes.push({ kind: 'block', block: b });
+}
+let headingIndex = -1;
+---
+{nodes.map((node) => {
+  if (node.kind === 'list') {
+    return <ul>{node.items.map((item) => <li><span>{item.children.map((c) => <Marks text={c.text} marks={c.marks} defs={item.markDefs} />)}</span></li>)}</ul>;
+  }
+  if (node.kind === 'block') {
+    const b = node.block;
+    if (b.style === 'h2') {
+      headingIndex += 1;
+      const heading = headings[headingIndex]!;
+      return <h2 id={heading.id}><span>{pad2(headingIndex + 1)}</span>{heading.text}</h2>;
+    }
+    return <p>{b.children.map((c) => <Marks text={c.text} marks={c.marks} defs={b.markDefs} />)}</p>;
+  }
+  const b = node.block;
+  if (b._type === 'figure') {
+    return <figure><div class="media"><Media media={b.media} sizes="(min-width: 760px) 720px, 100vw" /></div>{b.caption && <figcaption>{b.caption}</figcaption>}</figure>;
+  }
+  return <aside class="callout"><span class="callout__ic"><Icon name="sprout" size={24} sw={1.6} /></span><div><b>{b.title}</b><p>{b.text}</p></div></aside>;
+})}

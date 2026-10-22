@@ -1,0 +1,7 @@
+---
+import { pad2 } from '~/lib/format';
+import type { Heading } from '~/lib/article';
+interface Props { headings: Heading[] }
+const { headings } = Astro.props;
+---
+<aside class="toc" aria-label="Mục lục"><div class="toc__t">NỘI DUNG</div><ol>{headings.map((h, i) => <li><a href={`#${h.id}`} data-toc={h.id}><b>{pad2(i + 1)}</b>{h.text}</a></li>)}</ol></aside>

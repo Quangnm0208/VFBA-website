@@ -1,0 +1,22 @@
+---
+import leaf from '~/assets/brand/leaf-green.webp';
+import Breadcrumb from '../ui/Breadcrumb.astro';
+import Icon from '../ui/Icon.astro';
+import { formatDate } from '~/lib/format';
+import { CATEGORIES, type Article } from '~/lib/content';
+
+interface Props { article: Article; source: string }
+const { article, source } = Astro.props;
+const category = CATEGORIES[article.category];
+---
+<header class="article-head">
+  <img class="gfx gfx-img gfx-leaf" data-gfx="leaf" src={leaf.src} alt="" width={leaf.width} height={leaf.height} aria-hidden="true" />
+  <div class="container">
+    <Breadcrumb items={[{ label: 'Trang chủ', href: '/' }, { label: 'Tin tức', href: '/tin-tuc/' }, { label: category.label }]} />
+    <div class="article-head__box">
+      <div class="tags"><span class="badge">{category.badge}</span><span class="kicker kicker--amber">{article.kicker}</span></div>
+      <h1 id="art-title">{article.title}</h1>
+      <div class="article-meta"><span><Icon name="calendar" size={18} sw={1.7} />{formatDate(article.publishedAt)}</span><span><Icon name="clock" size={18} sw={1.7} />{article.readingMinutes} phút đọc</span><span><Icon name="sprout" size={18} sw={1.7} />Nguồn: {source}</span></div>
+    </div>
+  </div>
+</header>

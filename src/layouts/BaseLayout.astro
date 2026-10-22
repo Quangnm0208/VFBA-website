@@ -1,0 +1,82 @@
+---
+import { Font } from 'astro:assets';
+import '~/styles/global.css';
+import Seo from '~/components/seo/Seo.astro';
+import SiteHeader from '~/components/layout/SiteHeader.astro';
+import SiteFooter from '~/components/layout/SiteFooter.astro';
+import UtilityBar from '~/components/layout/UtilityBar.astro';
+import NewsletterBand from '~/components/layout/NewsletterBand.astro';
+import MobileMenu from '~/components/layout/MobileMenu.astro';
+import SearchDialog from '~/components/layout/SearchDialog.astro';
+import JoinDialog from '~/components/layout/JoinDialog.astro';
+import Popup from '~/components/layout/Popup.astro';
+import Icon from '~/components/ui/Icon.astro';
+import { getContent } from '~/lib/content';
+import { organizationJsonLd, websiteJsonLd } from '~/lib/seo';
+import type { Media, Seo as SeoFields } from '~/lib/content';
+
+export type PageKind = 'home' | 'news' | 'article' | 'page' | 'notfound';
+interface Props {
+  page: PageKind;
+  title: string;
+  description?: string;
+  path: string;
+  seo?: SeoFields;
+  ogType?: 'website' | 'article';
+  ogImage?: Media;
+  publishedAt?: string;
+  modifiedAt?: string;
+  jsonLd?: Array<Record<string, unknown>>;
+  newsCurrent?: 'page' | 'true';
+}
+const { page, title, description, path, seo, ogType, ogImage, publishedAt, modifiedAt, jsonLd = [], newsCurrent } = Astro.props;
+
+const { site, popups } = await getContent();
+const home = page === 'home';
+const pagePopups = popups.filter((p) => p.pages.includes(page as 'home' | 'news' | 'article' | 'page'));
+---
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <Seo
+      title={title}
+      description={description ?? site.seo.description ?? ''}
+      path={path}
+      seo={seo}
+      type={ogType}
+      image={ogImage}
+      publishedAt={publishedAt}
+      modifiedAt={modifiedAt}
+      siteName={`${site.name} · ${site.legalName}`}
+      jsonLd={[organizationJsonLd(site), websiteJsonLd(site), ...jsonLd]}
+    />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <Font cssVariable="--font-mona-semiexp" preload />
+    <Font cssVariable="--font-be-vietnam" preload={[{ weight: 400 }, { weight: 600 }]} />
+    <Font cssVariable="--font-bebas-semiexp" preload={[{ weight: 700 }]} />
+    <Font cssVariable="--font-mona" />
+    <Font cssVariable="--font-primark" />
+  </head>
+  <body data-page={page}>
+    <div class="progress" aria-hidden="true"></div>
+    <a class="skip-link" href="#main">Bỏ qua đến nội dung</a>
+    <UtilityBar left={site.utilityLeft} right={site.utilityRight} />
+    <SiteHeader home={home} newsCurrent={newsCurrent} logoAlt={`${site.name} - ${site.legalName}`} />
+    <main id="main"><slot /></main>
+    <NewsletterBand site={site} />
+    <SiteFooter site={site} home={home} />
+    <MobileMenu home={home} />
+    <SearchDialog />
+    <JoinDialog site={site} />
+    <Popup popups={pagePopups} />
+    <div class="toast" role="status" hidden><span class="toast__ic"><Icon name="check" size={15} sw={2.6} /></span><span class="toast__msg"></span></div>
+    <button class="back-top" type="button" aria-label="Về đầu trang"><Icon name="arrow-up" size={20} /></button>
+    <script>
+      import '~/scripts/main';
+    </script>
+  </body>
+</html>

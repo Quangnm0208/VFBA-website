@@ -1,0 +1,15 @@
+---
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import Icon from '~/components/ui/Icon.astro';
+---
+<BaseLayout page="notfound" title="Không tìm thấy trang | VBFA" description="Trang bạn tìm không tồn tại hoặc đã được di chuyển." path="/404/" seo={{ noIndex: true }}>
+  <section class="page-head notfound" aria-labelledby="nf-title">
+    <div class="page-head__bg" aria-hidden="true"></div>
+    <div class="container page-head__in">
+      <div class="page-head__eyebrow"><span class="eyebrow eyebrow--lime">404</span></div>
+      <h1 id="nf-title"><span class="mask"><span>Không tìm thấy trang.</span></span></h1>
+      <p class="lead">Trang bạn tìm không tồn tại hoặc đã được di chuyển. Hãy quay về trang chủ hoặc xem các bài viết mới nhất.</p>
+      <div class="notfound__actions"><a class="btn btn--lime" href="/">Về trang chủ <Icon name="arrow" class="ar" size={18} /></a><a class="btn btn--ghost" href="/tin-tuc/">Xem tin tức <Icon name="arrow-right" class="ar" size={18} /></a></div>
+    </div>
+  </section>
+</BaseLayout>

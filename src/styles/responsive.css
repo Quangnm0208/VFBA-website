@@ -1,0 +1,28 @@
+/* ============ Responsive ============ */
+@media (hover:none){.fcard:hover,.rcard:hover,.pn:hover{transform:none}}
+@media (max-width:1040px){
+  .nav,.header-cta,.hero__pts,.hero__micro{display:none!important}
+  .burger{display:inline-flex}
+  .hero__art{right:-110px;top:40%;width:440px;opacity:.34}
+  .toc{display:none}
+  .article-grid{grid-template-columns:minmax(0,720px)}
+}
+@media (max-width:1040px){
+  .footer__grid{grid-template-columns:1fr 1fr}
+  .footer__brand,.footer__contact{grid-column:1/-1}
+}
+@media (max-width:720px){
+  .utility,.hero__cue,.join__side{display:none!important}
+  .hero__art{right:-150px;top:-40px;width:380px;transform:none;opacity:.2}
+  .hero__actions{flex-direction:column;align-items:stretch}
+  .hero__actions .btn{justify-content:space-between}
+  .join{grid-template-columns:1fr}
+  .form-grid{grid-template-columns:1fr}
+  .page-head h1{max-width:none}
+  .page-head__art{width:300px;right:-110px;top:30%;opacity:.3}
+}
+
+/* Giảm chuyển động theo cài đặt hệ điều hành */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+}

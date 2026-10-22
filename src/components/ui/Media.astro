@@ -1,0 +1,23 @@
+---
+import type { Media } from '~/lib/content';
+interface Props {
+  media: Media;
+  sizes?: string;
+  loading?: 'lazy' | 'eager';
+  priority?: boolean;
+  class?: string;
+}
+const { media, sizes = '100vw', loading = 'lazy', priority = false, class: className } = Astro.props;
+---
+<img
+  class={className}
+  src={media.src}
+  srcset={media.srcset}
+  sizes={media.srcset ? sizes : undefined}
+  alt={media.alt}
+  width={media.width}
+  height={media.height}
+  fetchpriority={priority ? 'high' : undefined}
+  loading={priority ? 'eager' : loading}
+  decoding="async"
+/>

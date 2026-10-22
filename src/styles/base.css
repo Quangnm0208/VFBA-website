@@ -1,0 +1,38 @@
+/* VBFA website. Phụ thuộc tokens.css.
+   Desktop là mặc định; thu hẹp bằng max-width ở 1040 / 900 / 720 px (xem cuối file).
+   Giá trị lấy từ prototype design_reference/VBFA Website.dc.html. */
+
+/* ============ Base ============ */
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{scroll-behavior:smooth;scroll-padding-top:96px;-webkit-text-size-adjust:100%}
+body{margin:0;position:relative;font-family:var(--font-body);font-size:16px;line-height:1.7;color:var(--vbfa-text-base);background:#fff;overflow-x:clip;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility}
+body.is-locked{overflow:hidden}
+h1,h2,h3,h4,p,ul,ol,figure{margin:0}
+ul,ol{padding:0;list-style:none}
+img{display:block;max-width:100%}
+a{color:var(--vbfa-forest);text-decoration:none}
+a:hover{color:var(--vbfa-forest-link-hover)}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+::selection{background:var(--vbfa-selection);color:var(--vbfa-deep)}
+:focus-visible{outline:var(--outline-focus);outline-offset:3px}
+input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none}
+.container{max-width:var(--container);margin:0 auto;padding:0 var(--gutter)}
+
+/* ============ Motion ============ */
+@keyframes rise{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes pop{from{opacity:0;transform:translateY(18px) scale(.985)}to{opacity:1;transform:none}}
+@keyframes slide{from{transform:translateX(100%)}to{transform:none}}
+@keyframes toast-in{from{opacity:0;transform:translate(-50%,16px)}to{opacity:1;transform:translate(-50%,0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes float{from{transform:translate(-50%,-52%)}to{transform:translate(-50%,-48%)}}
+@keyframes line{from{transform:translateY(108%)}to{transform:none}}
+@keyframes draw{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes wipe{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 -3% 0 0)}}
+@keyframes wave{0%{transform:scale(.5);opacity:0}14%{opacity:.8}100%{transform:scale(2.3);opacity:0}}
+@keyframes drift{from{transform:translate3d(-3%,2%,0) scale(1)}to{transform:translate3d(4%,-3%,0) scale(1.1)}}
+@keyframes glow{from{opacity:.5}to{opacity:1}}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(4px)}}
+@keyframes r-up{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}

@@ -1,0 +1,132 @@
+/* VBFA website: design tokens (@font-face do Astro Fonts API sinh ra từ astro.config.mjs).
+   Trích từ prototype design_reference/VBFA Website.dc.html.
+   Màu đánh dấu "sampled" được lấy mẫu từ artwork logo, KHÔNG lấy từ trang bảng màu của guideline.
+   Cần đối chiếu với bảng màu chính thức trước khi ra mắt. */
+
+:root{
+  /* ---------- Brand ---------- */
+  --vbfa-forest:#1f5329;            /* sampled: chữ VBFA. Nút chính, link, trạng thái active */
+  --vbfa-forest-hover:#17441f;      /* hover nút forest */
+  --vbfa-forest-link-hover:#143c1d; /* hover link văn bản */
+  --vbfa-deep:#0b2616;              /* hero, footer, badge, dải tối */
+  --vbfa-deep-band:#0e3320;         /* dải Hội viên */
+  --vbfa-leaf:#96b949;              /* sampled: lá. Vòng gợn, chấm, đầu thanh tiến trình */
+  --vbfa-lime:#b2d25a;              /* CTA và điểm nhấn trên nền tối */
+  --vbfa-lime-hover:#c6e07c;
+  --vbfa-amber:#e3a63a;             /* sampled: giọt. Đường kẻ eyebrow, focus ring, cuối thanh tiến trình */
+  --vbfa-amber-text:#8a5f0a;        /* amber cho chữ nhỏ trên nền sáng: 5.64:1 trên trắng */
+  --vbfa-amber-numeral:#b07d17;     /* chỉ dùng cho số lớn từ 24px: 3.63:1 trên trắng */
+  --vbfa-gold:#f2cf75;              /* chữ viết tay (Primark) trên nền tối */
+
+  /* ---------- Surfaces ---------- */
+  --vbfa-white:#ffffff;
+  --vbfa-paper:#f4f6ec;             /* nền section xen kẽ */
+  --vbfa-leaf-tint:#e5edd1;         /* dải bản tin, callout, tag "Bài nổi bật" */
+  --vbfa-tile:#e6eed2;              /* nền ô icon */
+  --vbfa-hover-tint:#eef3e1;        /* hover nút icon, nút chip */
+  --vbfa-strip:#eaf1d6;             /* dải thông điệp ở Thư viện */
+  --vbfa-selection:#cfe29a;
+
+  /* ---------- Text trên nền sáng ---------- */
+  --vbfa-text-strong:#0f2a1a;       /* heading */
+  --vbfa-text-base:#11271a;         /* chữ gốc của trang */
+  --vbfa-text-body:#435448;         /* đoạn văn */
+  --vbfa-text-article:#2f4236;      /* thân bài viết */
+  --vbfa-text-card:#4a5a4f;         /* mô tả trong thẻ lĩnh vực / thư viện */
+  --vbfa-text-muted:#5a6b5e;        /* ngày, ghi chú, nhãn phụ */
+  --vbfa-text-nav:#26382c;          /* link điều hướng */
+
+  /* ---------- Text trên nền tối ---------- */
+  --vbfa-on-dark-strong:#ffffff;
+  --vbfa-on-dark-body:#d4e4d3;      /* đoạn hero */
+  --vbfa-on-dark-link:#cfe0cf;      /* link footer */
+  --vbfa-on-dark-muted:#b9ceb9;     /* đoạn footer, mô tả dải Hội viên */
+  --vbfa-on-dark-fine:#a9c0ab;      /* bản quyền */
+
+  /* ---------- Lines ---------- */
+  --vbfa-line:#dfe7da;              /* viền thẻ tin tức */
+  --vbfa-line-card:#e0e7da;         /* viền thẻ lĩnh vực */
+  --vbfa-line-card-2:#dbe5d7;       /* viền thẻ thư viện */
+  --vbfa-line-soft:#e3e9de;         /* đường kẻ mảnh */
+  --vbfa-line-header:#e2e8dd;       /* viền dưới header, hàng menu */
+  --vbfa-line-control:#c5d2c3;      /* input, chip, nút outline */
+  --vbfa-line-icon-btn:#d2dcce;     /* nút icon tròn */
+  --vbfa-line-strong:#aebfa9;       /* input bản tin, hover viền */
+  --vbfa-line-on-dark:rgba(255,255,255,.2);
+  --vbfa-line-on-dark-soft:rgba(255,255,255,.14);
+  --vbfa-outline-on-dark:#6f9279;   /* viền nút outline trên nền tối */
+
+  /* ---------- Gradients ---------- */
+  --vbfa-grad-deep:linear-gradient(110deg,#091f12 0%,#0e2f1b 52%,#164126 100%);
+  --vbfa-grad-hero-glow:radial-gradient(56% 78% at 76% 46%,rgba(150,185,73,.22),transparent 64%),radial-gradient(42% 52% at 4% 104%,rgba(227,166,58,.12),transparent 70%);
+  --vbfa-grad-page-header-glow:radial-gradient(52% 120% at 84% 30%,rgba(150,185,73,.24),transparent 66%),radial-gradient(40% 70% at 0% 120%,rgba(227,166,58,.12),transparent 70%);
+  --vbfa-grad-progress:linear-gradient(90deg,#96b949,#e3a63a);
+  --vbfa-grad-bar:linear-gradient(90deg,#1f5329,#e3a63a);
+  --vbfa-grad-image-a:linear-gradient(135deg,#dfe9c6,#c4d99a); /* nền placeholder ảnh, xoay vòng a,b,c theo thứ tự bài */
+  --vbfa-grad-image-b:linear-gradient(135deg,#e3ebcf,#cbdca6);
+  --vbfa-grad-image-c:linear-gradient(135deg,#e6ecd6,#d3dfb4);
+
+  /* ---------- Typography ---------- */
+  --font-display:var(--font-mona-semiexp); /* H1, H2 */
+  --font-heading:var(--font-mona);                     /* H3, tiêu đề hàng, tiêu đề thẻ */
+  --font-label:var(--font-bebas-semiexp);                     /* eyebrow, kicker, badge, chỉ mục */
+  --font-script:var(--font-primark);                             /* câu ký, chỉ từ 28px trở lên */
+  --font-body:var(--font-be-vietnam);                              /* văn bản web */
+
+  --fs-h1-hero:clamp(32px,4.1vw,60px);   /* line-height 1.18, letter-spacing -.025em, weight 600 */
+  --fs-h1-page:clamp(34px,4.2vw,58px);   /* trang Tin tức: line-height 1.14 */
+  --fs-h1-article:clamp(30px,3.8vw,52px);/* bài viết: line-height 1.2 */
+  --fs-h2:clamp(27px,2.9vw,42px);        /* line-height 1.24, letter-spacing -.02em */
+  --fs-h2-small:clamp(26px,2.7vw,38px);  /* "Bài viết liên quan" */
+  --fs-h2-band:clamp(24px,2.4vw,34px);   /* bản tin */
+  --fs-h2-prose:clamp(24px,2.3vw,30px);  /* H2 trong bài viết, line-height 1.28 */
+  --fs-h3-card:20px;                     /* thẻ tin 20px/1.38; thẻ lĩnh vực 21px/1.35 */
+  --fs-lead:clamp(18px,1.6vw,21px);      /* đoạn dẫn bài viết, line-height 1.8, weight 500 */
+  --fs-hero-body:clamp(16px,1.25vw,18px);/* line-height 1.85 */
+  --fs-body-article:17px;                /* line-height 1.95 */
+  --fs-ui:15px;                          /* nút, link; 14.5px cho nav và link nhỏ */
+  --fs-small:14px;
+  --fs-label:14px;                       /* Bebas: eyebrow 700 / .22em, kicker 400 / .2em, badge 13px / .18em */
+
+  /* ---------- Layout ---------- */
+  --container:1280px;
+  --gutter:clamp(20px,4vw,48px);
+  --section-y:clamp(72px,9vw,128px);
+  --section-y-band:clamp(48px,6vw,80px);
+  --header-h:clamp(68px,6vw,88px);
+  /* Breakpoints (không dùng được trong @media bằng biến): 1040px, 900px, 720px (max-width) */
+
+  /* ---------- Radius ---------- */
+  --r-badge:3px;
+  --r-control:6px;                       /* nút, input */
+  --r-icon-btn:8px;
+  --r-card:10px;
+  --r-modal:14px;
+  --r-pill:999px;                        /* chip, ô tìm kiếm */
+  --r-leaf-tile:0 22px 0 22px;           /* ô icon 60px */
+  --r-leaf-small:0 18px 0 18px;          /* icon callout 48px */
+  --r-leaf-cover:0 clamp(40px,6vw,88px) 0 clamp(40px,6vw,88px);
+  --r-leaf-hero-photo:0 140px 0 140px;
+
+  /* ---------- Shadows ---------- */
+  --shadow-header:0 12px 32px rgba(11,38,22,.09);     /* khi đã cuộn */
+  --shadow-card-hover:0 26px 60px rgba(11,46,26,.12);
+  --shadow-news-hover:0 24px 56px rgba(11,46,26,.11);
+  --shadow-btn-hover:0 14px 30px rgba(6,30,16,.2);
+  --shadow-cover:0 30px 70px rgba(11,46,26,.16);
+  --shadow-modal:0 40px 90px rgba(0,0,0,.35);
+  --shadow-toast:0 20px 50px rgba(0,0,0,.32);
+  --shadow-top-btn:0 12px 28px rgba(8,38,20,.3);
+  --ring-focus-field:0 0 0 3px rgba(150,185,73,.4);
+  --outline-focus:3px solid #e3a63a;     /* :focus-visible, offset 3px */
+
+  /* ---------- Motion ---------- */
+  --ease:cubic-bezier(.2,.8,.2,1);
+  --dur-fast:.25s;                       /* màu, viền */
+  --dur-base:.35s;                       /* nút, gạch chân nav, nút lên đầu trang */
+  --dur-card:.5s;
+  --dur-zoom:.9s;                        /* ảnh trong thẻ tin phóng 1.045 */
+
+  /* ---------- z-index ---------- */
+  --z-header:60; --z-top-btn:70; --z-overlay:100; --z-toast:130; --z-progress:140; --z-skip:200;
+}

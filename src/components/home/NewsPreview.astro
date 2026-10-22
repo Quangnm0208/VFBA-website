@@ -1,0 +1,33 @@
+---
+import Icon from '../ui/Icon.astro';
+import Media from '../ui/Media.astro';
+import { articlePath } from '~/lib/url';
+import { CATEGORIES, type Article, type HomeContent } from '~/lib/content';
+
+interface Props { news: HomeContent['news']; articles: Article[] }
+const { news, articles } = Astro.props;
+const picks = news.picks.map((pick) => ({ pick, article: articles.find((a) => a.slug === pick.slug)! }));
+const GRADIENT = ['g-a', 'g-b', 'g-c'] as const;
+---
+<section class="sec" id="news" aria-labelledby="news-title">
+  <div class="container">
+    <div class="sec-head"><div class="sec-head__t"><span class="eyebrow" data-rv data-d="0">{news.eyebrow}</span><h2 class="h2" id="news-title" data-rv data-d="1">{news.title}</h2></div><div class="sec-head__p" data-rv data-d="2"><p>{news.description}</p><a class="link-ul" href={news.allLink.href}>{news.allLink.label} <Icon name="arrow" class="ar" size={18} /></a></div></div>
+    <div class="chips news-tools" data-rv data-d="2" role="group" aria-label="Lọc tin tức">
+      <button class="chip" type="button" data-filter="all" aria-pressed="true">Tất cả</button>
+      {(Object.keys(CATEGORIES) as Array<keyof typeof CATEGORIES>).map((key) => <button class="chip" type="button" data-filter={key} aria-pressed="false">{CATEGORIES[key].label}</button>)}
+    </div>
+    <div class="nh-grid" id="nh-grid" data-filter-mode="dim">
+      {picks.map(({ pick, article }, i) => (
+        <article class:list={['ncard', i === 0 ? 'nh-feat' : 'ncard--row']} data-rv data-d={String(i)} data-cat={article.category}>
+          <div class:list={['media', GRADIENT[i]]}><div class="media__zoom"><Media media={article.cover} sizes={i === 0 ? '(min-width: 1040px) 50vw, 100vw' : '(min-width: 1040px) 20vw, 100vw'} /></div><span class="badge">{CATEGORIES[article.category].badge}</span></div>
+          <div class="ncard__body">
+            <div class="kicker kicker--amber">{article.kicker}</div>
+            <h3 class="ncard__t"><a href={articlePath(article.slug)}>{article.title}</a></h3>
+            <p class="ncard__p">{article.excerpt}</p>
+            <a class="link" href={pick.link.href}>{pick.link.label} <Icon name="arrow" class="ar" size={17} /></a>
+          </div>
+        </article>
+      ))}
+    </div>
+  </div>
+</section>

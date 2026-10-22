@@ -1,0 +1,39 @@
+---
+import { PUBLIC_TURNSTILE_SITE_KEY } from 'astro:env/client';
+import drop from '~/assets/brand/drop.webp';
+import Icon from '../ui/Icon.astro';
+import { pagePath } from '~/lib/url';
+import type { SiteSettings } from '~/lib/content';
+
+interface Props { site: SiteSettings }
+const { forms } = Astro.props.site;
+const interests = ['Quan tâm hội viên', 'Hợp tác chuyên môn', 'Đề nghị cung cấp thông tin', 'Khác'];
+---
+<div class="overlay overlay--blur overlay--center" data-overlay="join" hidden>
+  <div class="dialog join" role="dialog" aria-modal="true" aria-labelledby="join-title">
+    <div class="join__side" aria-hidden="true">
+      <svg viewBox="0 0 620 620" fill="none" aria-hidden="true"><circle cx="310" cy="310" r="120" stroke="#96b949" stroke-opacity=".4"/><circle cx="310" cy="310" r="190" stroke="#96b949" stroke-opacity=".25"/><circle cx="310" cy="310" r="260" stroke="#96b949" stroke-opacity=".14"/><circle cx="310" cy="310" r="306" stroke="#e3a63a" stroke-opacity=".4" stroke-dasharray="2 9" stroke-linecap="round"/></svg>
+      <span class="eyebrow-s">VIETNAM BIOFUELS ASSOCIATION</span>
+      <img src={drop.src} alt="" width={drop.width} height={drop.height} />
+      <span class="script">vì tương lai bền vững</span>
+    </div>
+    <div class="join__body">
+      <button class="icon-btn dialog__close" type="button" aria-label="Đóng" data-close><Icon name="close" size={20} sw={1.8} /></button>
+      <h2 id="join-title">{forms.joinTitle}</h2>
+      <p class="dialog__sub">{forms.joinIntro}</p>
+      <form id="join-form" class="form-grid" data-endpoint="/api/join/" data-kind="membership" data-consent-version={forms.consentVersion} data-success={forms.joinSuccess} data-error={forms.genericError}>
+        <div class="field"><label for="person">Họ và tên *</label><input class="input" id="person" name="name" required maxlength="120" placeholder="Nguyễn Văn A" autocomplete="name" data-autofocus /></div>
+        <div class="field"><label for="company">Tổ chức / Doanh nghiệp *</label><input class="input" id="company" name="company" required maxlength="160" placeholder="Tên doanh nghiệp" autocomplete="organization" /></div>
+        <div class="field"><label for="email">Email công việc *</label><input class="input" id="email" name="email" type="email" required maxlength="254" placeholder="name@company.com" autocomplete="email" /></div>
+        <div class="field"><label for="phone">Số điện thoại</label><input class="input" id="phone" name="phone" type="tel" maxlength="30" placeholder="(+84) ..." autocomplete="tel" /></div>
+        <div class="field field--wide"><label for="interest">Nhu cầu kết nối</label><select class="input" id="interest" name="interest">{interests.map((i) => <option>{i}</option>)}</select></div>
+        <div class="field field--wide"><label for="message">Nội dung thêm</label><textarea class="input" id="message" name="message" maxlength="1000" placeholder="Chia sẻ ngắn về nhu cầu của bạn..."></textarea></div>
+        <div class="hp" aria-hidden="true"><label>Để trống <input type="text" name="website" tabindex="-1" autocomplete="off" /></label></div>
+        <label class="consent"><input type="checkbox" name="consent" required /><span>{forms.consentText}{forms.privacyPageSlug && <> <a href={pagePath(forms.privacyPageSlug)} target="_blank" rel="noopener">Chính sách bảo mật</a></>}</span></label>
+        {PUBLIC_TURNSTILE_SITE_KEY && <div class="turnstile" data-turnstile data-sitekey={PUBLIC_TURNSTILE_SITE_KEY}></div>}
+        <p class="form-status" role="alert" data-status hidden></p>
+        <div class="form-actions"><button class="btn btn--forest" type="submit"><span class="btn__txt">Gửi thông tin đăng ký</span> <Icon name="arrow" class="ar" size={18} /></button></div>
+      </form>
+    </div>
+  </div>
+</div>

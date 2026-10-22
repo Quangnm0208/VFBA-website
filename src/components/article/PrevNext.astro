@@ -1,0 +1,11 @@
+---
+import Icon from '../ui/Icon.astro';
+import { articlePath } from '~/lib/url';
+import type { Article } from '~/lib/content';
+interface Props { prev?: Article; next?: Article }
+const { prev, next } = Astro.props;
+---
+<nav class="prevnext" aria-label="Bài viết khác">
+  {prev && <a class="pn" href={articlePath(prev.slug)}><span class="kicker"><Icon name="arrow-left" size={16} />BÀI TRƯỚC</span><span class="pn__t">{prev.title}</span></a>}
+  {next && <a class="pn" href={articlePath(next.slug)}><span class="kicker">BÀI SAU<Icon name="arrow-right" size={16} /></span><span class="pn__t">{next.title}</span></a>}
+</nav>

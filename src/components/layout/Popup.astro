@@ -1,0 +1,44 @@
+---
+import Icon from '../ui/Icon.astro';
+import Media from '../ui/Media.astro';
+import type { Popup } from '~/lib/content';
+
+interface Props { popups: Popup[] }
+const { popups } = Astro.props;
+// The page is prerendered, so eligibility that depends on the visitor or the clock
+// (schedule, frequency cap, trigger) is decided in the browser by src/scripts/popup.ts.
+const config = popups.map((p) => ({
+  id: p.id,
+  revision: p.revision,
+  trigger: p.trigger,
+  delaySeconds: p.delaySeconds,
+  scrollPercent: p.scrollPercent,
+  frequency: p.frequency,
+  startsAt: p.startsAt ?? null,
+  endsAt: p.endsAt ?? null,
+  priority: p.priority,
+}));
+---
+{popups.length > 0 && (
+  <>
+    <script type="application/json" id="popup-config" set:html={JSON.stringify(config)} />
+    {popups.map((p) => (
+      <div class="overlay overlay--blur overlay--center" data-overlay="popup" data-popup-id={p.id} hidden>
+        <div class="dialog popup" role="dialog" aria-modal="true" aria-labelledby={`popup-title-${p.id}`}>
+          <button class="icon-btn dialog__close" type="button" aria-label="Đóng" data-close data-popup-dismiss><Icon name="close" size={20} sw={1.8} /></button>
+          {p.image && <div class="popup__media"><Media media={p.image} sizes="(min-width: 720px) 520px, 100vw" /></div>}
+          <div class="popup__body">
+            <span class="eyebrow">VBFA</span>
+            <h2 class="dialog__title" id={`popup-title-${p.id}`}>{p.heading}</h2>
+            {p.body && <p class="dialog__sub">{p.body}</p>}
+            <div class="popup__actions">
+              {p.ctaLabel && p.ctaAction === 'join' && <button class="btn btn--forest" type="button" data-open="join" data-popup-cta>{p.ctaLabel} <Icon name="arrow" class="ar" size={18} /></button>}
+              {p.ctaLabel && p.ctaAction === 'link' && p.ctaUrl && <a class="btn btn--forest" href={p.ctaUrl} data-popup-cta>{p.ctaLabel} <Icon name="arrow" class="ar" size={18} /></a>}
+              <button class="text-btn" type="button" data-close data-popup-dismiss data-autofocus>{p.dismissLabel}</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    ))}
+  </>
+)}

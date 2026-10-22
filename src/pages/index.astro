@@ -1,0 +1,20 @@
+---
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import Hero from '~/components/home/Hero.astro';
+import About from '~/components/home/About.astro';
+import Focus from '~/components/home/Focus.astro';
+import NewsPreview from '~/components/home/NewsPreview.astro';
+import Membership from '~/components/home/Membership.astro';
+import Resources from '~/components/home/Resources.astro';
+import { getContent } from '~/lib/content';
+
+const { site, home, articles } = await getContent();
+---
+<BaseLayout page="home" title={site.seo.title ?? `${site.name} | ${site.legalName}`} description={site.seo.description} path="/" seo={home.seo}>
+  <Hero hero={home.hero} />
+  <About about={home.about} />
+  <Focus focus={home.focus} />
+  <NewsPreview news={home.news} articles={articles} />
+  <Membership membership={home.membership} />
+  <Resources resources={home.resources} />
+</BaseLayout>
