@@ -99,6 +99,7 @@ Chưa tạo `resource`, `event`, `partner`: guide thiết kế ghi các trang Th
 ## 6. Bảo mật
 
 - **CSP** do Astro sinh (hash cho script/style của chính nó) và ghi thành header thật cho từng route: `default-src 'self'`; ảnh chỉ `self` + `cdn.sanity.io`; kết nối chỉ `self`; `frame-ancestors 'self'`; Turnstile được cho phép khi bật.
+  - Adapter ghi `src` của route theo tên route (`/tin-tuc`, `/404`) trong khi Vercel khớp chính xác đường dẫn có dấu `/` cuối (`/tin-tuc/`) và trang 404 được trả bởi route bắt-tất-cả. `scripts/finalize-vercel-output.mjs` (chạy sau `astro build` trong `npm run build`, `vercel.json` đặt `buildCommand` tương ứng) chuẩn hoá các route này rồi **kiểm tra mọi trang đã dựng đều có CSP, nếu thiếu thì build thất bại**. `scripts/check_site.py` và `scripts/qa/serve.mjs` khớp route theo cùng ngữ nghĩa của Vercel.
 - Header: `nosniff`, `Referrer-Policy`, `Permissions-Policy`, `X-Frame-Options`, HSTS (`vercel.json`).
 - Bí mật chỉ ở biến môi trường Vercel và chỉ được Function đọc (`astro:env/server`, khai báo `secret`). Không có khoá nào có tiền tố `PUBLIC_` ngoài các giá trị công khai (project id Sanity, site key Turnstile).
 - `security.checkOrigin` của Astro + kiểm tra Origin riêng trong handler.

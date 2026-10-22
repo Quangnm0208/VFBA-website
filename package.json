@@ -9,7 +9,7 @@
   },
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build",
+    "build": "astro build && node scripts/finalize-vercel-output.mjs",
     "check": "astro check",
     "test": "vitest run",
     "verify": "npm run check && npm test && npm run build && python3 scripts/check_site.py",

@@ -180,14 +180,30 @@ if re.search(r"fonts\.(googleapis|gstatic)\.com|cdn\.jsdelivr", home):
 
 # CSP on every prerendered route (written by the Vercel adapter into config.json)
 config = json.loads((OUT / "config.json").read_text(encoding="utf-8"))
-csp_routes = {r["src"].rstrip("/") or "/" for r in config["routes"] if "headers" in r and "content-security-policy" in {k.lower() for k in r["headers"]}}
+def has_csp(rule):
+    return "content-security-policy" in {k.lower() for k in rule.get("headers", {})}
+
+def route_matches(rule, url):
+    # Vercel matches `src` as an anchored regex against the exact request path (trailing slash included).
+    src = rule["src"]
+    if not src.startswith("^"):
+        src = "^" + src
+    if not src.endswith("$"):
+        src += "$"
+    return re.fullmatch(src[1:-1], url) is not None
+
+page_rules = [r for r in config["routes"] if "src" in r and has_csp(r) and not r.get("dest")]
 for path in parsed:
-    route = "/" + path.relative_to(STATIC).parent.as_posix().strip(".")
-    route = route.rstrip("/") or "/"
     if path.name == "404.html":
-        route = "/404"
-    if route not in csp_routes:
-        err(f"no Content-Security-Policy header configured for {route}")
+        # Unknown URLs are answered by the catch-all `dest: /404.html` rule, which must carry the CSP itself.
+        catch_all = [r for r in config["routes"] if r.get("dest") == "/404.html" and r.get("status") == 404]
+        if not catch_all or not all(has_csp(r) for r in catch_all):
+            err("the 404 catch-all route does not send a Content-Security-Policy header")
+        continue
+    rel = path.relative_to(STATIC).parent.as_posix()
+    url = "/" if rel == "." else f"/{rel}/"
+    if not any(route_matches(r, url) for r in page_rules):
+        err(f"no Content-Security-Policy route matches {url} (routes must use the exact trailing-slash URL)")
 for r in config["routes"]:
     h = {k.lower(): v for k, v in r.get("headers", {}).items()}
     if "content-security-policy" in h and "default-src 'self'" not in h["content-security-policy"]:
