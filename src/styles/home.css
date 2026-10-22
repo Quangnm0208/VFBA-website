@@ -108,7 +108,7 @@
 .footer__grid{display:grid;grid-template-columns:minmax(0,1.6fr) repeat(3,minmax(0,1fr));gap:48px 40px}
 .footer__brand img{height:72px;width:auto}
 .footer__brand p{max-width:340px;margin-top:22px;font-size:15px;line-height:1.8;color:var(--vbfa-on-dark-muted)}
-.footer h4{margin-bottom:20px;font-family:var(--font-label);font-weight:700;font-size:15px;line-height:1;letter-spacing:.22em;text-transform:uppercase;color:var(--vbfa-lime)}
+.footer h3{margin-bottom:20px;font-family:var(--font-label);font-weight:700;font-size:15px;line-height:1;letter-spacing:.22em;text-transform:uppercase;color:var(--vbfa-lime)}
 .footer ul{display:flex;flex-direction:column;font-size:15px}
 .footer li a{display:flex;align-items:center;min-height:44px;color:var(--vbfa-on-dark-link)}
 .footer li a:hover{color:#fff}

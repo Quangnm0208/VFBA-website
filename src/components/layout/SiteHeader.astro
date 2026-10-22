@@ -1,4 +1,5 @@
 ---
+import { Image } from 'astro:assets';
 import logo from '~/assets/brand/logo.webp';
 import Icon from '../ui/Icon.astro';
 import { NAV, navHref } from '~/lib/nav';
@@ -13,7 +14,7 @@ const { home, newsCurrent, logoAlt } = Astro.props;
 ---
 <header class="site-header">
   <div class="container site-header__in">
-    <a class="logo" href={home ? '#top' : '/'}><img src={logo.src} alt={logoAlt} width={logo.width} height={logo.height} /></a>
+    <a class="logo" href={home ? '#top' : '/'}><Image src={logo} alt={logoAlt} widths={[300, 450]} sizes="146px" format="webp" quality={80} loading="eager" fetchpriority="high" decoding="async" /></a>
     <nav class="nav" aria-label="Điều hướng chính">
       {NAV.map((item) => (
         <a href={navHref(item, home)} data-section={item.id} aria-current={item.id === 'news' ? newsCurrent : undefined}>{item.label}</a>

@@ -1,4 +1,5 @@
 ---
+import { Image } from 'astro:assets';
 import drop from '~/assets/brand/drop.webp';
 import Icon from '../ui/Icon.astro';
 import type { HomeContent } from '~/lib/content';
@@ -27,7 +28,7 @@ const { hero } = Astro.props;
           </svg>
           <span class="wave"></span><span class="wave wave--2"></span><span class="wave wave--3"></span>
         </div>
-        <div class="px px--b"><img class="hero__drop" src={drop.src} alt="" width={drop.width} height={drop.height} fetchpriority="high" decoding="async" /></div>
+        <div class="px px--b"><Image class="hero__drop" src={drop} alt="" widths={[280, 560]} sizes="(min-width: 1041px) 250px, 140px" format="webp" quality={78} loading="eager" fetchpriority="high" decoding="async" /></div>
         <div class="hero__micro">{hero.microLabel}</div>
       </div>
     </div>

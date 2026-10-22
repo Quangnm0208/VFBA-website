@@ -8,7 +8,7 @@ interface Props { focus: HomeContent['focus'] }
 const { focus } = Astro.props;
 ---
 <section class="sec focus" id="focus" aria-labelledby="focus-title">
-  <img class="gfx gfx-img gfx-contours" data-gfx="contours" src={contours.src} alt="" width="1000" height="1000" aria-hidden="true" />
+  <img class="gfx gfx-img gfx-contours" data-gfx="contours" src={contours.src} alt="" width="1000" height="1000" loading="lazy" decoding="async" aria-hidden="true" />
   <div class="container">
     <div class="sec-head"><div class="sec-head__t"><span class="eyebrow" data-rv data-d="0">{focus.eyebrow}</span><h2 class="h2" id="focus-title" data-rv data-d="1">{focus.title}</h2></div><p class="sec-head__p" data-rv data-d="2">{focus.description}</p></div>
     <div class="focus__grid">

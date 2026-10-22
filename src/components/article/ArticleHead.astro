@@ -1,4 +1,5 @@
 ---
+import { Image } from 'astro:assets';
 import leaf from '~/assets/brand/leaf-green.webp';
 import Breadcrumb from '../ui/Breadcrumb.astro';
 import Icon from '../ui/Icon.astro';
@@ -10,7 +11,7 @@ const { article, source } = Astro.props;
 const category = CATEGORIES[article.category];
 ---
 <header class="article-head">
-  <img class="gfx gfx-img gfx-leaf" data-gfx="leaf" src={leaf.src} alt="" width={leaf.width} height={leaf.height} aria-hidden="true" />
+  <Image class="gfx gfx-img gfx-leaf" data-gfx="leaf" src={leaf} alt="" widths={[320, 603]} sizes="(min-width: 721px) 230px, 140px" format="webp" quality={70} loading="eager" fetchpriority="low" decoding="async" aria-hidden="true" />
   <div class="container">
     <Breadcrumb items={[{ label: 'Trang chủ', href: '/' }, { label: 'Tin tức', href: '/tin-tuc/' }, { label: category.label }]} />
     <div class="article-head__box">

@@ -1,4 +1,5 @@
 ---
+import { Image } from 'astro:assets';
 import logo from '~/assets/brand/logo.webp';
 import Icon from '../ui/Icon.astro';
 import { NAV, navHref } from '~/lib/nav';
@@ -9,7 +10,7 @@ const { home } = Astro.props;
 ---
 <div class="overlay" data-overlay="menu" hidden>
   <div class="drawer" role="dialog" aria-modal="true" aria-label="Menu">
-    <div class="drawer__top"><img src={logo.src} alt="VBFA" width={logo.width} height={logo.height} /><button class="icon-btn" type="button" aria-label="Đóng menu" data-close data-autofocus><Icon name="close" size={22} sw={1.8} /></button></div>
+    <div class="drawer__top"><Image src={logo} alt="VBFA" widths={[300, 450]} sizes="112px" format="webp" quality={80} loading="lazy" decoding="async" /><button class="icon-btn" type="button" aria-label="Đóng menu" data-close data-autofocus><Icon name="close" size={22} sw={1.8} /></button></div>
     <nav class="drawer__nav" aria-label="Menu di động">{NAV.map((item, i) => <a href={navHref(item, home)}>{item.label} <span>{pad2(i + 1)}</span></a>)}</nav>
     <button class="btn btn--forest" type="button" data-open="join">Đăng ký quan tâm hội viên <Icon name="arrow" class="ar" size={18} /></button>
   </div>

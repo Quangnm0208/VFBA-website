@@ -1,5 +1,8 @@
 ---
+import { getImage } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
 import type { Media } from '~/lib/content';
+import { localSource } from '~/lib/content/media';
 interface Props {
   media: Media;
   sizes?: string;
@@ -8,12 +11,22 @@ interface Props {
   class?: string;
 }
 const { media, sizes = '100vw', loading = 'lazy', priority = false, class: className } = Astro.props;
+
+// Sanity images already carry a srcset from the Assets CDN. Local seed images get width variants at build time so a
+// phone is not sent the 1200px file (the featured image is the LCP element on the news and article pages).
+let srcset = media.srcset;
+const source = srcset ? undefined : localSource(media.src);
+if (source) {
+  const widths = [480, 768].filter((w) => w < source.width - 120);
+  const variants = await Promise.all(widths.map((w) => getImage({ src: source as ImageMetadata, width: w, format: 'webp', quality: 76 })));
+  srcset = [...variants.map((v, i) => `${v.src} ${widths[i]}w`), `${media.src} ${source.width}w`].join(', ');
+}
 ---
 <img
   class={className}
   src={media.src}
-  srcset={media.srcset}
-  sizes={media.srcset ? sizes : undefined}
+  srcset={srcset}
+  sizes={srcset ? sizes : undefined}
   alt={media.alt}
   width={media.width}
   height={media.height}

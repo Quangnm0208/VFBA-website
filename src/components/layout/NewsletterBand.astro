@@ -1,4 +1,5 @@
 ---
+import { Image } from 'astro:assets';
 import dropGold from '~/assets/brand/drop-gold.webp';
 import Icon from '../ui/Icon.astro';
 import type { SiteSettings } from '~/lib/content';
@@ -7,7 +8,7 @@ interface Props { site: SiteSettings }
 const { newsletter, forms } = Astro.props.site;
 ---
 <section class="newsletter" aria-labelledby="nl-title">
-  <img class="gfx gfx-img gfx-gold" data-gfx="gold" src={dropGold.src} alt="" width={dropGold.width} height={dropGold.height} aria-hidden="true" />
+  <Image class="gfx gfx-img gfx-gold" data-gfx="gold" src={dropGold} alt="" widths={[360, 503]} sizes="(min-width: 721px) 440px, 300px" format="webp" quality={70} loading="lazy" decoding="async" aria-hidden="true" />
   <div class="container newsletter__in">
     <div class="newsletter__t" data-rv data-d="0"><h2 id="nl-title">{newsletter.title}</h2><p>{newsletter.description}</p></div>
     <form data-rv data-d="1" data-endpoint="/api/newsletter/" data-kind="newsletter" data-success={forms.newsletterSuccess} data-error={forms.genericError}>

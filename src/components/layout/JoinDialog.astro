@@ -1,5 +1,6 @@
 ---
 import { PUBLIC_TURNSTILE_SITE_KEY } from 'astro:env/client';
+import { Image } from 'astro:assets';
 import drop from '~/assets/brand/drop.webp';
 import Icon from '../ui/Icon.astro';
 import { pagePath } from '~/lib/url';
@@ -14,7 +15,7 @@ const interests = ['Quan tâm hội viên', 'Hợp tác chuyên môn', 'Đề ng
     <div class="join__side" aria-hidden="true">
       <svg viewBox="0 0 620 620" fill="none" aria-hidden="true"><circle cx="310" cy="310" r="120" stroke="#96b949" stroke-opacity=".4"/><circle cx="310" cy="310" r="190" stroke="#96b949" stroke-opacity=".25"/><circle cx="310" cy="310" r="260" stroke="#96b949" stroke-opacity=".14"/><circle cx="310" cy="310" r="306" stroke="#e3a63a" stroke-opacity=".4" stroke-dasharray="2 9" stroke-linecap="round"/></svg>
       <span class="eyebrow-s">VIETNAM BIOFUELS ASSOCIATION</span>
-      <img src={drop.src} alt="" width={drop.width} height={drop.height} />
+      <Image src={drop} alt="" widths={[320, 480]} sizes="160px" format="webp" quality={78} loading="lazy" decoding="async" />
       <span class="script">vì tương lai bền vững</span>
     </div>
     <div class="join__body">

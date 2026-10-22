@@ -7,7 +7,7 @@ interface Props { membership: HomeContent['membership'] }
 const { membership } = Astro.props;
 ---
 <section class="sec membership" id="membership" aria-labelledby="member-title">
-  <img class="gfx gfx-img gfx-tiles" data-gfx="tiles" src={tiles.src} alt="" width="1024" height="554" aria-hidden="true" />
+  <img class="gfx gfx-img gfx-tiles" data-gfx="tiles" src={tiles.src} alt="" width="1024" height="554" loading="lazy" decoding="async" aria-hidden="true" />
   <div class="container membership__grid">
     <div>
       <span class="eyebrow eyebrow--lime" data-rv data-d="0">{membership.eyebrow}</span>

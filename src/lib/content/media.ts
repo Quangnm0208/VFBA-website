@@ -7,4 +7,11 @@ export interface LocalImage {
   height: number;
 }
 
-export const localMedia = (image: LocalImage, alt = ''): Media => ({ src: image.src, width: image.width, height: image.height, alt });
+const sources = new Map<string, LocalImage>();
+
+/** Local seed images are registered so <Media> can generate width variants at build time (see Media.astro). */
+export const localMedia = (image: LocalImage, alt = ''): Media => {
+  sources.set(image.src, image);
+  return { src: image.src, width: image.width, height: image.height, alt };
+};
+export const localSource = (src: string): LocalImage | undefined => sources.get(src);
