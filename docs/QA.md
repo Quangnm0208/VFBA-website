@@ -8,7 +8,7 @@ Preview/production URL before sign-off; the procedure is the same.
 | Suite | Command | Covers |
 |---|---|---|
 | Type check | `npm run check` | Astro/TypeScript, 83 files |
-| Unit tests | `npm test` | lead handler (origin, size, honeypot, validation, 503 fail-closed, Turnstile, rate limit), logging redaction, content schema/seed, **Sanity loader against a fake Content Lake client (valid load, invalid document and failed request throw, home picks repaired; a mock, not the real API)**, **Sanity webhook filter == Studio document types == types the site queries**, SEO, Supabase migration (PGlite), CSP route finaliser |
+| Unit tests | `npm test` (71) | lead handler (origin, size, honeypot, validation, 503 fail-closed, Turnstile, rate limit), logging redaction, content schema/seed, **Sanity loader against a fake Content Lake client (valid load, invalid document and failed request throw, home picks repaired; a mock, not the real API)**, **Sanity webhook filter == Studio document types == types the site queries**, SEO, Supabase migration (PGlite), CSP route finaliser |
 | Static build checks | `npm run build && python3 scripts/check_site.py` | routes, links/anchors, SEO tags, JSON-LD, indexing mode, self-hosted fonts, **restricted fonts absent**, **page text inside the font subset**, **CSP route matching Vercel's exact-path semantics for every page and the 404**, size budgets |
 | Browser e2e | `node scripts/qa/serve.mjs 4322 &` then `node scripts/qa/e2e.mjs http://localhost:4322 [--popup]` | breakpoints, overlays and focus return, news filter/search/load-more/deep links, article tools, both forms (API mocked), pop-up, motion incl. reduced motion, **home filter hide + announcement, back-to-top out of the tab order, TOC focus, real 404 response with CSP, `/tin-tuc` redirect** |
 | Responsive audit | `node scripts/qa/responsive.mjs http://localhost:4322` | 320/375/390/430/768/834/1024/1440/1920 x home/news/article/404: overflow (and the culprit), broken/distorted images, logo proportions, clipped text, touch targets, focus visibility, font errors, console/CSP errors, headings, drawer/search/join fit; PNG screenshots |
@@ -55,6 +55,25 @@ distorted images, logo proportions intact, no clipped text, no undersized (<24 p
 focus on the first 14 tab stops, no console/CSP errors, drawer/search/join dialogs fit and the join submit button is
 reachable at 320 px. Informational: card-title links are 28-31 px tall at 834/1024 px (as specified by the design guide)
 and desktop nav links are 41 px (WCAG 2.5.8 AA asks for 24 px; 44 px is the AAA recommendation).
+
+### Re-measured on the reconciled head (activation branch, 2026-10-22, same profile as above)
+
+Production-like build (no demo pop-up, no Turnstile key), Lighthouse mobile, HTTP/2 + Brotli, Arial shim, cold cache.
+
+| Page | n | Performance | Accessibility | Best practices | SEO | FCP | LCP median (max) | CLS | TBT |
+|---|---|---|---|---|---|---|---|---|---|
+| `/` | 5 (quiet machine) | 97 | 100 | 100 | 69* | 1.67 s | **2.42 s** (2.46) | 0 | 0 ms |
+| `/tin-tuc/` | 3 | 99 | 100 | 100 | 69* | 1.23 s | **2.21 s** (2.21) | 0 | 0 ms |
+| `/tin-tuc/dong-luc-tuong-lai/` | 3 | 98 | 100 | 100 | 69* | 1.38 s | **2.28 s** (2.31) | 0.0003 | 0 ms |
+
+\* indexing is off on purpose. An earlier 3-run batch of `/` showed one LCP of 2.66 s while other work was running on the same
+machine (median 2.41 s); the quiet 5-run repeat above has a maximum of 2.46 s. Treat the home page as "at target with ~0.05 s
+margin", as before. The CDP profile (`scripts/qa/perf.mjs`, slow-4G, 4x CPU, 3 runs) gives cold LCP 1.1 s (home), 1.9 s (news),
+1.8 s (article) and CLS <= 0.0003.
+
+Other suites on this head: unit tests 71, compiled Function 57 checks (database emulated), browser e2e 117/117 (three runs in a row),
+responsive audit without layout or focus failures (the only reports are `ERR_TUNNEL_CONNECTION_FAILED`, caused by the
+sandbox blocking the Turnstile script; the CI runner has no such block).
 
 ## CLS investigation (earlier report: 0.149 on an article page)
 

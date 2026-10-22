@@ -46,7 +46,7 @@ Biến môi trường dịch vụ thật **chưa** đặt (xem mục 5) nên Pre
 | Trình duyệt e2e (API giả) | 117/117, chạy 3 lần liên tiếp ổn định | MÔ PHỎNG API |
 | Responsive 9 độ rộng × 4 trang + hộp thoại | không lỗi bố cục/focus (còn 9 báo lỗi `ERR_TUNNEL` là do sandbox chặn script Turnstile, không xảy ra trên CI) | lab |
 | Hiệu năng (CDP, slow-4G, 4× CPU, 3 lần) | LCP lạnh 1.1 s (home) / 1.9 s (tin tức) / 1.8 s (bài); CLS ≤ 0.0003 | lab, không phải dữ liệu người dùng thật |
-| Lighthouse di động | xem `docs/QA.md` (mục kết quả và dòng "merged head") | lab |
+| Lighthouse di động (trung vị) | `/` 97 · `/tin-tuc/` 99 · bài viết 98; Accessibility 100, Best practices 100; LCP 2.42 / 2.21 / 2.28 s; CLS 0 / 0 / 0.0003 (home đo lại 5 lần trên máy rảnh: tối đa 2.46 s) | lab, không phải dữ liệu người dùng thật |
 | Bảo mật | quét bí mật: nguồn, bundle client, bundle Function đều sạch; không có sourcemap công khai; phụ thuộc: 3 cảnh báo cao ở chuỗi adapter build-time (không có trong Function), xem QA.md | thật (tĩnh) |
 | Trình duyệt thật (iOS Safari, Android Chrome), trình đọc màn hình | **CHƯA** | — |
 
