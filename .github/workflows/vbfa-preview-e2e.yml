@@ -32,6 +32,17 @@ jobs:
           test "$CONFIRM" = "write-test-rows" || { echo "::error::Explicit consent to test rows is required"; exit 1; }
           [[ "$TEST_URL" =~ ^https://vfba-website-[a-z0-9-]+-quangnm\.vercel\.app/?$ ]] || { echo "::error::Only VBFA branch-scoped Vercel Preview hosts are allowed"; exit 1; }
           [[ "$TEST_URL" != "https://vfba-website-alpha.vercel.app" ]] || exit 1
+      - name: Fail closed if test-key Preview is publicly accessible
+        env:
+          TEST_URL: ${{ inputs.preview_url }}
+        shell: bash
+        run: |
+          # With Cloudflare always-pass TEST keys, deployment protection must be on.
+          status="$(curl --silent --output /dev/null --write-out '%{http_code}' --max-time 15 "$TEST_URL" || true)"
+          case "$status" in
+            301|302|303|307|308|401|403) echo "Protected Preview preflight: HTTP $status";;
+            *) echo "::error::Preview must be deployment-protected before enabling always-pass Turnstile test keys (unauthenticated status $status)"; exit 1;;
+          esac
       - uses: actions/checkout@v4
         with:
           ref: feat/vbfa-services-activation-20261022
