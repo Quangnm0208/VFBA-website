@@ -52,6 +52,7 @@ minutes. Nothing in the repository prevents that, so the merge itself is the rel
 | Privacy policy, consent wording approved by the client | **blocked** (legal) | section 6 |
 | Content, images and contact details signed off | **blocked** (Marketing) | section 5 |
 | Production font exposure decided | **decision needed** | section 4 |
+| Dependency advisories | **recorded, no fix available**: 3 high in the build-time adapter chain (`path-to-regexp`), not in the deployed Function; 18 in the Studio toolchain | `docs/QA.md` known limits; re-run `npm audit` before release |
 | Real devices and screen readers | **not done** (no device lab here) | UAT |
 
 Decision for the current state: **READY FOR UAT; NOT READY FOR PRODUCTION.**
