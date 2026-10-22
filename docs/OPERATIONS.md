@@ -19,12 +19,14 @@ Mọi thứ dưới đây cần quyền của chủ dự án (tài khoản Sanit
 
 ### B. Supabase (lead)
 1. Tạo project **riêng cho VBFA**, vùng gần Việt Nam (ví dụ Singapore `ap-southeast-1`, khớp vùng Function `sin1` trong `vercel.json`).
-2. Chạy `supabase/migrations/0001_website_leads.sql` (SQL Editor hoặc `supabase db push`). Kiểm tra: Table Editor → `website_leads` có nhãn **RLS enabled**, không có policy.
+2. Chạy lần lượt `supabase/migrations/0001_website_leads.sql` và `0002_form_throttle.sql` (SQL Editor hoặc `supabase db push`). Kiểm tra: Table Editor → `website_leads` và `form_attempts` đều có nhãn **RLS enabled**, không có policy; Database → Functions có `register_attempt` và `purge_lead_metadata`.
 3. Lấy `Project URL` và khoá **service_role** (Settings → API). Khoá này bỏ qua RLS: chỉ đặt trong biến môi trường Vercel, không bao giờ dán vào chat/commit/client.
-4. Lên lịch xoá dấu vết rate-limit (khuyến nghị mỗi ngày): `select public.purge_lead_metadata();` bằng `pg_cron` hoặc Supabase Scheduled Function.
+4. Dọn dẹp dữ liệu giới hạn tốc độ mỗi ngày: bật extension **pg_cron** (Database → Extensions) **trước** khi chạy `0002` thì migration tự lên lịch `vbfa-purge-lead-metadata` lúc 03:17 UTC. Nếu bật sau, chạy lại đoạn `do $cron$ … $cron$` cuối `0002`, hoặc lên lịch `select public.purge_lead_metadata();` bằng Supabase Scheduled Function. Hàm xoá hash địa chỉ trên lead sau 30 ngày và bộ đếm sau 2 ngày. Kiểm tra: `select * from cron.job where jobname = 'vbfa-purge-lead-metadata';`
+5. Xác minh quyền: bằng khoá **anon** (Settings → API) gọi `GET /rest/v1/website_leads` và `/rest/v1/form_attempts` phải trả `401/403` hoặc mảng rỗng không có dữ liệu, và `POST /rest/v1/rpc/register_attempt` phải bị từ chối.
+6. Yêu cầu truy cập/xoá dữ liệu của khách: tìm theo email (`select * from public.website_leads where lower(email) = lower('…')`), xoá bằng `delete from public.website_leads where lower(email) = lower('…')`. Bộ đếm `form_attempts` không chứa dữ liệu cá nhân. Thời hạn lưu giữ lead do chủ dự án và bộ phận pháp lý quyết định (chưa có trong code).
 
 ### C. Cloudflare Turnstile (khuyến nghị)
-Tạo widget (Managed) cho domain website → lấy **Site key** và **Secret key**. Form hội viên sẽ hiện widget khi có `PUBLIC_TURNSTILE_SITE_KEY` và server bắt buộc token khi có `TURNSTILE_SECRET_KEY`.
+Tạo widget (Managed) cho domain website → lấy **Site key** và **Secret key**. Cả form hội viên và form bản tin sẽ hiện widget khi có `PUBLIC_TURNSTILE_SITE_KEY` (bản tin ở chế độ vô hình, nạp khi người dùng bắt đầu nhập) và server bắt buộc token cho cả hai khi có `TURNSTILE_SECRET_KEY`. Thêm mọi hostname sẽ dùng (domain chính thức, `*.vercel.app` của bản Preview cần test) vào danh sách **Hostname** của widget; khi gắn tên miền riêng, cập nhật danh sách này trước khi chuyển DNS.
 
 ### D. Vercel
 1. Project `vfba-website` (Settings → Environment Variables), theo bảng mục 2.
@@ -43,8 +45,9 @@ Tạo widget (Managed) cho domain website → lấy **Site key** và **Secret ke
 | `SANITY_API_READ_TOKEN` | Preview + Production | **có** | Chỉ khi dataset ở chế độ private |
 | `SUPABASE_URL` | Preview + Production | có | URL project Supabase |
 | `SUPABASE_SERVICE_ROLE_KEY` | Production (Preview tuỳ chọn) | **có** | Ghi lead (chỉ Function đọc) |
-| `IP_HASH_SALT` | Production | **có** | Muối băm IP cho giới hạn tốc độ (`openssl rand -hex 32`) |
-| `PUBLIC_TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY` | Production | secret: có | Chống spam |
+| `IP_HASH_SALT` | Production | **có** | Muối băm IP cho giới hạn tốc độ (`openssl rand -hex 32`). **Bắt buộc**: thiếu thì form trả 503 (không còn dùng service-role key thay thế) |
+| `LEADS_ENABLED` | Production | **có** | Công tắc ra mắt thu thập dữ liệu cá nhân: chỉ đặt `true` **sau khi** chính sách bảo mật và câu đồng ý được duyệt. Khác `true` thì form trả 503 dù đã có khoá Supabase |
+| `PUBLIC_TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY` | Production | secret: có | Chống spam (cả hai form) |
 | `FORM_ALLOWED_ORIGINS` | Production | không | Origin bổ sung được phép POST (vd. domain mới khi chuyển đổi) |
 | `ENABLE_VERCEL_ANALYTICS` | Production | không | `true` bật Web Analytics không cookie |
 
@@ -56,8 +59,17 @@ Preview **không** nên có `SUPABASE_SERVICE_ROLE_KEY`: form ở preview sẽ t
 - [ ] Trang *Chính sách bảo mật* đã xuất bản và được liên kết từ biểu mẫu.
 - [ ] Font: bản dựng chỉ dùng font SIL OFL (Be Vietnam Pro, Mona Sans, Barlow Condensed, Dancing Script; xem `docs/design/FONTS.md`). Marketing duyệt hiển thị nhãn/câu viết tay; nếu VBFA có giấy phép web cho SVN-Bebas Neue Pro / SVN-Primark thì làm theo mục "Quay lại font SVN" trong tài liệu đó.
 - [ ] Domain đã trỏ về Vercel; `PUBLIC_SITE_URL` = domain chính thức.
-- [ ] Gửi thử form hội viên và bản tin trên bản production → có hàng mới trong `website_leads`; gửi lại cùng email bản tin không tạo hàng thứ hai.
-- [ ] Turnstile bật; thử gửi nhanh liên tiếp để thấy giới hạn tốc độ.
+- [ ] Chính sách bảo mật và câu đồng ý đã được duyệt bằng văn bản; chỉ sau đó đặt `LEADS_ENABLED=true` trên Production.
+- [ ] **Kiểm thử E2E với danh tính thử** (email dạng `qa+<ngày>@<domain của VBFA>`), trên Preview có Supabase thử hoặc Production sau khi bật công tắc:
+  - gửi form hội viên → có đúng 1 hàng `kind='membership'` trong `website_leads`, `ip_hash` là chuỗi hex 32 ký tự, `utm` chỉ có khoá `utm_*`, `source_path` không có `?`;
+  - gửi bản tin → đúng 1 hàng `kind='newsletter'`; gửi lại cùng email (khác hoa/thường) → phản hồi giống hệt nhưng **không** thêm hàng;
+  - email sai hoặc bỏ tick đồng ý → không có hàng mới;
+  - gửi liên tiếp → lead thứ 6 trong 10 phút nhận 429; gửi lặp 16 lần cùng một email bản tin cũng nhận 429 (đếm cả lượt không lưu);
+  - tạm đổi `SUPABASE_URL` sai trên Preview → form báo lỗi và không hàng nào được tạo;
+  - `select * from public.form_attempts limit 5` chỉ có hash, loại form, thời gian;
+  - xoá các hàng thử (`delete from public.website_leads where email like 'qa+%'`) và ghi lại ngày/giờ xoá vào biên bản.
+- [ ] Turnstile bật cho cả hai form (kiểm tra widget xuất hiện và token được gửi); thêm hostname vào widget.
+- [ ] Firewall của Vercel: thêm quy tắc rate-limit cho `/api/*` (ví dụ 30 yêu cầu/phút/IP → chặn 10 phút) để chặn lưu lượng ồ ạt chưa qua kiểm tra hợp lệ (ứng dụng chỉ đếm các lượt đã qua validation).
 - [ ] Đặt `PUBLIC_SITE_INDEXING=on` → build lại → kiểm tra `robots.txt` có `Sitemap:` và các trang không còn `noindex`; gửi `sitemap.xml` cho Google Search Console.
 - [ ] Lighthouse (di động) trên URL production: Performance / Accessibility / SEO.
 - [ ] Đã thử trên thiết bị thật (iOS Safari, Android Chrome) và bằng trình đọc màn hình.
@@ -79,7 +91,7 @@ Chạy form thật khi phát triển: tạo `.env` từ `.env.example` và đi�
 
 | Việc | Nhìn ở đâu |
 |---|---|
-| Form không gửi được | Vercel → Logs → lọc `event: lead.*`. Mã: `lead.not_configured` (thiếu biến), `lead.store_failed` (Supabase), `lead.rate_limited`, `lead.captcha_failed`, `lead.origin_rejected`, `lead.dropped` (bot) |
+| Form không gửi được | Vercel → Logs → lọc `event: lead.*`. Mã: `lead.not_configured` (thiếu Supabase, `IP_HASH_SALT` hoặc `LEADS_ENABLED`), `lead.store_failed` (Supabase), `lead.rate_limited`, `lead.captcha_failed`, `lead.origin_rejected`, `lead.dropped` (bot) |
 | Build lỗi sau khi Publish | Vercel → Deployments → log build: thông báo `Invalid article "…" from Sanity` chỉ rõ trường sai. Bản cũ vẫn đang chạy |
 | Nội dung chưa cập nhật | Kiểm tra webhook Sanity đã gọi Deploy Hook (manage.sanity.io → API → Webhooks → Attempts) |
 | Hiệu năng thật | Vercel Speed Insights (nếu bật) hoặc Lighthouse |

@@ -40,8 +40,8 @@ flowchart LR
 | Sanity Studio | Ưu tiên hosting riêng tại Sanity | `studio/` là package độc lập, triển khai bằng `sanity deploy` lên `*.sanity.studio`. **Không** nhúng vào Vercel, không build cùng website. |
 | Sanity Content Lake | Nguồn dữ liệu nội dung chính | Website đọc **lúc build** (`src/lib/content/load.ts`, GROQ ở `queries.ts`). Mọi tài liệu đi qua schema `zod`: tài liệu sai định dạng **làm hỏng build** nên bản đang chạy vẫn giữ nguyên. Không có Sanity thì dùng nội dung seed cục bộ (dev/preview). |
 | Sanity Assets CDN | Phục vụ media trực tiếp cho trình duyệt | Trình duyệt tải ảnh thẳng từ `cdn.sanity.io` (`toMedia()` tạo `srcset` 400–1600px, `auto=format`, giữ crop/hotspot). CSP `img-src` chỉ cho phép `'self'` và `cdn.sanity.io`. Vercel không proxy ảnh. |
-| Vercel API Routes | Form, bảo mật, tích hợp backend | `/api/join`, `/api/newsletter` → `src/lib/server/leads.ts`: kiểm tra Origin, kiểu nội dung, kích thước; honeypot + bẫy thời gian; Turnstile (nếu cấu hình); giới hạn tốc độ theo hash địa chỉ; zod; **fail-closed 503** khi thiếu cấu hình. |
-| Supabase PostgreSQL | Chỉ dữ liệu nghiệp vụ và lead | Một bảng `website_leads` (`supabase/migrations/0001_website_leads.sql`). RLS bật, **không có policy**, thu hồi quyền `anon/authenticated`: trình duyệt không đọc/ghi được. Ghi bằng service-role key chỉ ở Function. Hàm `purge_lead_metadata()` xoá dấu vết rate-limit sau 30 ngày. |
+| Vercel API Routes | Form, bảo mật, tích hợp backend | `/api/join`, `/api/newsletter` → `src/lib/server/leads.ts`: kiểm tra Origin, kiểu nội dung, kích thước; honeypot + bẫy thời gian; zod; giới hạn tốc độ theo hash địa chỉ **tính mọi lượt thử** (kể cả không lưu); Turnstile cho cả hai form (nếu cấu hình); timeout 3 giây cho mỗi lệnh gọi Supabase/Turnstile; **fail-closed 503** khi thiếu cấu hình, thiếu `IP_HASH_SALT` hoặc chưa bật `LEADS_ENABLED`. |
+| Supabase PostgreSQL | Chỉ dữ liệu nghiệp vụ và lead | Bảng `website_leads` (`0001_website_leads.sql`) và bộ đếm giới hạn `form_attempts` + hàm `register_attempt` (`0002_form_throttle.sql`; chỉ chứa hash địa chỉ, loại form, thời gian). RLS bật, **không có policy**, thu hồi quyền `anon/authenticated`: trình duyệt không đọc/ghi/gọi được. Ghi bằng service-role key chỉ ở Function. `purge_lead_metadata()` xoá hash địa chỉ trên lead sau 30 ngày và bộ đếm sau 2 ngày (lịch `pg_cron` hằng ngày nếu extension bật). |
 | User Logs | Tách monitoring kỹ thuật khỏi dữ liệu khách | Xem mục 2. |
 | SEO / Pop-up | Bổ sung vào mô hình CMS và frontend | Xem mục 4 và 5. |
 
@@ -64,7 +64,7 @@ Chưa có "user event log" kiểu theo dõi hành vi. Nếu sau này cần (đo 
 
 **Gửi biểu mẫu**:
 1. Trình duyệt `POST application/json` tới `/api/join/` hoặc `/api/newsletter/` (cùng origin).
-2. Function: phương thức → Origin → content-type → kích thước (≤ 8 KB) → honeypot/bẫy thời gian (bot nhận `200` giả, không lưu) → zod → cấu hình Supabase (thiếu = `503`) → Turnstile (form hội viên, nếu có khoá) → giới hạn tốc độ (5 lượt/10 phút/địa chỉ) → ghi DB.
+2. Function: phương thức → Origin → content-type → kích thước (≤ 8 KB) → honeypot/bẫy thời gian (bot nhận `200` giả, không lưu) → zod → cấu hình (thiếu Supabase, `IP_HASH_SALT` hoặc `LEADS_ENABLED` = `503`) → giới hạn tốc độ qua RPC `register_attempt` (một vòng gọi DB; mỗi 10 phút/địa chỉ tối đa 15 lượt thử và 5 lead đã lưu; địa chỉ không xác định dùng chung một ngân sách; kể cả lượt trùng/captcha sai) → Turnstile (cả hai form, nếu có khoá) → ghi DB (chỉ trả `200` sau khi ghi xong).
 3. Đăng ký bản tin trùng email trả về giống hệt lần đầu (không lộ ai đã đăng ký).
 4. Trình duyệt hiện toast thành công hoặc thông báo lỗi trong hộp thoại, giữ nguyên dữ liệu đã nhập.
 
@@ -137,5 +137,6 @@ docs/                  tài liệu này + design/ (handoff gốc)
 - **Tĩnh + webhook thay vì SSR**: nhanh nhất và rẻ nhất, an toàn khi Sanity gián đoạn. Đánh đổi: nội dung cập nhật sau ~1 phút build. Nếu cần tức thời, bật ISR của adapter hoặc preview riêng.
 - **Sitemap tự sinh** thay cho `@astrojs/sitemap`: để có `lastmod` thật và loại `noIndex` từ CMS.
 - **Portable Text bị giới hạn** thay vì cho dùng tự do: bảo vệ thiết kế.
-- **Turnstile tuỳ chọn**: bản tin dùng honeypot + giới hạn tốc độ (không có widget trong thiết kế); form hội viên dùng Turnstile khi có khoá.
+- **Turnstile tuỳ chọn nhưng phủ cả hai form**: widget bản tin ở chế độ `interaction-only` (vô hình trừ khi Cloudflare cần tương tác), nạp lười ở lần focus đầu tiên để script bên thứ ba không nằm trên đường găng; form hội viên nạp khi mở hộp thoại. Khi có `TURNSTILE_SECRET_KEY` server bắt buộc token cho cả hai.
+- **Công tắc ra mắt `LEADS_ENABLED`**: việc thu thập dữ liệu cá nhân chỉ bật khi biến này là `true` (đặt sau khi chính sách bảo mật và câu đồng ý được duyệt), ngoài việc có khoá Supabase.
 - **Chưa có email xác nhận** cho bản tin: cần nhà cung cấp email (Resend…) và quy trình double opt-in; hiện chỉ ghi nhận đăng ký (thông báo thành công đã viết đúng như vậy).
