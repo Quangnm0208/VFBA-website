@@ -5,7 +5,7 @@
   "type": "module",
   "description": "VBFA website: Astro frontend on Vercel, Sanity content, Supabase leads.",
   "engines": {
-    "node": ">=22.23.4"
+    "node": "24.x"
   },
   "scripts": {
     "dev": "astro dev",

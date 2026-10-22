@@ -19,7 +19,7 @@ npm run dev          # http://localhost:4321 — dùng nội dung seed khi chưa
 npm run verify       # astro check + vitest + build + kiểm tra tĩnh
 ```
 
-Cần Node ≥ 22.23.4 (khuyến nghị 24).
+Cần Node 24 (xem `.nvmrc`; tối thiểu 22.23.4 để chạy cục bộ).
 
 ## Trạng thái hiện tại
 

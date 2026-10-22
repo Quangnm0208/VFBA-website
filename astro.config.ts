@@ -29,6 +29,8 @@ export default defineConfig({
   trailingSlash: 'always',
   build: { format: 'directory' },
   devToolbar: { enabled: false },
+  // No Markdown/code blocks on this site; also silences Astro's Shiki-vs-CSP warning.
+  markdown: { syntaxHighlight: false },
   adapter: vercel({
     webAnalytics: { enabled: process.env.ENABLE_VERCEL_ANALYTICS === 'true' },
     maxDuration: 10,

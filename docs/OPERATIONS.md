@@ -64,7 +64,7 @@ Preview **không** nên có `SUPABASE_SERVICE_ROLE_KEY`: form ở preview sẽ t
 
 ## 4. Chạy cục bộ
 
-Yêu cầu Node ≥ 22.23.4 (khuyến nghị 24, xem `.nvmrc`).
+Yêu cầu Node 24 (xem `.nvmrc`; chạy cục bộ tối thiểu 22.23.4).
 
 ```bash
 npm install
