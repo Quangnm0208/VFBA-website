@@ -119,7 +119,7 @@ export async function handleLead(request: Request, kind: LeadKind, clientIp: str
       interest: join?.interest ?? null,
       message: join?.message || null,
       consent: true,
-      consent_text_version: join?.consentVersion ?? 'newsletter-action-v1',
+      consent_text_version: input.consentVersion,
       source_path: input.sourcePath,
       utm: input.utm,
       ip_hash: ipHash,

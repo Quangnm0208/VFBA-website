@@ -13,15 +13,16 @@ The connected Vercel runtime is in `sin1` while the EXISTING Supabase project is
 
 ## What was actually executed on the dedicated Supabase project
 
-Migrations were committed to GitHub under `supabase/migrations/` and applied through the authenticated Supabase project connector:
+Migration files in `supabase/migrations/` are prefixed with the remote version so the Supabase CLI sees one history. They were applied through the authenticated Supabase project connector:
 
 | Order | Migration | Remote version | Result |
 |---|---|---|---|
-| 1 | `0001_website_leads.sql` | `20261022123647` | APPLIED |
-| 2 | `0002_form_throttle.sql` | `20261022123654` | APPLIED |
-| 3 | `0003_revoke_rls_trigger_access.sql` | `20261022123815` | APPLIED |
-| 4 | `0004_harden_timestamp_trigger.sql` | `20261022124025` | APPLIED |
-| 5 | `0005_schedule_metadata_purge.sql` | `20261022124107` | APPLIED |
+| 1 | `20261022123647_0001_website_leads.sql` | `20261022123647` | APPLIED |
+| 2 | `20261022123654_0002_form_throttle.sql` | `20261022123654` | APPLIED |
+| 3 | `20261022123815_0003_revoke_rls_trigger_access.sql` | `20261022123815` | APPLIED |
+| 4 | `20261022124025_0004_harden_timestamp_trigger.sql` | `20261022124025` | APPLIED |
+| 5 | `20261022124107_0005_schedule_metadata_purge.sql` | `20261022124107` | APPLIED |
+| 6 | `20261022133747_0006_service_role_insert_grant.sql` | `20261022133747` | APPLIED (explicit INSERT grant for the Function; idempotent) |
 
 Verified on the real project: `website_leads` and `form_attempts` exist and RLS is enabled; `anon` cannot SELECT `website_leads` or EXECUTE `register_attempt`. `service_role` has INSERT and `register_attempt` execute rights. Existing elevated `public.rls_auto_enable()` had callable rights granted to `anon`/`authenticated`; those rights were revoked. `touch_updated_at()` now has pinned `search_path` and no direct public invocation.
 

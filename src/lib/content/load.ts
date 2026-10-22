@@ -106,6 +106,13 @@ export async function loadFromSanity() {
     client.fetch<Json[]>(POPUPS_QUERY),
   ]);
 
+  // An empty dataset (project connected, seed not imported yet) would otherwise fail much later with a confusing
+  // "Invalid homePage" message. Say what to do instead.
+  if (!articlesRaw.length) {
+    throw new Error(
+      'Sanity returned no published articles. Import the seed first (docs/OPERATIONS.md section A.5: `npm run seed:export`, then `sanity dataset import seed/seed.ndjson production --missing`) or Publish content, then build again. To build from the local sample content instead, leave PUBLIC_SANITY_PROJECT_ID empty.',
+    );
+  }
   const articles = articlesRaw.map(mapArticle);
   const pages = pagesRaw.map(mapPage);
 

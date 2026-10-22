@@ -1,9 +1,9 @@
 name: CI
 on:
   push:
-    branches: [main, 'claude/**']
+    branches: [main, 'claude/**', 'security/**', 'feat/**']
+  # Any base: stacked pull requests (activation -> release candidate) are checked too, not only those aimed at main.
   pull_request:
-    branches: [main]
 permissions:
   contents: read
 concurrency:

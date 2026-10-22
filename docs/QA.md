@@ -93,3 +93,10 @@ the first costs brand fidelity on slow first visits and the second adds a visibl
   changes LCP (re-measure after content is loaded).
 - The sandbox cannot reach `*.vercel.app`; deployed-URL checks were made with the Vercel tooling and, in CI, with
   `smoke.mjs`.
+
+## Security hardening verification (22/10/2026)
+- Explicit newsletter opt-in checkbox is mandatory and displayed next to the email field; a submit with `consent:false` or an unapproved version is rejected with HTTP 400 before storage.
+- Both Turnstile keys (`PUBLIC_TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`) and `IP_HASH_SALT` are required for `LEADS_ENABLED=true` to create the Supabase store. Any missing credential makes both form endpoints return 503.
+- Only GitHub CI uses the fixed Cloudflare dummy credentials with a stubbed Siteverify fetch, never production credentials. Server-side real verification is still required in end-to-end UAT.
+- Migration 0001 explicitly grants `INSERT` to `service_role`, independent of Supabase project default privileges; exposed anonymous/authenticated roles have no access.
+- **No live Sanity project, Supabase database or client PII has been created or modified during this hardening phase.**

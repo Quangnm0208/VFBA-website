@@ -70,6 +70,11 @@ describe('loadFromSanity (fake Content Lake)', () => {
     await expect(loadFromSanity()).rejects.toThrow(/Invalid article "Bad-Slug" from Sanity/);
   });
 
+  it('explains how to fix an empty dataset instead of failing deep in the home page schema', async () => {
+    set([]);
+    await expect(loadFromSanity()).rejects.toThrow(/no published articles.*seed/s);
+  });
+
   it('fails the build on a title that is too short', async () => {
     set([rawArticle(articlesSeed[0]!, { title: 'Ngắn' })]);
     await expect(loadFromSanity()).rejects.toThrow(/Invalid article/);

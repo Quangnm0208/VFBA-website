@@ -1,0 +1,99 @@
+name: Sanity activation (manual)
+# Deploys the EXISTING Studio (studio/) to Sanity hosting and, only when asked, imports the seed content.
+# Nothing here runs automatically and nothing is created in a second project: it targets Sanity project iqyx5ttc.
+#
+# One-time setup by a Sanity project Administrator:
+#   1. sanity.io/manage -> project iqyx5ttc -> API -> Tokens -> Add token. Permission "Deploy Studio" is enough for the
+#      deploy; the seed import additionally needs "Editor". Prefer two tokens, one per job, and delete them afterwards.
+#   2. GitHub -> Settings -> Secrets and variables -> Actions -> New repository secret:
+#      SANITY_DEPLOY_TOKEN (deploy) and SANITY_IMPORT_TOKEN (import). Never paste a token into an issue, PR or chat.
+# Then: Actions -> "Sanity activation (manual)" -> Run workflow. The deploy is idempotent. The import uses --missing, so it
+# only creates documents that do not exist yet and never overwrites what Marketing has edited.
+# NOT EXECUTED by engineering: it needs the tokens above, which engineering does not hold.
+on:
+  workflow_dispatch:
+    inputs:
+      studio_host:
+        description: 'Studio hostname -> https://<host>.sanity.studio (must be free, or already yours)'
+        default: vbfa
+      deploy_studio:
+        description: 'Deploy the Studio to Sanity hosting'
+        type: boolean
+        default: true
+      import_seed:
+        description: 'Import the seed content (only after Marketing has approved it; articles 4-10 are SAMPLES)'
+        type: boolean
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: sanity-activation
+  cancel-in-progress: false
+
+env:
+  SANITY_STUDIO_PROJECT_ID: iqyx5ttc
+  SANITY_STUDIO_DATASET: production
+  SANITY_TELEMETRY: 'false'
+
+jobs:
+  deploy:
+    name: Deploy Studio (iqyx5ttc / production)
+    if: ${{ inputs.deploy_studio }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            studio/package-lock.json
+      - name: Install root dependencies (tsconfig resolution)
+        run: npm ci
+      - name: Install Studio dependencies
+        run: npm ci
+        working-directory: studio
+      - name: Type check and validate the schema
+        working-directory: studio
+        run: |
+          npm run typecheck
+          npm run validate
+      - name: Deploy to Sanity hosting
+        working-directory: studio
+        env:
+          SANITY_AUTH_TOKEN: ${{ secrets.SANITY_DEPLOY_TOKEN }}
+          SANITY_STUDIO_HOST: ${{ inputs.studio_host }}
+        run: |
+          test -n "$SANITY_AUTH_TOKEN" || { echo "::error::Repository secret SANITY_DEPLOY_TOKEN is not set (see the header of this workflow)."; exit 1; }
+          npx sanity deploy --yes 2>&1 | tee deploy.log
+          echo "Studio URL: https://${SANITY_STUDIO_HOST}.sanity.studio" >> "$GITHUB_STEP_SUMMARY"
+
+  import:
+    name: Import seed content (--missing)
+    if: ${{ inputs.import_seed }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            studio/package-lock.json
+      - run: npm ci
+      - run: npm ci
+        working-directory: studio
+      - name: Export the seed (images are referenced by file:// path on this runner)
+        # The seed is exported from the LOCAL content; PUBLIC_SANITY_PROJECT_ID must be unset for that.
+        run: npm run seed:export
+      - name: Import without overwriting existing documents
+        working-directory: studio
+        env:
+          SANITY_AUTH_TOKEN: ${{ secrets.SANITY_IMPORT_TOKEN }}
+        run: |
+          test -n "$SANITY_AUTH_TOKEN" || { echo "::error::Repository secret SANITY_IMPORT_TOKEN is not set (see the header of this workflow)."; exit 1; }
+          npx sanity dataset import seed/seed.ndjson production --missing

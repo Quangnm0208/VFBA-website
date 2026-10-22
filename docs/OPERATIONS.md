@@ -2,6 +2,10 @@
 
 Mọi thứ dưới đây cần quyền của chủ dự án (tài khoản Sanity, Supabase, Vercel, Cloudflare). Repo **không** chứa khoá bí mật.
 
+> **Kích hoạt thật cho dự án VBFA** (Sanity `iqyx5ttc`, Supabase `bzrtllytykldnawbuszu`): làm theo `docs/ACTIVATION_RUNBOOK.md`.
+> Bằng chứng đã có trên DB thật: `docs/evidence/SUPABASE_REAL_2026-10-22.md`. Kịch bản E2E thật cho hai form: `scripts/qa/live-e2e.mjs`.
+> Báo cáo GO/NO-GO và danh sách P0/P1: `docs/RELEASE_PACKET.md`. Sơ đồ dữ liệu cá nhân cho pháp lý: `docs/privacy/DATA_MAP.md`.
+
 ## 1. Thứ tự thiết lập
 
 ### A. Sanity (nội dung)
@@ -19,14 +23,14 @@ Mọi thứ dưới đây cần quyền của chủ dự án (tài khoản Sanit
 
 ### B. Supabase (lead)
 1. Tạo project **riêng cho VBFA**, vùng gần Việt Nam (ví dụ Singapore `ap-southeast-1`, khớp vùng Function `sin1` trong `vercel.json`).
-2. Chạy lần lượt `supabase/migrations/0001_website_leads.sql` và `0002_form_throttle.sql` (SQL Editor hoặc `supabase db push`). Kiểm tra: Table Editor → `website_leads` và `form_attempts` đều có nhãn **RLS enabled**, không có policy; Database → Functions có `register_attempt` và `purge_lead_metadata`.
+2. Áp các migration trong `supabase/migrations/` theo thứ tự tên file (SQL Editor hoặc `supabase db push`). Tên file có dạng `<version 14 số>_<số thứ tự>_<tên>.sql`; `<version>` **trùng với version trong lịch sử migration của dự án** để Supabase CLI thấy một lịch sử duy nhất. **Dự án VBFA thật (`bzrtllytykldnawbuszu`) đã có 0001-0006**: *không chạy lại*; trước khi dùng `db push` hãy chạy `supabase migration list` và đối chiếu từng version. Với một dự án mới, đặt version là thời điểm áp dụng thực tế rồi đổi tên file cho khớp. Kiểm tra: Table Editor → `website_leads` và `form_attempts` đều có nhãn **RLS enabled**, không có policy; Database → Functions có `register_attempt` và `purge_lead_metadata`; chạy `supabase/fingerprint.sql` và so với `node scripts/qa/db-fingerprint.mjs` (hai mã băm phải trùng, xem `docs/evidence/SUPABASE_REAL_2026-10-22.md`).
 3. Lấy `Project URL` và khoá **service_role** (Settings → API). Khoá này bỏ qua RLS: chỉ đặt trong biến môi trường Vercel, không bao giờ dán vào chat/commit/client.
 4. Dọn dẹp dữ liệu giới hạn tốc độ mỗi ngày: bật extension **pg_cron** (Database → Extensions) **trước** khi chạy `0002` thì migration tự lên lịch `vbfa-purge-lead-metadata` lúc 03:17 UTC. Nếu bật sau, chạy lại đoạn `do $cron$ … $cron$` cuối `0002`, hoặc lên lịch `select public.purge_lead_metadata();` bằng Supabase Scheduled Function. Hàm xoá hash địa chỉ trên lead sau 30 ngày và bộ đếm sau 2 ngày. Kiểm tra: `select * from cron.job where jobname = 'vbfa-purge-lead-metadata';`
 5. Xác minh quyền: bằng khoá **anon** (Settings → API) gọi `GET /rest/v1/website_leads` và `/rest/v1/form_attempts` phải trả `401/403` hoặc mảng rỗng không có dữ liệu, và `POST /rest/v1/rpc/register_attempt` phải bị từ chối.
 6. Yêu cầu truy cập/xoá dữ liệu của khách: tìm theo email (`select * from public.website_leads where lower(email) = lower('…')`), xoá bằng `delete from public.website_leads where lower(email) = lower('…')`. Bộ đếm `form_attempts` không chứa dữ liệu cá nhân. Thời hạn lưu giữ lead do chủ dự án và bộ phận pháp lý quyết định (chưa có trong code).
 
-### C. Cloudflare Turnstile (khuyến nghị)
-Tạo widget (Managed) cho domain website → lấy **Site key** và **Secret key**. Cả form hội viên và form bản tin sẽ hiện widget khi có `PUBLIC_TURNSTILE_SITE_KEY` (bản tin ở chế độ vô hình, nạp khi người dùng bắt đầu nhập) và server bắt buộc token cho cả hai khi có `TURNSTILE_SECRET_KEY`. Thêm mọi hostname sẽ dùng (domain chính thức, `*.vercel.app` của bản Preview cần test) vào danh sách **Hostname** của widget; khi gắn tên miền riêng, cập nhật danh sách này trước khi chuyển DNS.
+### C. Cloudflare Turnstile (bắt buộc khi bật form)
+Tạo widget (Managed) cho domain website → lấy **Site key** và **Secret key**. **Cả hai khoá là bắt buộc khi `LEADS_ENABLED=true`**: thiếu một trong hai, hai form trả 503 (fail-closed, không có chế độ "không captcha"). Cả form hội viên và form bản tin hiện widget (bản tin ở chế độ vô hình, nạp khi người dùng bắt đầu nhập) và server bắt buộc token cho cả hai. `PUBLIC_TURNSTILE_SITE_KEY` được đọc lúc build: đổi xong phải redeploy. Cho Preview dùng khoá thử nghiệm công khai của Cloudflare (site `1x00000000000000000000AA`, secret `1x0000000000000000000000000000000AA`); **không** dùng chúng trên Production. Thêm mọi hostname sẽ dùng (domain chính thức, `*.vercel.app` của bản Preview cần test) vào danh sách **Hostname** của widget; khi gắn tên miền riêng, cập nhật danh sách này trước khi chuyển DNS.
 
 ### D. Vercel
 1. Project `vfba-website` (Settings → Environment Variables), theo bảng mục 2.
@@ -75,7 +79,7 @@ Preview **không** nên có `SUPABASE_SERVICE_ROLE_KEY`: form ở preview sẽ t
 - [ ] Chính sách bảo mật và câu đồng ý đã được duyệt bằng văn bản; chỉ sau đó đặt `LEADS_ENABLED=true` trên Production.
 - [ ] **Kiểm thử E2E với danh tính thử** (email dạng `qa+<ngày>@<domain của VBFA>`), trên Preview có Supabase thử hoặc Production sau khi bật công tắc:
   - gửi form hội viên → có đúng 1 hàng `kind='membership'` trong `website_leads`, `ip_hash` là chuỗi hex 32 ký tự, `utm` chỉ có khoá `utm_*`, `source_path` không có `?`;
-  - gửi bản tin → đúng 1 hàng `kind='newsletter'`; gửi lại cùng email (khác hoa/thường) → phản hồi giống hệt nhưng **không** thêm hàng;
+  - gửi bản tin (đã tick ô đồng ý riêng) → đúng 1 hàng `kind='newsletter'`, `consent_text_version='newsletter-v1'`; không tick ô đồng ý → 400 và không có hàng; gửi lại cùng email (khác hoa/thường) → phản hồi giống hệt nhưng **không** thêm hàng;
   - email sai hoặc bỏ tick đồng ý → không có hàng mới;
   - gửi liên tiếp → lead thứ 6 trong 10 phút nhận 429; gửi lặp 16 lần cùng một email bản tin cũng nhận 429 (đếm cả lượt không lưu);
   - tạm đổi `SUPABASE_URL` sai trên Preview → form báo lỗi và không hàng nào được tạo;

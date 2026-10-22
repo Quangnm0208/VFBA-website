@@ -127,7 +127,7 @@ describe('handleLead — membership', () => {
 
   it('limits stored leads per hashed address (5 per window) and leaves other addresses alone', async () => {
     const { d, store } = deps();
-    const sub = (n: number) => ({ kind: 'newsletter', email: `n${n}@b.vn`, website: '', openedAt: NOW - 20_000 });
+    const sub = (n: number) => ({ kind: 'newsletter', email: `n${n}@b.vn`, website: '', openedAt: NOW - 20_000, consent: true, consentVersion: 'newsletter-v1' });
     for (let i = 0; i < 5; i++) expect((await handleLead(post(sub(i)), 'newsletter', '203.0.113.7', d)).status).toBe(200);
     const sixth = await handleLead(post(sub(6)), 'newsletter', '203.0.113.7', d);
     expect(sixth.status).toBe(429);
@@ -138,7 +138,7 @@ describe('handleLead — membership', () => {
 
   it('counts attempts that store nothing: repeated duplicates are throttled too', async () => {
     const { d, store } = deps();
-    const dup = { kind: 'newsletter', email: 'same@b.vn', website: '', openedAt: NOW - 20_000 };
+    const dup = { kind: 'newsletter', email: 'same@b.vn', website: '', openedAt: NOW - 20_000, consent: true, consentVersion: 'newsletter-v1' };
     const statuses: number[] = [];
     for (let i = 0; i < LIMITS.maxAttempts + 2; i++) statuses.push((await handleLead(post(dup), 'newsletter', '203.0.113.9', d)).status);
     expect(statuses.slice(0, LIMITS.maxAttempts).every((x) => x === 200)).toBe(true);
@@ -203,7 +203,7 @@ describe('handleLead — membership', () => {
 });
 
 describe('handleLead — newsletter', () => {
-  const sub = (email: string) => ({ kind: 'newsletter', email, website: '', openedAt: NOW - 20_000, sourcePath: '/tin-tuc/' });
+  const sub = (email: string) => ({ kind: 'newsletter', email, website: '', openedAt: NOW - 20_000, sourcePath: '/tin-tuc/', consent: true, consentVersion: 'newsletter-v1' });
 
   it('stores an address and answers a repeat exactly the same way', async () => {
     const { d, store } = deps();
@@ -212,7 +212,17 @@ describe('handleLead — newsletter', () => {
     expect([first.status, again.status]).toEqual([200, 200]);
     expect(await json(first)).toEqual(await json(again));
     expect(store.rows).toHaveLength(1);
-    expect(store.rows[0]).toMatchObject({ kind: 'newsletter', name: null, consent_text_version: 'newsletter-action-v1' });
+    expect(store.rows[0]).toMatchObject({ kind: 'newsletter', name: null, consent_text_version: 'newsletter-v1' });
+  });
+
+  it('refuses newsletter without explicit opt-in or accepted consent version', async () => {
+    const { d, store } = deps();
+    const notChecked = await handleLead(post({ ...sub('x@y.vn'), consent: false }), 'newsletter', undefined, d);
+    expect(notChecked.status).toBe(400);
+    expect((await json(notChecked)).fields).toMatchObject({ consent: 'Vui lòng đồng ý nhận bản tin và xử lý địa chỉ email.' });
+    const wrongVersion = await handleLead(post({ ...sub('x@y.vn'), consentVersion: 'unreviewed-v99' }), 'newsletter', undefined, d);
+    expect(wrongVersion.status).toBe(400);
+    expect(store.rows).toHaveLength(0);
   });
 
   it('requires a valid Turnstile token on the newsletter too when a secret is configured', async () => {
