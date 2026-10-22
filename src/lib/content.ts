@@ -1,11 +1,10 @@
 import {createClient} from '@sanity/client';
-type SanityAsset={asset?:{url?:string}};
-export type Article={_id:string,title:string,slug?:string,excerpt?:string,category?:string,publishedAt?:string,coverUrl?:string,body?:unknown[]};
+export type Article={_id:string,title:string,slug?:string,excerpt?:string,category?:string,publishedAt?:string,coverUrl?:string,body?:unknown[],seoTitle?:string,seoDescription?:string};
 export type Focus={_id:string,title:string,description?:string,number?:number,icon?:string};
 export type Resource={_id:string,title:string,category?:string,description?:string,url?:string};
 export type Event={_id:string,title:string,summary?:string,startsAt?:string,coverUrl?:string};
-export type SiteSettings={organizationName?:string,organizationEnglish?:string,email?:string,phone?:string,address?:string,logoUrl?:string};
-export type HomePage={eyebrow?:string,headline?:string,subheadline?:string,aboutTitle?:string,aboutDescription?:string,primaryCta?:string};
+export type SiteSettings={organizationName?:string,organizationEnglish?:string,email?:string,phone?:string,address?:string,logoUrl?:string,seoTitle?:string,seoDescription?:string};
+export type HomePage={eyebrow?:string,headline?:string,subheadline?:string,aboutTitle?:string,aboutDescription?:string,primaryCta?:string,heroImageUrl?:string,heroImageAlt?:string,focusTitle?:string,focusDescription?:string,newsTitle?:string,newsDescription?:string,membershipTitle?:string,membershipDescription?:string,resourcesTitle?:string,resourcesDescription?:string,contactTitle?:string,contactDescription?:string,seoTitle?:string,seoDescription?:string};
 export type Content={settings:SiteSettings,home:HomePage,focus:Focus[],articles:Article[],resources:Resource[],events:Event[],connected:boolean};
 const id=import.meta.env.PUBLIC_SANITY_PROJECT_ID?.trim();
 const dataset=import.meta.env.PUBLIC_SANITY_DATASET||'production';
@@ -28,10 +27,10 @@ export async function getContent():Promise<Content>{
  if(!client)return fallback;
  try{
  const [settings,home,focus,articles,resources,events]=await Promise.all([
-  client.fetch<SiteSettings|null>(`*[_type=="siteSettings"][0]{organizationName,organizationEnglish,email,phone,address,"logoUrl":logo.asset->url}`),
-  client.fetch<HomePage|null>(`*[_type=="homePage"][0]{eyebrow,headline,subheadline,aboutTitle,aboutDescription,primaryCta}`),
+  client.fetch<SiteSettings|null>(`*[_type=="siteSettings" && _id=="siteSettings"][0]{organizationName,organizationEnglish,email,phone,address,seoTitle,seoDescription,"logoUrl":logo.asset->url}`),
+  client.fetch<HomePage|null>(`*[_type=="homePage" && _id=="homePage"][0]{eyebrow,headline,subheadline,aboutTitle,aboutDescription,primaryCta,focusTitle,focusDescription,newsTitle,newsDescription,membershipTitle,membershipDescription,resourcesTitle,resourcesDescription,contactTitle,contactDescription,seoTitle,seoDescription,"heroImageUrl":heroImage.asset->url,"heroImageAlt":heroImage.alt}`),
   client.fetch<Focus[]>(`*[_type=="focusArea"]|order(number asc)[0...12]{_id,title,description,number,icon}`),
-  client.fetch<Article[]>(`*[_type=="article" && defined(publishedAt) && publishedAt <= now()]|order(publishedAt desc)[0...12]{_id,title,"slug":slug.current,excerpt,category,publishedAt,"coverUrl":cover.asset->url,body}`),
+  client.fetch<Article[]>(`*[_type=="article" && defined(publishedAt) && publishedAt <= now()]|order(publishedAt desc)[0...12]{_id,title,"slug":slug.current,excerpt,category,publishedAt,"coverUrl":cover.asset->url,seoTitle,seoDescription,body}`),
   client.fetch<Resource[]>(`*[_type=="resource"]|order(_createdAt desc)[0...16]{_id,title,category,description,"url":coalesce(file.asset->url,externalUrl)}`),
   client.fetch<Event[]>(`*[_type=="event"]|order(startsAt desc)[0...8]{_id,title,summary,startsAt,"coverUrl":cover.asset->url}`)
  ]);
@@ -40,6 +39,6 @@ export async function getContent():Promise<Content>{
 }
 export async function getArticle(slug:string){
  if(!client||!slug)return null;
- try{return await client.fetch<Article|null>(`*[_type=="article" && slug.current==$slug && defined(publishedAt) && publishedAt <= now()][0]{_id,title,"slug":slug.current,excerpt,category,publishedAt,"coverUrl":cover.asset->url,body}`,{slug});}
+ try{return await client.fetch<Article|null>(`*[_type=="article" && slug.current==$slug && defined(publishedAt) && publishedAt <= now()][0]{_id,title,"slug":slug.current,excerpt,category,publishedAt,"coverUrl":cover.asset->url,seoTitle,seoDescription,body}`,{slug});}
  catch{return null;}
 }
