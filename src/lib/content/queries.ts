@@ -11,7 +11,7 @@ const BODY = `body[]{
 export const SITE_QUERY = `*[_type == "siteSettings"][0]{
   name, legalName, englishName, utilityLeft, utilityRight, footerBlurb, footerContact, footerContactCta,
   newsletter, contact, social,
-  forms{ joinTitle, joinIntro, consentText, consentVersion, joinSuccess, newsletterSuccess, genericError, "privacyPageSlug": privacyPage->slug.current },
+  forms{ joinTitle, joinIntro, consentText, consentVersion, newsletterConsentText, newsletterConsentVersion, joinSuccess, newsletterSuccess, genericError, "privacyPageSlug": privacyPage->slug.current },
   ${SEO}
 }`;
 

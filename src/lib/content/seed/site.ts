@@ -24,6 +24,9 @@ export const siteSeed: SiteSettings = {
     // Prototype wording ("...khi hệ thống chính thức được vận hành") replaced; needs legal review (README, Open items).
     consentText: 'Tôi đồng ý để VBFA sử dụng thông tin này nhằm liên hệ và phản hồi yêu cầu của tôi.',
     consentVersion: 'join-v2',
+    // Same wording as before this became editable in the Studio; needs legal review like the membership sentence (docs/privacy/CONSENT_TEXTS.vi.md).
+    newsletterConsentText: 'Tôi đồng ý nhận bản tin VBFA qua email và cho phép xử lý địa chỉ email để gửi bản tin.',
+    newsletterConsentVersion: 'newsletter-v1',
     joinSuccess: 'Cảm ơn bạn. VBFA đã nhận được thông tin và sẽ liên hệ lại.',
     newsletterSuccess: 'Đã ghi nhận đăng ký nhận bản tin của bạn.',
     genericError: 'Chưa thể gửi lúc này. Vui lòng thử lại sau ít phút.',

@@ -36,7 +36,8 @@ export const joinSchema = z.object({
   interest: z.enum(INTERESTS).optional().default('Quan tâm hội viên'),
   message: z.string().trim().max(1000, 'Nội dung tối đa 1000 ký tự.').optional().default(''),
   consent: z.literal(true, { error: 'Vui lòng đồng ý để VBFA liên hệ lại.' }),
-  consentVersion: z.string().max(40).optional().default('join-v2'),
+  // The version is rendered into the page together with the sentence (same build), so it is always the one the visitor saw.
+  consentVersion: z.string({ error: 'Phiên bản chấp thuận không hợp lệ.' }).regex(/^join-v[1-9]\d?$/, 'Phiên bản chấp thuận không hợp lệ.'),
 });
 
 export const newsletterSchema = z.object({
@@ -44,7 +45,7 @@ export const newsletterSchema = z.object({
   kind: z.literal('newsletter'),
   email,
   consent: z.literal(true, { error: 'Vui lòng đồng ý nhận bản tin và xử lý địa chỉ email.' }),
-  consentVersion: z.literal('newsletter-v1', { error: 'Phiên bản chấp thuận không hợp lệ.' }),
+  consentVersion: z.string({ error: 'Phiên bản chấp thuận không hợp lệ.' }).regex(/^newsletter-v[1-9]\d?$/, 'Phiên bản chấp thuận không hợp lệ.'),
 });
 
 export type JoinInput = z.infer<typeof joinSchema>;

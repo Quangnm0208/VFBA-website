@@ -243,6 +243,23 @@ describe('handleLead — newsletter', () => {
     expect(store.rows).toHaveLength(0);
   });
 
+  it('applies the same consent-version rule to both forms: <form>-v<number>, always present, stored as sent', async () => {
+    const { d, store } = deps();
+    const bad = async (kind: 'membership' | 'newsletter', body: Record<string, unknown>) => (await handleLead(post(body), kind, undefined, d)).status;
+    // A version of the other form, a made-up one, a malformed one and a missing one are all refused and nothing is stored.
+    expect(await bad('membership', { ...join, consentVersion: 'newsletter-v1' })).toBe(400);
+    expect(await bad('membership', { ...join, consentVersion: 'unreviewed-v99' })).toBe(400);
+    expect(await bad('membership', { ...join, consentVersion: undefined })).toBe(400);
+    expect(await bad('newsletter', { ...sub('a@b.vn'), consentVersion: 'join-v2' })).toBe(400);
+    expect(await bad('newsletter', { ...sub('a@b.vn'), consentVersion: 'newsletter-v1; drop table' })).toBe(400);
+    expect(await bad('newsletter', { ...sub('a@b.vn'), consentVersion: undefined })).toBe(400);
+    expect(store.rows).toHaveLength(0);
+    // When legal approves new wording and the Studio versions are bumped, the new versions are accepted and recorded.
+    expect(await bad('membership', { ...join, consentVersion: 'join-v3' })).toBe(200);
+    expect(await bad('newsletter', { ...sub('c@d.vn'), consentVersion: 'newsletter-v2' })).toBe(200);
+    expect(store.rows.map((r) => r.consent_text_version)).toEqual(['join-v3', 'newsletter-v2']);
+  });
+
   it('requires a valid Turnstile token on the newsletter too when a secret is configured', async () => {
     const ok = vi.fn(async () => new Response(JSON.stringify({ success: true })));
     const missing = await handleLead(post(sub('x@y.vn')), 'newsletter', undefined, deps({ turnstileSecret: 's' }).d);
