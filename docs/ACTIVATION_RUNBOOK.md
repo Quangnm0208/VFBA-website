@@ -79,7 +79,7 @@ Actions → Sanity activation → tick *import_seed*. Nó chạy `sanity dataset
 | Sửa tiêu đề, Publish | trang đổi tiêu đề | như trên |
 | **Unpublish** bài | trang bài trả 404 (có CSP), bài biến khỏi danh sách, `search-index.json`, `sitemap.xml` | như trên |
 | Nội dung sai (import qua CLI: slug viết hoa) | build **thất bại**, Preview cũ vẫn chạy | `docs/OPERATIONS.md` mục E.5 |
-| Bài có ngày tương lai | **không** hiện cho tới lần build kế tiếp (site tĩnh, chưa có bộ hẹn giờ) | ghi nhận giới hạn |
+| Bài có ngày tương lai | **không** hiện cho tới lần build kế tiếp (site tĩnh). Giảm thiểu: đăng đúng lúc, hoặc Scheduled Publishing của Sanity, hoặc bộ kiểm tra hằng giờ `scheduled-publish.yml` (tắt mặc định, chỉ chạy sau khi release lên `main`; xem OPERATIONS.md E.7) | ghi nhận giới hạn |
 
 ## 3. Kiểm thử E2E thật cho hai form (Preview, danh tính thử)
 

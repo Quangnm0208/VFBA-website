@@ -101,7 +101,7 @@ perspective, no API CDN).
 | ID | Severity | Finding | Reproduction | Status / fix |
 |---|---|---|---|---|
 | BUG-001 | High | Preview build failed on real data: a published article without a cover image aborted the whole build | Vercel build of `b90019c`: `Invalid article "test" ... at cover` | Fixed `f70b3f1`; Preview READY with the real article |
-| BUG-002 | Low | With one article, the article page rendered an empty contents list, an empty prev/next bar and a related-articles heading with no cards | `/tin-tuc/test/` on the `f70b3f1` Preview | Fixed `eaf9baf`; verified locally on a one-article, no-heading build (no `.toc`, `.prevnext`, `.related`; single-column grid) and unchanged on the sample set |
+| BUG-002 | Low | With one article, the article page rendered an empty contents list, an empty prev/next bar and a related-articles heading with no cards | `/tin-tuc/test/` on the `f70b3f1` Preview | Fixed `eaf9baf`. **REAL**: Preview `dpl_HKjRQFhqV253KZvM5MtJt8y4z1Xq` (`vbfa-build` = `eaf9baf`) serves `/tin-tuc/test/` with `article-grid article-grid--single` and no contents list, no prev/next bar, no related section. Also verified locally on a one-article build and unchanged on the sample set (6 articles) |
 | BUG-003 | Medium | A Production build without `PUBLIC_SANITY_PROJECT_ID` would silently publish the six sample articles as real news | read of `src/lib/content/index.ts` | Fixed (this commit) + 4 unit tests + real-build proof above |
 | BUG-004 | Info | `canonical`, `og:url`, `og:image` and JSON-LD on a Preview point to `vfba-website-alpha.vercel.app` | any Preview page | By design (site origin = `PUBLIC_SITE_URL` or the project's production URL); harmless while `noindex`. Set `PUBLIC_SITE_URL` for Production when the custom domain is attached |
 | BUG-005 | Info | `/tin-tuc/` with one article shows the featured card and "1 bài viết" with an empty area under the toolbar | `/tin-tuc/` on the Preview | Open, cosmetic, resolves itself with more articles; not changed (no redesign) |
@@ -111,7 +111,7 @@ perspective, no API CDN).
 
 ```bash
 export PUBLIC_TURNSTILE_SITE_KEY=1x00000000000000000000AA   # Cloudflare public test key, build-time only
-npm test                                   # 81 tests
+npm test                                   # 93 tests
 npm run check && npm run build && python3 scripts/check_site.py
 VERCEL_ENV=production npm run build        # must fail: no CMS project configured
 (cd studio && SANITY_STUDIO_PROJECT_ID=iqyx5ttc npm run typecheck && SANITY_STUDIO_PROJECT_ID=iqyx5ttc npm run validate)
