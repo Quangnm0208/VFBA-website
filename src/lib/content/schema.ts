@@ -153,8 +153,8 @@ export const homeSchema = z.object({
     title: z.string(),
     description: z.string(),
     allLink: linkSchema,
-    /** Exactly three highlighted articles: one featured card and two row cards. */
-    picks: z.array(z.object({ slug: z.string(), link: linkSchema })).length(3),
+    /** Up to three highlighted articles: supports a new CMS with only one published article. */
+    picks: z.array(z.object({ slug: z.string(), link: linkSchema })).min(1).max(3),
   }),
   membership: z.object({
     eyebrow: z.string(),
