@@ -1,0 +1,74 @@
+name: VBFA Sanity Studio deployment
+# This trusted workflow lives on main so GitHub Actions can expose "Run workflow".
+# It checks out the reviewed CMS release branch, NOT production frontend files.
+on:
+  workflow_dispatch:
+    inputs:
+      studio_host:
+        description: "Sanity hosted subdomain (e.g. vbfa-site; must be available)"
+        required: true
+        type: string
+        default: vbfa
+      confirmation:
+        description: "Type deploy-vbfa-studio to confirm project iqyx5ttc"
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: vbfa-sanity-deployment
+  cancel-in-progress: false
+jobs:
+  sanity:
+    name: Validate and deploy Sanity Studio
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: vbfa-cms
+    env:
+      SANITY_STUDIO_PROJECT_ID: iqyx5ttc
+      SANITY_STUDIO_DATASET: production
+      SANITY_TELEMETRY: "false"
+    steps:
+      - name: Confirm project and destination
+        shell: bash
+        env:
+          STUDIO_HOST: ${{ inputs.studio_host }}
+          CONFIRMATION: ${{ inputs.confirmation }}
+        run: |
+          test "$CONFIRMATION" = "deploy-vbfa-studio" || { echo "::error::Missing deployment confirmation"; exit 1; }
+          [[ "$STUDIO_HOST" =~ ^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$ ]] || { echo "::error::Invalid Studio hostname"; exit 1; }
+      - name: Check out reviewed CMS code
+        uses: actions/checkout@v4
+        with:
+          ref: feat/vbfa-services-activation-20261022
+          persist-credentials: false
+      - name: Record exact source commit
+        run: |
+          echo "CMS source SHA: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
+          echo "Project: iqyx5ttc / production" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            studio/package-lock.json
+      - name: Install pinned dependencies
+        run: |
+          npm ci --no-audit
+          npm ci --prefix studio --no-audit
+      - name: Validate Studio
+        run: |
+          npm --prefix studio run typecheck
+          npm --prefix studio run validate
+          npm --prefix studio run build
+      - name: Deploy Studio (requires owner secret)
+        working-directory: studio
+        env:
+          SANITY_AUTH_TOKEN: ${{ secrets.SANITY_DEPLOY_TOKEN }}
+          STUDIO_HOST: ${{ inputs.studio_host }}
+        shell: bash
+        run: |
+          test -n "$SANITY_AUTH_TOKEN" || { echo "::error::Add SANITY_DEPLOY_TOKEN to GitHub Actions secrets before running"; exit 1; }
+          npx sanity deploy --yes --schema-required --url "$STUDIO_HOST"
+          echo "Studio: https://${STUDIO_HOST}.sanity.studio" >> "$GITHUB_STEP_SUMMARY"
