@@ -1,6 +1,8 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import {getArticle} from '../../lib/content';
+import {PortableText} from 'astro-portabletext';
+import ArticleImage from '../../components/ArticleImage.astro';
 import '../../styles/site.css';
 const slug=Astro.params.slug||'';
 const article=await getArticle(slug);
@@ -8,9 +10,9 @@ if(!article){return Astro.redirect('/#news',302);}
 const date=article.publishedAt?new Intl.DateTimeFormat('vi-VN',{day:'2-digit',month:'long',year:'numeric'}).format(new Date(article.publishedAt)):null;
 const blocks=Array.isArray(article.body)?article.body:[];
 ---
-<BaseLayout title={article.title+' | VBFA'} description={article.excerpt||'Thông tin ngành nhiên liệu sinh học'} image={article.coverUrl}>
+<BaseLayout title={(article.seoTitle||article.title)+' | VBFA'} description={article.seoDescription||article.excerpt||'Thông tin ngành nhiên liệu sinh học'} image={article.coverUrl}>
 <header class="site-header" data-header><div class="container header-inner"><a class="brand" href="/"><span class="brand-emblem">◈</span><span class="brand-type"><strong>VBFA</strong><small>HIỆP HỘI NHIÊN LIỆU SINH HỌC VIỆT NAM</small></span></a><a class="button button-dark" href="/#news">← Về trang tin</a></div></header>
 <main id="main" class="section"><article class="container" style="max-width:860px"><div class="eyebrow"><span class="eyebrow-line"></span>{article.category||'TIN NGÀNH'} {date&&' · '+date}</div><h1 style="font-size:clamp(32px,5vw,56px);line-height:1.25;letter-spacing:-.045em">{article.title}</h1>{article.excerpt&&<p style="font-size:18px;line-height:1.75;color:#607363;margin:30px 0">{article.excerpt}</p>}{article.coverUrl&&<img src={article.coverUrl+'?auto=format&fit=crop&w=1400&q=85'} alt={article.title} style="width:100%;border-radius:10px;margin:20px 0 40px"/>}
-<div style="font-size:16px;line-height:2;color:#2b4934">{blocks.filter((b:any)=>b?._type==='block').map((b:any)=><p>{(b.children||[]).map((c:any)=>c.text||'').join('')}</p>)}</div><a class="text-link" style="margin-top:55px" href="/#news">← Quay lại tin tức</a></article></main>
+<div style="font-size:16px;line-height:2;color:#2b4934"><PortableText value={blocks as any[]} components={{type:{image:ArticleImage}}}/></div><a class="text-link" style="margin-top:55px" href="/#news">← Quay lại tin tức</a></article></main>
 <footer class="site-footer"><div class="container footer-bottom"><span>© {new Date().getFullYear()} VBFA.</span><a href="/">Trang chủ ↗</a></div></footer>
 </BaseLayout>
