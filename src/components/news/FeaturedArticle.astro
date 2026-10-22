@@ -1,0 +1,21 @@
+---
+import Icon from '../ui/Icon.astro';
+import Media from '../ui/Media.astro';
+import { formatDate } from '~/lib/format';
+import { articlePath } from '~/lib/url';
+import { CATEGORIES, type Article } from '~/lib/content';
+
+interface Props { article: Article }
+const { article } = Astro.props;
+const href = articlePath(article.slug);
+---
+<article class="nfeat" id="feat">
+  <div class="media g-a"><div class="media__zoom"><Media media={article.cover} priority sizes="(min-width: 1040px) 55vw, 100vw" /></div><span class="badge">{CATEGORIES[article.category].badge}</span></div>
+  <div class="nfeat__body">
+    <div class="nfeat__tags"><b>BÀI NỔI BẬT</b><span>{CATEGORIES[article.category].label.toLocaleUpperCase('vi')} · {formatDate(article.publishedAt)}</span></div>
+    <h2><a href={href}>{article.title}</a></h2>
+    <p>{article.excerpt}</p>
+    <div class="meta">{article.readingMinutes} phút đọc</div>
+    <a class="btn btn--forest" href={href}>Đọc bài viết <Icon name="arrow" class="ar" size={18} /></a>
+  </div>
+</article>

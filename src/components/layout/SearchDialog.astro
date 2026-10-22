@@ -1,0 +1,16 @@
+---
+import Icon from '../ui/Icon.astro';
+---
+<div class="overlay overlay--blur overlay--top" data-overlay="search" hidden>
+  <div class="dialog dialog--search" role="dialog" aria-modal="true" aria-labelledby="search-title">
+    <button class="icon-btn dialog__close" type="button" aria-label="Đóng" data-close><Icon name="close" size={20} sw={1.8} /></button>
+    <span class="eyebrow">VBFA</span>
+    <h2 class="dialog__title" id="search-title">Tìm kiếm nội dung</h2>
+    <p class="dialog__sub">Tìm chủ đề, tài liệu và các khu vực thông tin trên website.</p>
+    <form id="search-form" class="search-form" data-index="/search-index.json">
+      <label class="field-label" for="search-input">Từ khóa</label>
+      <div class="search-field"><Icon name="search" size={20} sw={1.8} /><input class="input" id="search-input" type="search" autocomplete="off" placeholder="Ví dụ: hội viên, chính sách, tin tức" data-autofocus /></div>
+    </form>
+    <div class="results" aria-live="polite"></div>
+  </div>
+</div>

@@ -1,0 +1,44 @@
+---
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import PageHead from '~/components/news/PageHead.astro';
+import FeaturedArticle from '~/components/news/FeaturedArticle.astro';
+import ArticleCard from '~/components/news/ArticleCard.astro';
+import Icon from '~/components/ui/Icon.astro';
+import { breadcrumbJsonLd } from '~/lib/seo';
+import { CATEGORIES, getContent } from '~/lib/content';
+
+const { newsPage, articles } = await getContent();
+const [featured] = articles;
+// Initial state equals the state the filter script renders by default (featured + first six of the rest),
+// so there is no layout shift when the script runs.
+const PAGE_SIZE = 6;
+---
+<BaseLayout
+  page="news"
+  title={newsPage.seo.title ?? 'Tin tức | VBFA'}
+  description={newsPage.seo.description}
+  path="/tin-tuc/"
+  seo={newsPage.seo}
+  newsCurrent="page"
+  jsonLd={[breadcrumbJsonLd([{ name: 'Trang chủ', path: '/' }, { name: 'Tin tức', path: '/tin-tuc/' }])]}
+>
+  <PageHead content={newsPage} />
+  <section class="news-list" aria-label="Danh sách bài viết">
+    <div class="container">
+      {featured && <FeaturedArticle article={featured} />}
+      <div class="toolbar">
+        <div class="chips" role="group" aria-label="Lọc theo chuyên mục">
+          <button class="chip" type="button" data-cat-filter="all" aria-pressed="true">Tất cả</button>
+          {(Object.keys(CATEGORIES) as Array<keyof typeof CATEGORIES>).map((key) => <button class="chip" type="button" data-cat-filter={key} aria-pressed="false">{CATEGORIES[key].label}</button>)}
+        </div>
+        <div class="pill-search"><Icon name="search" size={18} sw={1.8} /><input class="input" id="nq" type="search" aria-label="Tìm bài viết" autocomplete="off" placeholder="Tìm bài viết" /></div>
+      </div>
+      <div class="count-row"><span class="count" id="count" aria-live="polite">{articles.length} bài viết</span><button class="text-btn" type="button" data-clear data-clear-row hidden>Xóa bộ lọc</button></div>
+      <div class="news-grid">
+        {articles.map((article, i) => <ArticleCard article={article} index={i} hidden={i === 0 || i > PAGE_SIZE} />)}
+      </div>
+      <div class="empty" id="empty" hidden><p>Không tìm thấy bài viết phù hợp.</p><button class="btn btn--forest" type="button" data-clear>Xóa bộ lọc</button></div>
+      <div class="more" id="more" hidden={articles.length - 1 <= PAGE_SIZE}><button class="btn btn--outline" id="more-btn" type="button">Xem thêm bài viết <Icon name="arrow" class="ar" size={18} /></button></div>
+    </div>
+  </section>
+</BaseLayout>

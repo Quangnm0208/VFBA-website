@@ -1,51 +1,266 @@
 #!/usr/bin/env python3
-"""Zero-dependency static VBFA deployment validation."""
+"""Static checks on the Astro build (.vercel/output). No dependencies.
+
+    npm run build && python3 scripts/check_site.py
+
+Verifies what a browser test cannot see cheaply: every URL in the sitemap exists, links and assets resolve
+(including #anchors), one <h1> per page, meta/canonical/JSON-LD, alt text, duplicate ids, indexing mode
+consistency (noindex vs robots.txt), self-hosted fonts (no third-party hosts), CSP on every page and size budgets.
+"""
+from __future__ import annotations
+
+import json
+import re
+import sys
 from html.parser import HTMLParser
 from pathlib import Path
-from urllib.parse import urlsplit
-import sys
+from urllib.parse import urldefrag, urlsplit
 
-ROOT=Path(__file__).resolve().parents[1]
-class Links(HTMLParser):
-    def __init__(self):
-        super().__init__()
-        self.links=[]
-        self.has_noindex=False
-    def handle_starttag(self,tag,attrs):
-        a=dict(attrs)
-        if tag=="meta" and a.get("name")=="robots" and "noindex" in a.get("content",""):
-            self.has_noindex=True
-        if tag in {"a","link","img","script","source"}:
-            value=a.get("src") or a.get("href")
-            if value:self.links.append((tag,value))
+OUT = Path(__file__).resolve().parents[1] / ".vercel" / "output"
+STATIC = OUT / "static"
+ALLOWED_HOSTS = {"cdn.sanity.io", "challenges.cloudflare.com", "va.vercel-scripts.com"}
+BUDGET = {"image_kb": 260, "html_kb": 120, "css_kb": 90, "js_kb": 120}
 
-pages=sorted(ROOT.rglob("*.html"))
-assert len(pages)==12,f"Expected 12 HTML pages; found {len(pages)}"
-errors=[]
-for page in pages:
-    parser=Links()
-    parser.feed(page.read_text(encoding="utf-8"))
-    if not parser.has_noindex:errors.append(f"{page}: missing preview noindex")
-    for tag,url in parser.links:
-        if url.startswith(("#","mailto:","tel:","javascript:","data:")):continue
-        parts=urlsplit(url)
-        if parts.scheme or parts.netloc:continue
-        route=parts.path
-        if not route:continue
-        if route.startswith("/"):
-            file=ROOT/route.lstrip("/")
-        else:file=page.parent/route
-        if file.is_dir():file=file/"index.html"
-        if not file.exists():
-            errors.append(f"{page.relative_to(ROOT)}: broken {tag} path {url}")
-for path in ROOT.rglob("*"):
-    if path.is_file() and path.suffix.lower() in {".otf",".ttf"}:
-        errors.append(f"Unlicensed binary font unexpectedly included: {path}")
-robots=ROOT/"robots.txt"
-if not robots.is_file() or "Disallow: /" not in robots.read_text():
-    errors.append("Review protection robots.txt missing")
-print(f"Validated {len(pages)} routes and static asset references.")
+
+class Page(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.h1 = 0
+        self.title = ""
+        self._in_title = False
+        self.meta: dict[str, str] = {}
+        self.canonical = ""
+        self.refs: list[tuple[str, str]] = []
+        self.ids: list[str] = []
+        self.imgs_missing_alt = 0
+        self.jsonld: list[str] = []
+        self._in_ld = False
+        self.preloads: list[tuple[str, dict]] = []
+        self.lang = ""
+        self.text = ""
+        self._skip = 0
+
+    def handle_starttag(self, tag, attrs):
+        a = dict(attrs)
+        if tag == "html":
+            self.lang = a.get("lang", "")
+        if tag == "h1":
+            self.h1 += 1
+        if tag == "title":
+            self._in_title = True
+        if tag in {"script", "style"}:
+            self._skip += 1
+        if tag == "meta":
+            key = a.get("name") or a.get("property")
+            if key:
+                self.meta[key] = a.get("content", "")
+        if tag == "link" and a.get("rel") == "canonical":
+            self.canonical = a.get("href", "")
+        if tag == "link" and a.get("rel") == "preload":
+            self.preloads.append((a.get("href", ""), a))
+        if tag == "script" and a.get("type") == "application/ld+json":
+            self._in_ld = True
+            self.jsonld.append("")
+        if tag == "img" and "alt" not in a:
+            self.imgs_missing_alt += 1
+        if a.get("id"):
+            self.ids.append(a["id"])
+        for attr in ("href", "src", "srcset"):
+            if a.get(attr) and tag in {"a", "link", "img", "script", "source"}:
+                value = a[attr].split(",")[0].split(" ")[0] if attr == "srcset" else a[attr]
+                self.refs.append((tag, value))
+
+    def handle_endtag(self, tag):
+        if tag == "title":
+            self._in_title = False
+        if tag in {"script", "style"}:
+            self._skip = max(0, self._skip - 1)
+        if tag == "script":
+            self._in_ld = False
+
+    def handle_data(self, data):
+        if not self._skip:
+            self.text += data
+        if self._in_title:
+            self.title += data
+        if self._in_ld and self.jsonld:
+            self.jsonld[-1] += data
+
+
+errors: list[str] = []
+warnings: list[str] = []
+err = errors.append
+
+if not STATIC.is_dir():
+    sys.exit("No build output. Run `npm run build` first.")
+
+robots = (STATIC / "robots.txt").read_text(encoding="utf-8")
+indexing = "Disallow: /\n" not in robots + "\n" or "Allow: /" in robots
+sitemap = (STATIC / "sitemap.xml").read_text(encoding="utf-8")
+sitemap_paths = [urlsplit(u).path for u in re.findall(r"<loc>([^<]+)</loc>", sitemap)]
+
+pages = sorted(p for p in STATIC.rglob("*.html"))
+parsed: dict[Path, Page] = {}
+for path in pages:
+    page = Page()
+    page.feed(path.read_text(encoding="utf-8"))
+    parsed[path] = page
+
+
+def resolve(url: str, source: Path) -> Path | None:
+    parts = urlsplit(url)
+    if parts.scheme or parts.netloc:
+        return None
+    route = parts.path or "/"
+    target = STATIC / route.lstrip("/") if route.startswith("/") else (source.parent / route)
+    if target.is_dir():
+        target = target / "index.html"
+    return target
+
+
+for url_path in sitemap_paths:
+    target = STATIC / url_path.lstrip("/")
+    if not (target / "index.html").is_file():
+        err(f"sitemap lists {url_path} but no page was built")
+
+for path, page in parsed.items():
+    rel = path.relative_to(STATIC).as_posix()
+    is404 = rel == "404.html"
+    if page.lang != "vi":
+        err(f"{rel}: <html lang> should be vi, got '{page.lang}'")
+    if page.h1 != 1:
+        err(f"{rel}: expected exactly one <h1>, found {page.h1}")
+    if not page.title.strip():
+        err(f"{rel}: missing <title>")
+    if not page.meta.get("description"):
+        err(f"{rel}: missing meta description")
+    if not page.canonical:
+        err(f"{rel}: missing canonical link")
+    if page.imgs_missing_alt:
+        err(f"{rel}: {page.imgs_missing_alt} <img> without alt attribute")
+    dupes = {i for i in page.ids if page.ids.count(i) > 1}
+    if dupes:
+        err(f"{rel}: duplicate ids {sorted(dupes)}")
+    for blob in page.jsonld:
+        try:
+            json.loads(blob)
+        except ValueError as e:
+            err(f"{rel}: invalid JSON-LD ({e})")
+    robots_meta = page.meta.get("robots", "")
+    if indexing and not is404 and "noindex" in robots_meta:
+        err(f"{rel}: noindex while robots.txt allows indexing")
+    if not indexing and "noindex" not in robots_meta:
+        err(f"{rel}: robots.txt blocks crawlers but the page is indexable")
+    if len([p for p in page.preloads if p[1].get("as") == "font"]) < 3:
+        err(f"{rel}: fewer than 3 preloaded fonts")
+    for href, attrs in page.preloads:
+        if attrs.get("as") == "font" and "crossorigin" not in attrs:
+            err(f"{rel}: font preload without crossorigin ({href})")
+
+    for tag, url in page.refs:
+        if url.startswith(("mailto:", "tel:", "data:", "javascript:")):
+            continue
+        parts = urlsplit(url)
+        if parts.scheme or parts.netloc:
+            host = parts.netloc
+            if host and host not in ALLOWED_HOSTS and not url.startswith("https://schema.org"):
+                # canonical / og:url point at the site origin; only <link>/<a> to the same origin are expected
+                if tag in {"script", "img", "source"} or (tag == "link" and "stylesheet" in url):
+                    err(f"{rel}: third-party {tag} {url}")
+            continue
+        base, frag = urldefrag(url)
+        target = resolve(base or "/" + rel.replace("index.html", ""), path) if base else path
+        if base and (target is None or not target.exists()):
+            err(f"{rel}: broken {tag} {url}")
+            continue
+        if frag and target and target.suffix == ".html":
+            other = parsed.get(target)
+            if other is not None and frag not in other.ids:
+                err(f"{rel}: anchor #{frag} not found in {target.relative_to(STATIC)}")
+
+# Fonts: self-hosted, Astro-fingerprinted, WOFF2 for the open-licence families.
+font_files = list((STATIC / "_astro" / "fonts").glob("*"))
+if len(font_files) < 11:
+    err(f"expected 11 self-hosted font files in _astro/fonts, found {len(font_files)}")
+home = (STATIC / "index.html").read_text(encoding="utf-8")
+if re.search(r"fonts\.(googleapis|gstatic)\.com|cdn\.jsdelivr", home):
+    err("home page references a third-party font host")
+# Proprietary fonts (SVN-Bebas Neue Pro, SVN-Primark) have no verified web licence: they must not be committed or served.
+restricted = re.compile(r"svn[-_]|bebasneue|primark", re.I)
+for font in [*(OUT / "static").rglob("*"), *Path("src/assets/fonts").glob("*")]:
+    if font.is_file() and restricted.search(font.name):
+        err(f"restricted font file present: {font}")
+if any(restricted.search(css.read_text(encoding="utf-8")) for css in (STATIC / "_astro").glob("*.css")) or restricted.search(home):
+    err("built CSS/HTML still references a restricted font")
+
+# The web-font subsets keep only Latin + Vietnamese + the symbols the site uses (scripts/font-ranges.json).
+# Every character the pages (and the search index) display must be inside them, otherwise it silently falls back to a
+# system font. NFC-normalised first: composed Vietnamese letters are in range, and decomposed input is covered too.
+import unicodedata
+ranges = json.loads((Path(__file__).parent / "font-ranges.json").read_text(encoding="utf-8"))["ranges"]
+in_subset = lambda cp: any(a <= cp <= b for a, b in ranges)
+texts = {p.relative_to(STATIC).as_posix(): pg.text + pg.title for p, pg in parsed.items()}
+index_file = STATIC / "search-index.json"
+if index_file.exists():
+    texts["search-index.json"] = " ".join(str(x) for group in json.loads(index_file.read_text(encoding="utf-8")).values() for pair in group for x in pair)
+outside: dict[str, set[str]] = {}
+for where, text in texts.items():
+    for ch in set(unicodedata.normalize("NFC", text)):
+        if not ch.isspace() and not in_subset(ord(ch)):
+            outside.setdefault(ch, set()).add(where)
+for ch, where in sorted(outside.items()):
+    err(f"U+{ord(ch):04X} {ch!r} is outside the web-font subset (falls back to a system font); used in {sorted(where)[:3]}")
+
+# CSP on every prerendered route (written by the Vercel adapter into config.json)
+config = json.loads((OUT / "config.json").read_text(encoding="utf-8"))
+def has_csp(rule):
+    return "content-security-policy" in {k.lower() for k in rule.get("headers", {})}
+
+def route_matches(rule, url):
+    # Vercel matches `src` as an anchored regex against the exact request path (trailing slash included).
+    src = rule["src"]
+    if not src.startswith("^"):
+        src = "^" + src
+    if not src.endswith("$"):
+        src += "$"
+    return re.fullmatch(src[1:-1], url) is not None
+
+page_rules = [r for r in config["routes"] if "src" in r and has_csp(r) and not r.get("dest")]
+for path in parsed:
+    if path.name == "404.html":
+        # Unknown URLs are answered by the catch-all `dest: /404.html` rule, which must carry the CSP itself.
+        catch_all = [r for r in config["routes"] if r.get("dest") == "/404.html" and r.get("status") == 404]
+        if not catch_all or not all(has_csp(r) for r in catch_all):
+            err("the 404 catch-all route does not send a Content-Security-Policy header")
+        continue
+    rel = path.relative_to(STATIC).parent.as_posix()
+    url = "/" if rel == "." else f"/{rel}/"
+    if not any(route_matches(r, url) for r in page_rules):
+        err(f"no Content-Security-Policy route matches {url} (routes must use the exact trailing-slash URL)")
+for r in config["routes"]:
+    h = {k.lower(): v for k, v in r.get("headers", {}).items()}
+    if "content-security-policy" in h and "default-src 'self'" not in h["content-security-policy"]:
+        err(f"weak CSP on {r['src']}")
+
+# Size budgets
+for f in STATIC.rglob("*"):
+    if not f.is_file():
+        continue
+    kb = f.stat().st_size / 1024
+    if f.suffix in {".webp", ".png", ".jpg"} and kb > BUDGET["image_kb"] and "og-default" not in f.name and "favicon-512" not in f.name:
+        warnings.append(f"image {f.relative_to(STATIC)} is {kb:.0f} KB (> {BUDGET['image_kb']} KB)")
+    if f.suffix == ".html" and kb > BUDGET["html_kb"]:
+        warnings.append(f"{f.relative_to(STATIC)} is {kb:.0f} KB (> {BUDGET['html_kb']} KB)")
+    if f.suffix == ".css" and kb > BUDGET["css_kb"]:
+        warnings.append(f"{f.relative_to(STATIC)} is {kb:.0f} KB (> {BUDGET['css_kb']} KB)")
+    if f.suffix == ".js" and kb > BUDGET["js_kb"]:
+        warnings.append(f"{f.relative_to(STATIC)} is {kb:.0f} KB (> {BUDGET['js_kb']} KB)")
+
+mode = "indexing ON" if indexing else "indexing OFF (preview mode)"
+print(f"Checked {len(pages)} pages, {len(sitemap_paths)} sitemap URLs — {mode}.")
+for w in warnings:
+    print(f"warning: {w}")
 if errors:
-    print("\n".join(errors[:100]),file=sys.stderr)
+    print("\n".join(f"error: {e}" for e in errors[:80]), file=sys.stderr)
     sys.exit(1)
-print("PASS: route/asset integrity, review robots, and font license packaging.")
+print("PASS: routes, links/anchors, SEO tags, JSON-LD, indexing mode, fonts, CSP, budgets.")

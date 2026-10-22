@@ -1,66 +1,36 @@
-name: VBFA Production Live Smoke
+name: Deployed site smoke
+# Black-box check of a live deployment: real Vercel headers (CSP on every page incl. the 404), redirects and the
+# real Vercel Function. After a push to main it waits until production serves that exact commit.
 on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      base_url:
+        description: Origin to test (production alias or a preview URL)
+        default: https://vfba-website-alpha.vercel.app
+      expect_indexing:
+        description: 'Must search engines be allowed? (off until the launch is approved)'
+        default: 'off'
+        type: choice
+        options: ['off', 'on']
 permissions:
   contents: read
 jobs:
-  verify-live:
+  smoke:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - name: Confirm Vercel production has the approved frontend
-        env:
-          LIVE_URL: https://vfba-website-alpha.vercel.app
-        run: |
-          python - <<'PY'
-          import os, time, urllib.request
-          root=os.environ["LIVE_URL"].rstrip("/")
-          checks=[
-            ("/index.html",["data-filter-mode=\"hide\"","news-filter-status"]),
-            ("/assets/js/site.js",["$$('.ncard', grid).forEach","$$('a', card).forEach"]),
-            ("/assets/css/tokens.css",["--font-display:'Be Vietnam Pro'"]),
-            ("/tin-tuc/index.html",["<html lang=\"vi\""]),
-          ]
-          for attempt in range(24):
-            missing=[]
-            for path,needles in checks:
-              try:
-                req=urllib.request.Request(root+path+"?vbfa_qacheck="+str(time.time_ns()),headers={"User-Agent":"VBFA-CI-Live-Audit/1.0","Cache-Control":"no-cache"})
-                with urllib.request.urlopen(req,timeout=15) as r: content=r.read().decode("utf-8","replace")
-                for item in needles:
-                  if item not in content: missing.append(f"{path}: missing {item[:35]}")
-              except Exception as e: missing.append(f"{path}: {e}")
-            if not missing:
-              print("PASS: Live deployment serves merged frontend across 4 endpoints")
-              break
-            print(f"Attempt {attempt+1}/24: "+"; ".join(missing)[:650],flush=True)
-            if attempt==23:raise SystemExit("FAIL: Production has not deployed verified frontend.")
-            time.sleep(10)
-          PY
-
-  verify-live-browser:
-    runs-on: ubuntu-latest
-    needs: verify-live
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-node@v4
         with:
-          python-version: '3.12'
-      - name: Install Playwright Chromium
-        run: |
-          python -m pip install playwright==1.56.0
-          python -m playwright install --with-deps chromium
-      - name: Audit responsive UX directly on Vercel production
+          node-version: 24
+      - name: Smoke test
         env:
-          QA_BASE_URL: https://vfba-website-alpha.vercel.app
-        run: python scripts/browser_qa.py
-      - name: Upload live responsive screenshots
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: vbfa-production-responsive-audit
-          path: qa-artifacts/
-          if-no-files-found: warn
+          SMOKE_BASE_URL: ${{ inputs.base_url || 'https://vfba-website-alpha.vercel.app' }}
+          SMOKE_EXPECT_INDEXING: ${{ inputs.expect_indexing || 'off' }}
+          # On push, wait for production to serve exactly this commit before judging it.
+          SMOKE_EXPECT_SHA: ${{ github.event_name == 'push' && github.sha || '' }}
+          # Optional repository secret for protected previews; empty for the public production alias.
+          VERCEL_PROTECTION_BYPASS: ${{ secrets.VERCEL_PROTECTION_BYPASS }}
+        run: node scripts/qa/smoke.mjs

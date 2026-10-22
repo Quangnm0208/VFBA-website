@@ -1,0 +1,22 @@
+---
+import { Image } from 'astro:assets';
+import logoWhite from '~/assets/brand/logo-white.webp';
+import Icon from '../ui/Icon.astro';
+import { homeHref } from '~/lib/nav';
+import type { SiteSettings } from '~/lib/content';
+
+interface Props { site: SiteSettings; home: boolean }
+const { site, home } = Astro.props;
+const h = (hash: string) => homeHref(hash, home);
+---
+<footer class="footer" id="contact">
+  <div class="container">
+    <div class="footer__grid">
+      <div class="footer__brand"><Image src={logoWhite} alt="Logo VBFA" widths={[360, 540]} sizes="175px" format="webp" quality={80} loading="lazy" decoding="async" /><p>{site.footerBlurb}</p></div>
+      <div><h3>Khám phá</h3><ul><li><a href={h('#about')}>Giới thiệu</a></li><li><a href={h('#focus')}>Lĩnh vực trọng tâm</a></li><li><a href="/tin-tuc/">Tin tức</a></li><li><a href={h('#membership')}>Hội viên</a></li></ul></div>
+      <div><h3>Thông tin</h3><ul><li><a href={h('#resources')}>Thư viện</a></li><li><a href={h('#resources')}>Chính sách</a></li><li><a href="#contact">Liên hệ</a></li></ul></div>
+      <div class="footer__contact"><h3>Liên hệ</h3><p>{site.footerContact}</p><button type="button" data-open="join">{site.footerContactCta} <Icon name="arrow" class="ar" size={17} /></button></div>
+    </div>
+    <div class="footer__legal"><span>© <span data-year>2026</span> {site.name} · {site.legalName}</span></div>
+  </div>
+</footer>

@@ -1,0 +1,13 @@
+/* ---------- Đầu trang Tin tức: chuỗi vào cùng họ với hero trang chủ ---------- */
+.page-head__art-in{position:absolute;inset:0;animation:rise 1.2s var(--ease) .25s both}
+.page-head .crumb{animation:rise .9s var(--ease) both}
+.page-head__eyebrow{animation:rise .9s var(--ease) .08s both}
+.page-head .eyebrow::before{transform-origin:left;animation:draw .8s var(--ease) .2s backwards}
+.page-head h1{display:flex;flex-direction:column}
+.page-head h1 .mask{display:block;overflow:hidden;padding:.24em 0 .14em;margin:-.24em 0 -.14em}
+.page-head h1 .mask>span{display:block;animation:line 1s var(--ease) .15s backwards}
+.page-head h1 .mask:nth-child(2)>span{animation-delay:.32s}
+.page-head h1 em{position:relative;display:inline-block}
+.page-head h1 em>i{position:absolute;left:0;right:0;bottom:-.04em;height:3px;border-radius:2px;background:var(--vbfa-grad-bar);transform-origin:left;animation:draw .9s var(--ease) 1.15s backwards}
+.page-head .lead{animation:rise .9s var(--ease) .55s both}
+.page-head .wave--2{animation-delay:4.4s}

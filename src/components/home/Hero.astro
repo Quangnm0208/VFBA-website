@@ -1,0 +1,47 @@
+---
+import { Image } from 'astro:assets';
+import drop from '~/assets/brand/drop.webp';
+import Icon from '../ui/Icon.astro';
+import type { HomeContent } from '~/lib/content';
+
+interface Props { hero: HomeContent['hero'] }
+const { hero } = Astro.props;
+---
+<section class="hero" id="top" data-hero aria-labelledby="hero-title">
+  <div class="hero__bg" aria-hidden="true"></div>
+  <div class="hero__drift" aria-hidden="true"></div>
+  <div class="gfx gfx-dots gfx-dots--hero" data-gfx="dots" aria-hidden="true"></div>
+  <div class="container hero__in">
+    <div class="hero__art" aria-hidden="true">
+      <div class="hero__art-in">
+        <div class="px px--a">
+          <div class="hero__glow"></div>
+          <svg class="hero__rings" viewBox="0 0 620 620" fill="none">
+            <circle cx="310" cy="310" r="120" stroke="#96b949" stroke-opacity=".36"/>
+            <circle cx="310" cy="310" r="170" stroke="#96b949" stroke-opacity=".25"/>
+            <circle cx="310" cy="310" r="224" stroke="#96b949" stroke-opacity=".16"/>
+            <circle cx="310" cy="310" r="280" stroke="#96b949" stroke-opacity=".10"/>
+            <circle class="ring-dash" cx="310" cy="310" r="308" stroke="#e3a63a" stroke-opacity=".4" stroke-dasharray="2 9" stroke-linecap="round"/>
+            <g class="orbit"><circle cx="439" cy="202" r="6" fill="#e3a63a"/><circle cx="152" cy="368" r="3.5" fill="#fff"/></g>
+            <g class="orbit orbit--2"><circle cx="109" cy="216" r="5" fill="#b2d25a"/><circle cx="272" cy="529" r="4" fill="#b2d25a"/></g>
+            <g class="orbit orbit--3"><circle cx="538" cy="469" r="6" fill="#e3a63a"/><circle cx="262" cy="36" r="4" fill="#b2d25a"/></g>
+          </svg>
+          <span class="wave"></span><span class="wave wave--2"></span><span class="wave wave--3"></span>
+        </div>
+        <div class="px px--b"><Image class="hero__drop" src={drop} alt="" widths={[280, 560]} sizes="(min-width: 1041px) 250px, 140px" format="webp" quality={78} loading="eager" fetchpriority="high" decoding="async" /></div>
+        <div class="hero__micro">{hero.microLabel}</div>
+      </div>
+    </div>
+    <div class="hero__copy">
+      <div class="hero__eyebrow"><span class="eyebrow eyebrow--lime">{hero.eyebrow}</span></div>
+      <h1 id="hero-title"><span class="mask"><span>{hero.line1}</span></span><span class="mask"><span>{hero.line2Prefix} <em class="hl">{hero.highlight}</em></span></span></h1>
+      <p class="lead hero__p">{hero.lead}</p>
+      <div class="hero__actions"><a class="btn btn--lime" href={hero.primaryCta.href}>{hero.primaryCta.label} <Icon name="arrow" class="ar" size={18} /></a><a class="btn btn--ghost" href={hero.secondaryCta.href}>{hero.secondaryCta.label} <Icon name="arrow-right" class="ar" size={18} /></a></div>
+    </div>
+  </div>
+  <div class="hero__strip"><div class="container hero__strip-in">
+    <div class="hero__tag"><strong>{hero.stripLabel}</strong><span class="script">{hero.stripScript}</span></div>
+    <ul class="hero__pts">{hero.stripPoints.map((point) => <li>{point}</li>)}</ul>
+    <a class="hero__cue" href="#about">{hero.stripCue} <Icon name="arrow-down" size={16} /></a>
+  </div></div>
+</section>

@@ -1,0 +1,16 @@
+---
+import type { PortableBlock } from '~/lib/content';
+interface Props {
+  text: string;
+  marks: string[];
+  defs: PortableBlock['markDefs'];
+}
+const { text, marks, defs } = Astro.props;
+const [first, ...rest] = marks;
+const def = first ? defs.find((d) => d._key === first) : undefined;
+---
+{!first && text}
+{first === 'strong' && <strong><Astro.self text={text} marks={rest} defs={defs} /></strong>}
+{first === 'em' && <em><Astro.self text={text} marks={rest} defs={defs} /></em>}
+{def && <a href={def.href} rel="noopener"><Astro.self text={text} marks={rest} defs={defs} /></a>}
+{first && first !== 'strong' && first !== 'em' && !def && <Astro.self text={text} marks={rest} defs={defs} />}

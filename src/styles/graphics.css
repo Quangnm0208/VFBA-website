@@ -1,0 +1,8 @@
+/* ---------- Nền graphic: dải nền trắng và chân trang để sạch; mỗi dải nền màu một hình ---------- */
+.gfx-img{max-width:none;height:auto}
+.gfx-tiles{left:-40px;bottom:-40px;width:1000px;-webkit-mask-image:radial-gradient(ellipse 72% 96% at 0% 100%,#000 34%,rgba(0,0,0,0) 100%);mask-image:radial-gradient(ellipse 72% 96% at 0% 100%,#000 34%,rgba(0,0,0,0) 100%)}
+.gfx-contours{right:-250px;top:-320px;width:740px;-webkit-mask-image:radial-gradient(closest-side,#000 50%,rgba(0,0,0,0) 99%);mask-image:radial-gradient(closest-side,#000 50%,rgba(0,0,0,0) 99%)}
+.gfx-gold{right:6%;top:-40%;width:auto;height:260%;opacity:.55;transform:rotate(14deg)}
+.gfx-leaf{right:2%;top:-6%;width:auto;height:104%;opacity:.2;transform:rotate(8deg)}
+@media (max-width:1040px){.gfx-tiles{left:auto;bottom:auto;right:-40px;top:-30px;width:520px;transform:rotate(180deg)}}
+@media (max-width:720px){.gfx-tiles{width:400px;right:-90px;top:-20px}.gfx-contours{width:480px;right:-190px;top:-210px}.gfx-gold{height:125%;top:-28%;right:-70px;opacity:.5}.gfx-leaf{height:56%;right:-70px;top:-4%;opacity:.18}}

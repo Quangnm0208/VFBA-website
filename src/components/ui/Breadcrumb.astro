@@ -1,0 +1,16 @@
+---
+import Icon from './Icon.astro';
+interface Item { label: string; href?: string }
+interface Props { items: Item[]; dark?: boolean }
+const { items, dark = false } = Astro.props;
+---
+<nav class:list={['crumb', dark && 'crumb--dark']} aria-label="Đường dẫn">
+  <ol>
+    {items.map((item, i) => (
+      <>
+        {i > 0 && <li aria-hidden="true"><Icon name="chevron" size={14} /></li>}
+        {item.href ? <li><a href={item.href}>{item.label}</a></li> : <li aria-current="page">{item.label}</li>}
+      </>
+    ))}
+  </ol>
+</nav>

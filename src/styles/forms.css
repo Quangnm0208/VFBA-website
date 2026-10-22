@@ -1,0 +1,20 @@
+/* Form states added for the live API (the prototype only validated). Tokens come from tokens.css. */
+.hp{position:absolute;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden}
+.form-status{grid-column:1/-1;margin:0;padding:12px 14px;border:1px solid #f0c987;border-radius:var(--r-control);background:#fdf1e0;color:#6b4500;font-size:14.5px;line-height:1.6}
+.form-status[hidden]{display:none}
+.turnstile{grid-column:1/-1;min-height:65px}
+/* Newsletter band: the widget is invisible unless Cloudflare needs an interaction, so it must not reserve space. */
+.turnstile--inline{flex:1 1 100%;min-height:0}
+.consent a{color:var(--vbfa-forest);text-decoration:underline;text-underline-offset:3px}
+.btn[aria-busy="true"]{pointer-events:none;opacity:.88}
+.btn[aria-busy="true"] .ar{display:none}
+.btn[aria-busy="true"]::after{content:'';width:16px;height:16px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:spin .7s linear infinite}
+.join__side .script{text-wrap:balance}
+.consent a:focus-visible,.form-status a:focus-visible{outline:var(--outline-focus);outline-offset:3px}
+
+/* 404 */
+.notfound .page-head__in{padding-bottom:clamp(64px,8vw,112px)}
+.notfound__actions{display:flex;flex-wrap:wrap;gap:14px;margin-top:36px}
+
+/* Generic CMS page: single reading column (no table of contents) */
+.article-grid--single{grid-template-columns:minmax(0,720px)}

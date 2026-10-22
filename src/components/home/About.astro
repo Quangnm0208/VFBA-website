@@ -1,0 +1,25 @@
+---
+import Icon from '../ui/Icon.astro';
+import { pad2 } from '~/lib/format';
+import type { HomeContent } from '~/lib/content';
+
+interface Props { about: HomeContent['about'] }
+const { about } = Astro.props;
+---
+<section class="sec about" id="about" aria-labelledby="about-title">
+  <div class="container about__grid">
+    <div>
+      <span class="eyebrow" data-rv data-d="0">{about.eyebrow}</span>
+      <h2 class="h2" id="about-title" data-rv data-d="1">{about.title}</h2>
+      <a class="link-ul" data-rv data-d="2" href={about.link.href}>{about.link.label} <Icon name="arrow" class="ar" size={18} /></a>
+    </div>
+    <div>
+      <p class="about__lead" data-rv data-d="1">{about.lead}</p>
+      <div class="rows">
+        {about.rows.map((row, i) => (
+          <a class="row" data-rv data-d={String(i + 2)} href={row.href}><span class="row__n">{pad2(i + 1)}</span><span class="row__t">{row.label}</span><span class="circle"><Icon name="arrow" class="ar" size={18} /></span></a>
+        ))}
+      </div>
+    </div>
+  </div>
+</section>

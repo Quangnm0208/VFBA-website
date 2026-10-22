@@ -1,0 +1,26 @@
+---
+import contours from '~/assets/brand/contours.svg';
+import Icon from '../ui/Icon.astro';
+import { pad2 } from '~/lib/format';
+import type { HomeContent } from '~/lib/content';
+
+interface Props { focus: HomeContent['focus'] }
+const { focus } = Astro.props;
+---
+<section class="sec focus" id="focus" aria-labelledby="focus-title">
+  <img class="gfx gfx-img gfx-contours" data-gfx="contours" src={contours.src} alt="" width="1000" height="1000" loading="lazy" decoding="async" aria-hidden="true" />
+  <div class="container">
+    <div class="sec-head"><div class="sec-head__t"><span class="eyebrow" data-rv data-d="0">{focus.eyebrow}</span><h2 class="h2" id="focus-title" data-rv data-d="1">{focus.title}</h2></div><p class="sec-head__p" data-rv data-d="2">{focus.description}</p></div>
+    <div class="focus__grid">
+      {focus.cards.map((card, i) => (
+        <a class="fcard" data-rv data-d={String(i % 3)} href={card.href}>
+          <div class="fcard__top"><span class="kicker">{focus.kickerPrefix} / {pad2(i + 1)}</span><span class="circle"><Icon name="arrow" class="ar" size={16} /></span></div>
+          <div class="tile"><Icon name={card.icon} size={28} sw={1.6} /></div>
+          <h3 class="card-t">{card.title}</h3>
+          <p class="card-p">{card.description}</p>
+          <span class="bar" aria-hidden="true"></span>
+        </a>
+      ))}
+    </div>
+  </div>
+</section>

@@ -1,0 +1,6 @@
+---
+import Icon from '../ui/Icon.astro';
+interface Props { title: string }
+const { title } = Astro.props;
+---
+<div class="share"><span class="share__t">CHIA SẺ BÀI VIẾT</span><div class="share__btns"><button class="pill-btn" type="button" id="copy-link"><Icon name="link" size={18} sw={1.8} />Sao chép liên kết</button><a class="pill-btn" href={`mailto:?subject=${encodeURIComponent(title)}`}><Icon name="mail" size={18} sw={1.8} />Gửi email</a></div></div>

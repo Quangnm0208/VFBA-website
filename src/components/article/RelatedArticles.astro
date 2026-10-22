@@ -1,0 +1,23 @@
+---
+import contours from '~/assets/brand/contours.svg';
+import { Image } from 'astro:assets';
+import drop from '~/assets/brand/drop.webp';
+import Icon from '../ui/Icon.astro';
+import { formatDate } from '~/lib/format';
+import { articlePath } from '~/lib/url';
+import { CATEGORIES, type Article } from '~/lib/content';
+interface Props { articles: Article[] }
+const { articles } = Astro.props;
+const GRADIENT = ['g-a', 'g-b', 'g-c'] as const;
+---
+<section class="related" aria-labelledby="rel-title">
+  <img class="gfx gfx-img gfx-contours" data-gfx="contours" src={contours.src} alt="" width="1000" height="1000" loading="lazy" decoding="async" aria-hidden="true" />
+  <div class="container">
+    <div class="related__head"><div><span class="eyebrow">Đọc thêm</span><h2 id="rel-title">Bài viết liên quan</h2></div><a class="link-ul" href="/tin-tuc/">Tất cả tin tức <Icon name="arrow" class="ar" size={18} /></a></div>
+    <div class="news-grid">
+      {articles.map((a, i) => (
+        <article class="ncard"><div class:list={['media', GRADIENT[i % 3]]}><Image src={drop} alt="" widths={[220, 440]} sizes="180px" format="webp" quality={78} loading="lazy" decoding="async" /><span class="badge">{CATEGORIES[a.category].badge}</span></div><div class="ncard__body"><div class="kicker kicker--amber">{formatDate(a.publishedAt)}</div><h3 class="ncard__t"><a href={articlePath(a.slug)}>{a.title}</a></h3><a class="link" href={articlePath(a.slug)} aria-label={`Đọc tiếp: ${a.title}`}>Đọc tiếp <Icon name="arrow" class="ar" size={16} /></a></div></article>
+      ))}
+    </div>
+  </div>
+</section>

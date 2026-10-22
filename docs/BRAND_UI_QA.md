@@ -1,3 +1,5 @@
+> **Ghi chú:** tài liệu này ghi lại các quyết định thương hiệu/UX của bản tĩnh V1.1 trên `main` (chủ dự án). Bản Astro kế thừa các cải tiến truy cập (lọc ẩn + thông báo số kết quả, nút về đầu trang rời thứ tự Tab, mục lục chuyển focus). Về font: xem `docs/design/FONTS.md` (Bebas Neue thiếu glyph tiếng Việt nên không dùng cho nhãn). Các kết quả CI/PR #5 nêu bên dưới thuộc về bản tĩnh.
+
 # VBFA Frontend — Brand & UX Conformance (2026-10-22)
 
 ## Sources and scope

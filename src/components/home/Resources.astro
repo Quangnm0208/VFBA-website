@@ -1,0 +1,22 @@
+---
+import Icon from '../ui/Icon.astro';
+import type { HomeContent } from '~/lib/content';
+
+interface Props { resources: HomeContent['resources'] }
+const { resources } = Astro.props;
+---
+<section class="sec" id="resources" aria-labelledby="res-title">
+  <div class="container">
+    <div class="sec-head"><div class="sec-head__t"><span class="eyebrow" data-rv data-d="0">{resources.eyebrow}</span><h2 class="h2" id="res-title" data-rv data-d="1">{resources.titleLines.map((line, i) => <>{i > 0 && <br />}{line}</>)}</h2></div><p class="sec-head__p" data-rv data-d="2">{resources.description}</p></div>
+    <div class="res-grid">
+      {resources.cards.map((card, i) => (
+        <div class="rcard" data-rv data-d={String(i)}>
+          <div class="rcard__txt"><div class="tile"><Icon name={card.icon} size={28} sw={1.6} /></div><div class="kicker">{card.kicker}</div><h3 class="card-t">{card.title}</h3><p class="card-p">{card.description}</p></div>
+          <a class="circle circle--lg" href={card.href} aria-label={card.ariaLabel}><Icon name="arrow" class="ar" size={20} /></a>
+          <span class="bar" aria-hidden="true"></span>
+        </div>
+      ))}
+    </div>
+    <div class="res-band-wrap" data-rv data-d="0"><div class="res-band"><Icon name="sprout" size={26} sw={1.6} /><p>{resources.band}</p></div></div>
+  </div>
+</section>

@@ -1,0 +1,29 @@
+---
+import { Image } from 'astro:assets';
+import logo from '~/assets/brand/logo.webp';
+import Icon from '../ui/Icon.astro';
+import { NAV, navHref } from '~/lib/nav';
+
+interface Props {
+  home: boolean;
+  /** news list page -> "page"; article page -> "true" (handoff README, "Khung chung"). */
+  newsCurrent?: 'page' | 'true';
+  logoAlt: string;
+}
+const { home, newsCurrent, logoAlt } = Astro.props;
+---
+<header class="site-header">
+  <div class="container site-header__in">
+    <a class="logo" href={home ? '#top' : '/'}><Image src={logo} alt={logoAlt} widths={[300, 450]} sizes="146px" format="webp" quality={80} loading="eager" fetchpriority="high" decoding="async" /></a>
+    <nav class="nav" aria-label="Điều hướng chính">
+      {NAV.map((item) => (
+        <a href={navHref(item, home)} data-section={item.id} aria-current={item.id === 'news' ? newsCurrent : undefined}>{item.label}</a>
+      ))}
+    </nav>
+    <div class="site-header__actions">
+      <button class="icon-btn" type="button" aria-label="Tìm kiếm" data-open="search"><Icon name="search" size={20} sw={1.8} /></button>
+      <button class="btn btn--forest header-cta" type="button" data-open="join">Trở thành hội viên <Icon name="arrow" class="ar" size={17} /></button>
+      <button class="icon-btn burger" type="button" aria-label="Mở menu" aria-expanded="false" data-open="menu"><Icon name="menu" size={22} sw={1.8} /></button>
+    </div>
+  </div>
+</header>

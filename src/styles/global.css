@@ -1,0 +1,15 @@
+/* Thứ tự import giữ nguyên thứ tự khối trong bản gốc (cascade). tokens → nền → thành phần → trang. */
+@import './tokens.css';
+@import './base.css';
+@import './components.css';
+@import './hero.css';
+@import './home.css';
+@import './news.css';
+@import './article.css';
+@import './responsive.css';
+@import './graphics.css';
+@import './news-head.css';
+@import './media.css';
+@import './forms.css';
+@import './popup.css';
+@import './motion-extras.css';

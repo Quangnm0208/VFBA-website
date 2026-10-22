@@ -1,0 +1,80 @@
+name: CI
+on:
+  push:
+    branches: [main, 'claude/**']
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  website:
+    name: Website (type check, unit tests, build, static checks, browser QA)
+    runs-on: ubuntu-latest
+    env:
+      # Adds the demo pop-up to the seed content so the browser suite can exercise the pop-up flow.
+      PUBLIC_SEED_DEMO_POPUP: 'true'
+      # Cloudflare's published always-pass test key, so the browser suite exercises the widget markup and flow
+      # (the Turnstile script itself is stubbed in the tests).
+      PUBLIC_TURNSTILE_SITE_KEY: '1x00000000000000000000AA'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npm test
+      - run: npm run build
+      - run: python3 scripts/check_site.py
+      - name: 'Compiled Vercel Function (real routes, emulated database): methods, bodies, limits, fail-closed, no PII in logs'
+        run: node scripts/qa/api-function.mjs
+      - run: npx playwright install --with-deps chromium
+      - name: 'Browser QA (interactions, forms with mocked API, pop-up, motion, 404 + CSP) and responsive audit'
+        run: |
+          node scripts/qa/serve.mjs 4322 &
+          sleep 2
+          node scripts/qa/e2e.mjs http://localhost:4322 --popup
+          # 9 widths (320-1920) x home/news/article/404 plus drawer, search and join dialogs; screenshots uploaded below
+          node scripts/qa/responsive.mjs http://localhost:4322
+      - name: Upload responsive screenshots and report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: responsive-qa
+          path: qa-artifacts/responsive
+          if-no-files-found: warn
+          retention-days: 14
+
+  studio:
+    name: Sanity Studio (type check, schema validation, build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: studio
+    env:
+      # CI-only placeholder: the schema is validated and bundled offline; nothing is deployed from CI.
+      SANITY_STUDIO_PROJECT_ID: abcdefgh
+      SANITY_STUDIO_DATASET: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            studio/package-lock.json
+      # The Studio lives inside the Astro project: the Sanity CLI (Vite) also resolves the root tsconfig.json, which
+      # extends astro/tsconfigs/strict, so the root dependencies must be installed as well.
+      - name: Install root dependencies (tsconfig resolution)
+        run: npm ci
+        working-directory: .
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run validate
+      - run: npx sanity build --yes --no-auto-updates

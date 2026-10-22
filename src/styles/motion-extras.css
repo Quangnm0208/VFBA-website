@@ -1,0 +1,2 @@
+/* The hero's endless background animations stop while it is off screen (set by src/scripts/hero.ts). */
+[data-hero].is-offscreen *,[data-hero].is-offscreen *::before,[data-hero].is-offscreen *::after{animation-play-state:paused!important}

@@ -1,0 +1,20 @@
+---
+import { Image } from 'astro:assets';
+import drop from '~/assets/brand/drop.webp';
+import Breadcrumb from '../ui/Breadcrumb.astro';
+import type { NewsPageContent } from '~/lib/content';
+
+interface Props { content: NewsPageContent }
+const { content } = Astro.props;
+---
+<section class="page-head" data-hero aria-labelledby="np-title">
+  <div class="page-head__bg" aria-hidden="true"></div>
+  <div class="gfx gfx-dots gfx-dots--page" data-gfx="dots" aria-hidden="true"></div>
+  <div class="page-head__art" data-gfx="rings" aria-hidden="true"><div class="page-head__art-in"><div class="px px--a"><svg viewBox="0 0 620 620" fill="none" aria-hidden="true"><circle cx="310" cy="310" r="120" stroke="#96b949" stroke-opacity=".34"/><circle cx="310" cy="310" r="180" stroke="#96b949" stroke-opacity=".24"/><circle cx="310" cy="310" r="240" stroke="#96b949" stroke-opacity=".16"/><circle cx="310" cy="310" r="300" stroke="#96b949" stroke-opacity=".10"/><circle cx="310" cy="310" r="308" stroke="#e3a63a" stroke-opacity=".42" stroke-dasharray="2 9" stroke-linecap="round"/><circle cx="470" cy="150" r="6" fill="#e3a63a"/><circle cx="120" cy="260" r="5" fill="#b2d25a"/><circle cx="520" cy="430" r="5" fill="#b2d25a"/></svg><span class="wave"></span><span class="wave wave--2"></span></div><div class="px px--b"><Image src={drop} alt="" widths={[220, 440]} sizes="110px" format="webp" quality={78} loading="eager" fetchpriority="low" decoding="async" /></div></div></div>
+  <div class="container page-head__in">
+    <Breadcrumb dark items={[{ label: 'Trang chủ', href: '/' }, { label: 'Tin tức' }]} />
+    <div class="page-head__eyebrow"><span class="eyebrow eyebrow--lime">{content.eyebrow}</span></div>
+    <h1 id="np-title"><span class="mask"><span>{content.line1} </span></span><span class="mask"><span><em>{content.highlight}<i aria-hidden="true"></i></em></span></span></h1>
+    <p class="lead">{content.lead}</p>
+  </div>
+</section>

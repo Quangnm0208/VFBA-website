@@ -1,0 +1,40 @@
+---
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import PortableText from '~/components/article/PortableText.astro';
+import Breadcrumb from '~/components/ui/Breadcrumb.astro';
+import { breadcrumbJsonLd } from '~/lib/seo';
+import { pagePath } from '~/lib/url';
+import { getContent, type SitePage } from '~/lib/content';
+
+/** Generic CMS pages (privacy policy, terms, ...). Only pages that exist in Sanity are generated. */
+export async function getStaticPaths() {
+  const { pages } = await getContent();
+  return pages.map((page) => ({ params: { slug: page.slug }, props: { page } }));
+}
+interface Props { page: SitePage }
+const { page } = Astro.props;
+const { site } = await getContent();
+---
+<BaseLayout
+  page="page"
+  title={`${page.title} | ${site.name}`}
+  description={page.intro ?? site.seo.description}
+  path={pagePath(page.slug)}
+  seo={page.seo}
+  jsonLd={[breadcrumbJsonLd([{ name: 'Trang chủ', path: '/' }, { name: page.title, path: pagePath(page.slug) }])]}
+>
+  <article aria-labelledby="page-title">
+    <header class="article-head">
+      <div class="container">
+        <Breadcrumb items={[{ label: 'Trang chủ', href: '/' }, { label: page.title }]} />
+        <div class="article-head__box"><h1 id="page-title">{page.title}</h1></div>
+      </div>
+    </header>
+    <div class="container article-grid article-grid--single">
+      <div class="prose">
+        {page.intro && <p class="lede">{page.intro}</p>}
+        <PortableText body={page.body} />
+      </div>
+    </div>
+  </article>
+</BaseLayout>
