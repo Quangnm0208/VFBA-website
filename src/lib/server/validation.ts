@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 export const INTERESTS = ['Quan tâm hội viên', 'Hợp tác chuyên môn', 'Đề nghị cung cấp thông tin', 'Khác'] as const;
 const UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign'] as const;
+const UTM_VALUE = /^[\p{L}\p{N} _.:+%/-]{1,80}$/u;
 
 const email = z
   .string({ error: 'Vui lòng nhập email.' })
@@ -15,12 +16,14 @@ const common = {
   website: z.string().max(200).optional().default(''),
   openedAt: z.number().int().optional(),
   turnstileToken: z.string().max(4096).optional().default(''),
-  sourcePath: z.string().max(200).regex(/^\/[^\s]*$/).optional().default('/'),
+  // Path only: a query string or fragment could carry tokens or personal data, so it is cut off before storage.
+  sourcePath: z.string().max(200).regex(/^\/[^\s]*$/).transform((p) => p.split(/[?#]/)[0] || '/').optional().default('/'),
+  // Only the three standard campaign keys with plain-text values; anything else is dropped, not stored.
   utm: z
     .record(z.string(), z.string().max(80))
     .optional()
     .default({})
-    .transform((u) => Object.fromEntries(Object.entries(u).filter(([k]) => (UTM_KEYS as readonly string[]).includes(k)))),
+    .transform((u) => Object.fromEntries(Object.entries(u).filter(([k, v]) => (UTM_KEYS as readonly string[]).includes(k) && UTM_VALUE.test(v)))),
 };
 
 export const joinSchema = z.object({

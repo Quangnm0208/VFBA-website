@@ -73,7 +73,9 @@ export default defineConfig({
       PUBLIC_TURNSTILE_SITE_KEY: envField.string({ context: 'client', access: 'public', optional: true }),
       // Server only (Vercel Functions / build)
       SANITY_API_READ_TOKEN: envField.string({ context: 'server', access: 'secret', optional: true }),
-      SUPABASE_URL: envField.string({ context: 'server', access: 'secret', optional: true }),
+      // Go-live switch for collecting personal data: set to "true" only after the privacy policy and consent text are approved.
+    LEADS_ENABLED: envField.string({ context: 'server', access: 'secret', optional: true }),
+    SUPABASE_URL: envField.string({ context: 'server', access: 'secret', optional: true }),
       SUPABASE_SERVICE_ROLE_KEY: envField.string({ context: 'server', access: 'secret', optional: true }),
       TURNSTILE_SECRET_KEY: envField.string({ context: 'server', access: 'secret', optional: true }),
       IP_HASH_SALT: envField.string({ context: 'server', access: 'secret', optional: true }),

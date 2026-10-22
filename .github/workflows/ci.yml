@@ -17,6 +17,9 @@ jobs:
     env:
       # Adds the demo pop-up to the seed content so the browser suite can exercise the pop-up flow.
       PUBLIC_SEED_DEMO_POPUP: 'true'
+      # Cloudflare's published always-pass test key, so the browser suite exercises the widget markup and flow
+      # (the Turnstile script itself is stubbed in the tests).
+      PUBLIC_TURNSTILE_SITE_KEY: '1x00000000000000000000AA'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -28,6 +31,8 @@ jobs:
       - run: npm test
       - run: npm run build
       - run: python3 scripts/check_site.py
+      - name: Compiled Vercel Function (real routes, emulated database): methods, bodies, limits, fail-closed, no PII in logs
+        run: node scripts/qa/api-function.mjs
       - run: npx playwright install --with-deps chromium
       - name: Browser QA (interactions, forms with mocked API, pop-up, motion, 404 + CSP) and responsive audit
         run: |

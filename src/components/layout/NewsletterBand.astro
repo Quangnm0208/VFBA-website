@@ -1,4 +1,5 @@
 ---
+import { PUBLIC_TURNSTILE_SITE_KEY } from 'astro:env/client';
 import { Image } from 'astro:assets';
 import dropGold from '~/assets/brand/drop-gold.webp';
 import Icon from '../ui/Icon.astro';
@@ -14,6 +15,7 @@ const { newsletter, forms } = Astro.props.site;
     <form data-rv data-d="1" data-endpoint="/api/newsletter/" data-kind="newsletter" data-success={forms.newsletterSuccess} data-error={forms.genericError}>
       <input class="input" type="email" name="email" required aria-label="Địa chỉ email" placeholder={newsletter.placeholder} autocomplete="email" />
       <div class="hp" aria-hidden="true"><label>Để trống <input type="text" name="website" tabindex="-1" autocomplete="off" /></label></div>
+      {PUBLIC_TURNSTILE_SITE_KEY && <div class="turnstile turnstile--inline" data-turnstile data-sitekey={PUBLIC_TURNSTILE_SITE_KEY} data-appearance="interaction-only"></div>}
       <button class="btn btn--forest" type="submit"><span class="btn__txt">{newsletter.button}</span> <Icon name="arrow" class="ar" size={18} /></button>
     </form>
   </div>

@@ -3,6 +3,8 @@
 .form-status{grid-column:1/-1;margin:0;padding:12px 14px;border:1px solid #f0c987;border-radius:var(--r-control);background:#fdf1e0;color:#6b4500;font-size:14.5px;line-height:1.6}
 .form-status[hidden]{display:none}
 .turnstile{grid-column:1/-1;min-height:65px}
+/* Newsletter band: the widget is invisible unless Cloudflare needs an interaction, so it must not reserve space. */
+.turnstile--inline{flex:1 1 100%;min-height:0}
 .consent a{color:var(--vbfa-forest);text-decoration:underline;text-underline-offset:3px}
 .btn[aria-busy="true"]{pointer-events:none;opacity:.88}
 .btn[aria-busy="true"] .ar{display:none}

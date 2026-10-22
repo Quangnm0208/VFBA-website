@@ -1,23 +1,25 @@
 import { fieldErrors, joinSchema, newsletterSchema, type JoinInput, type LeadKind, type NewsletterInput } from './validation';
 import { hashIp } from './hash';
 import { verifyTurnstile } from './turnstile';
-import type { LeadRecord, LeadStore } from './store';
+import type { LeadRecord, LeadStore, Limits } from './store';
 import type { Logger } from './log';
 
 const MAX_BODY = 8 * 1024;
 const MIN_FILL_MS = 2000;
-const RATE_WINDOW_MS = 10 * 60 * 1000;
-const RATE_MAX = 5;
+/** Per visitor address and 10-minute window: at most 15 requests that passed validation, and at most 5 stored leads. */
+export const LIMITS: Limits = { windowSeconds: 10 * 60, maxAttempts: 15, maxLeads: 5 };
+/** Bucket for requests whose address cannot be determined: they share one budget instead of escaping the limit. */
+const UNKNOWN_ADDRESS = 'unknown-address';
 
 export interface LeadDeps {
-  /** null when Supabase is not configured: the route then fails closed (503) instead of dropping data. */
+  /** null when collection is not enabled or Supabase is not configured: the route then fails closed (503). */
   store: LeadStore | null;
   log: Logger;
   now?: () => number;
   /** Exact origins allowed to post (the request's own origin is always allowed). */
   allowedOrigins?: string[];
   turnstileSecret?: string;
-  /** Secret used to hash IP addresses for rate limiting. */
+  /** Secret used to hash IP addresses for rate limiting. Required: without it the route fails closed (503). */
   ipSalt?: string;
   fetchImpl?: typeof fetch;
 }
@@ -51,7 +53,7 @@ function originAllowed(request: Request, allowed: string[]): boolean {
 /**
  * Shared flow for /api/join and /api/newsletter.
  * Order matters: cheap checks first (method/origin/size/shape), silent drops for bots (no signal to adapt to),
- * then validation, configuration, captcha, rate limit, storage.
+ * then validation, configuration, rate limit (counts every attempt, stored or not), captcha, storage.
  */
 export async function handleLead(request: Request, kind: LeadKind, clientIp: string | undefined, deps: LeadDeps): Promise<Response> {
   const { log, store } = deps;
@@ -90,19 +92,21 @@ export async function handleLead(request: Request, kind: LeadKind, clientIp: str
   }
   const input = parsed.data as JoinInput | NewsletterInput;
 
-  if (!store) return done(fail(503, 'unavailable', MESSAGES.unavailable), 'lead.not_configured');
-
-  // Captcha is enforced on the membership form (it has the widget) whenever a secret is configured.
-  if (kind === 'membership' && deps.turnstileSecret) {
-    const ok = await verifyTurnstile(deps.turnstileSecret, input.turnstileToken, clientIp, deps.fetchImpl);
-    if (!ok) return done(fail(400, 'captcha', MESSAGES.captcha), 'lead.captcha_failed');
-  }
+  // Not enabled / no credentials / no salt: refuse instead of dropping data or limiting with a weak key.
+  if (!store || !deps.ipSalt) return done(fail(503, 'unavailable', MESSAGES.unavailable), 'lead.not_configured', { store: Boolean(store), salt: Boolean(deps.ipSalt) });
 
   try {
-    const ipHash = clientIp && deps.ipSalt ? await hashIp(clientIp, deps.ipSalt) : null;
-    if (ipHash) {
-      const recent = await store.countRecent(ipHash, new Date(now() - RATE_WINDOW_MS).toISOString());
-      if (recent >= RATE_MAX) return done(fail(429, 'rate_limited', MESSAGES.rateLimited, undefined), 'lead.rate_limited');
+    if (!clientIp) log.warn('lead.no_client_ip', { kind });
+    const ipHash = await hashIp(clientIp ?? UNKNOWN_ADDRESS, deps.ipSalt);
+
+    // Counted before the captcha call so repeated failures cannot be used to hammer the captcha provider or the database.
+    const verdict = await store.registerAttempt(ipHash, kind, LIMITS);
+    if (verdict !== 'ok') return done(fail(429, 'rate_limited', MESSAGES.rateLimited), 'lead.rate_limited', { reason: verdict });
+
+    // Captcha is enforced on both forms whenever a secret is configured (each form carries the widget).
+    if (deps.turnstileSecret) {
+      const ok = await verifyTurnstile(deps.turnstileSecret, input.turnstileToken, clientIp, deps.fetchImpl);
+      if (!ok) return done(fail(400, 'captcha', MESSAGES.captcha), 'lead.captcha_failed');
     }
 
     const join = kind === 'membership' ? (input as JoinInput) : undefined;

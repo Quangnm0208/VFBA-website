@@ -122,13 +122,25 @@ for (const width of [320, 390, 720, 721, 834, 1040, 1041, 1440]) {
     last = JSON.parse(route.request().postData() || '{}');
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true }) });
   });
+  // Cloudflare Turnstile is replaced by a stub (no network): it adds the hidden token input like the real widget does.
+  let turnstileRequests = 0;
+  await page.route('https://challenges.cloudflare.com/**', async (route) => {
+    turnstileRequests += 1;
+    await route.fulfill({ contentType: 'text/javascript', body: `window.turnstile={render(el,o){const i=document.createElement('input');i.type='hidden';i.name='cf-turnstile-response';i.value='TEST-TOKEN';el.appendChild(i);(window.__tsOpts=window.__tsOpts||[]).push(o);return 'w'+window.__tsOpts.length},reset(id){(window.__tsReset=window.__tsReset||[]).push(id)}};` });
+  });
   await page.goto(base + '/', { waitUntil: 'networkidle' });
+  const hasTurnstile = (await page.$('[data-turnstile]')) !== null; // present when the build had PUBLIC_TURNSTILE_SITE_KEY (CI sets Cloudflare's test key)
+  if (hasTurnstile) check('turnstile: nothing from challenges.cloudflare.com is requested on page load', turnstileRequests === 0, String(turnstileRequests));
   const fill = async () => {
     await page.fill('#person', 'Nguyễn Văn A'); await page.fill('#company', 'Công ty ABC'); await page.fill('#email', 'a@abc.vn');
     await page.check('.consent input');
   };
   await page.click('.site-header [data-open="join"]');
   await fill();
+  if (hasTurnstile) {
+    await page.waitForFunction(() => (window.__tsOpts || []).length >= 1);
+    check('turnstile: the join widget renders when the dialog opens', await page.evaluate(() => window.__tsOpts[0].sitekey.length > 0 && window.__tsOpts[0].language === 'vi'));
+  }
   await page.waitForTimeout(2300);
   const submit = page.locator('#join-form button[type=submit]');
   await submit.click();
@@ -138,6 +150,9 @@ for (const width of [320, 390, 720, 721, 834, 1040, 1041, 1440]) {
   check('join: success closes dialog and shows the CMS success message', (await page.textContent('.toast__msg')).includes('VBFA đã nhận được') && !(await page.isVisible('.dialog.join')));
   check('join: payload shape (kind, consent, empty honeypot, openedAt, no secrets)', last.kind === 'membership' && last.consent === true && last.website === '' && typeof last.openedAt === 'number' && last.sourcePath === '/' && !('password' in last), JSON.stringify(last));
   check('join: form was reset after success', (await page.inputValue('#person')) === '');
+  if (hasTurnstile) {
+    check('turnstile: the join payload carries the widget token and the widget is reset afterwards', last.turnstileToken === 'TEST-TOKEN' && (await page.evaluate(() => (window.__tsReset || []).length >= 1)), JSON.stringify(last.turnstileToken));
+  }
   await page.waitForSelector('.toast', { state: 'hidden', timeout: 6000 });
   answer.current = { status: 400, body: { ok: false, code: 'invalid', message: 'Email không hợp lệ.' } };
   await page.click('.site-header [data-open="join"]'); await fill(); await page.waitForTimeout(2300);
@@ -151,10 +166,18 @@ for (const width of [320, 390, 720, 721, 834, 1040, 1041, 1440]) {
   await page.waitForFunction(() => /Chưa thể gửi/.test(document.querySelector('[data-status]')?.textContent || ''));
   check('join: network failure shows a retry message without losing input', (await page.inputValue('#company')) === 'Công ty ABC');
   await page.keyboard.press('Escape');
+  const requestsBeforeNewsletter = turnstileRequests;
+  const widgetsBefore = hasTurnstile ? await page.evaluate(() => (window.__tsOpts || []).length) : 0;
   await page.fill('.newsletter input[type=email]', 'news@abc.vn');
+  if (hasTurnstile) {
+    await page.waitForFunction((n) => (window.__tsOpts || []).length > n, widgetsBefore);
+    check('turnstile: the newsletter widget renders on first interaction and is invisible unless challenged', await page.evaluate(() => window.__tsOpts.at(-1).appearance === 'interaction-only'));
+    check('turnstile: the script is requested at most once for both forms', turnstileRequests - requestsBeforeNewsletter === 0 || turnstileRequests === 1, `${turnstileRequests}`);
+  }
   await page.waitForTimeout(2300);
   await page.click('.newsletter button[type=submit]');
   await page.waitForSelector('.toast:not([hidden])');
+  if (hasTurnstile) check('turnstile: the newsletter payload carries the widget token', last.turnstileToken === 'TEST-TOKEN', JSON.stringify(last.turnstileToken));
   check('newsletter: success toast + payload kind', last.kind === 'newsletter' && last.email === 'news@abc.vn' && (await page.textContent('.toast__msg')).includes('đăng ký'), JSON.stringify(last));
   check('forms: no unexpected console/CSP errors', page.errors.every((e) => /Failed to load resource/.test(e)), page.errors.filter((e) => !/Failed to load resource/.test(e)).join(' | '));
   await page.context().close();

@@ -14,7 +14,7 @@ type ApiResult = { ok: true } | ApiError;
 declare global {
   interface Window {
     turnstile?: {
-      render(el: HTMLElement, options: { sitekey: string; theme?: string; language?: string }): string;
+      render(el: HTMLElement, options: { sitekey: string; theme?: string; language?: string; appearance?: string }): string;
       reset(widgetId?: string): void;
     };
   }
@@ -97,17 +97,34 @@ function loadTurnstile(): Promise<void> {
   }));
 }
 
-async function renderTurnstile(): Promise<void> {
-  const slot = $('[data-turnstile]');
+/** Renders the widget of one form (the join dialog or a newsletter band). Safe to call repeatedly. */
+async function renderTurnstile(form: HTMLFormElement | null): Promise<void> {
+  const slot = form ? $('[data-turnstile]', form) : null;
   if (!slot || slot.dataset.rendered) return;
   slot.dataset.rendered = '1';
   try {
     await loadTurnstile();
-    window.turnstile?.render(slot, { sitekey: slot.dataset.sitekey ?? '', theme: 'light', language: 'vi' });
+    slot.dataset.widgetId = window.turnstile?.render(slot, { sitekey: slot.dataset.sitekey ?? '', theme: 'light', language: 'vi', appearance: slot.dataset.appearance ?? 'always' }) ?? '';
   } catch {
     delete slot.dataset.rendered;
     turnstileLoading = undefined;
   }
+}
+
+const tokenOf = (form: HTMLFormElement): string => String(new FormData(form).get('cf-turnstile-response') ?? '');
+
+/** A fast typist can submit before the (lazy, invisible) widget has produced its token: wait a few seconds for it. */
+async function awaitToken(form: HTMLFormElement): Promise<void> {
+  const slot = $('[data-turnstile]', form);
+  if (!slot) return;
+  void renderTurnstile(form);
+  const deadline = Date.now() + 4000;
+  while (!tokenOf(form) && Date.now() < deadline) await new Promise((resolve) => setTimeout(resolve, 120));
+}
+
+function resetTurnstile(form: HTMLFormElement): void {
+  const id = $('[data-turnstile]', form)?.dataset.widgetId;
+  if (id) window.turnstile?.reset(id);
 }
 
 export function initForms(): void {
@@ -120,9 +137,15 @@ export function initForms(): void {
   document.addEventListener('vbfa:overlay-open', (event) => {
     if ((event as CustomEvent<{ name: string }>).detail.name !== 'join') return;
     markOpened(join);
-    void renderTurnstile();
+    void renderTurnstile(join);
   });
-  newsletters.forEach((form) => form.addEventListener('focusin', () => markOpened(form), { once: true }));
+  // The newsletter widget is loaded on first interaction, not on page load (keeps the third-party script off the critical path).
+  newsletters.forEach((form) =>
+    form.addEventListener('focusin', () => {
+      markOpened(form);
+      void renderTurnstile(form);
+    }, { once: true }),
+  );
   markOpened(null);
 
   join?.addEventListener('submit', async (event) => {
@@ -130,6 +153,7 @@ export function initForms(): void {
     if (!join.reportValidity()) return;
     showStatus(join, null);
     setBusy(join, true);
+    await awaitToken(join);
     const result = await send(join);
     setBusy(join, false);
     if (result.ok) {
@@ -138,11 +162,11 @@ export function initForms(): void {
       clearFocusReturn();
       closeOverlay();
       toast(join.dataset.success ?? 'Đã gửi thông tin.');
-      window.turnstile?.reset();
+      resetTurnstile(join);
       return;
     }
     showStatus(join, result.message ?? join.dataset.error ?? GENERIC_ERROR);
-    window.turnstile?.reset();
+    resetTurnstile(join);
   });
 
   newsletters.forEach((form) =>
@@ -150,6 +174,7 @@ export function initForms(): void {
       event.preventDefault();
       if (!form.reportValidity()) return;
       setBusy(form, true);
+      await awaitToken(form);
       const result = await send(form);
       setBusy(form, false);
       if (result.ok) {
@@ -159,6 +184,7 @@ export function initForms(): void {
       } else {
         toast(result.message ?? form.dataset.error ?? GENERIC_ERROR);
       }
+      resetTurnstile(form);
     }),
   );
 }
