@@ -161,13 +161,13 @@
       const k = ch.dataset.filter;
       chips.forEach((c) => c.setAttribute('aria-pressed', String(c === ch)));
       let matching = 0;
-      $('.ncard', grid).forEach((card) => {
+      $$('.ncard', grid).forEach((card) => {
         const on = k === 'all' || card.dataset.cat === k;
         if (on) matching++;
         card.classList.toggle('is-dim', !on && mode === 'dim');
         card.hidden = !on && mode === 'hide';
         if (on) card.removeAttribute('aria-hidden'); else card.setAttribute('aria-hidden', 'true');
-        $('a', card).forEach((a) => { a.tabIndex = on ? 0 : -1; });
+        $$('a', card).forEach((a) => { a.tabIndex = on ? 0 : -1; });
       });
       const message = $('#news-filter-status');
       if (message) message.textContent = matching + ' bài viết trong danh mục đã chọn.';
