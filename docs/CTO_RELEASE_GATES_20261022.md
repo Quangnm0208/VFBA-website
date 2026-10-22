@@ -31,6 +31,12 @@ Status: **UAT candidate, NO-GO for production**. This document is a release chec
 - Store the Vercel Deploy Hook URL as a secret in Sanity (never in this repository), trigger **Preview** first.
 - Scheduled publication remains a known limitation of static builds: use a controlled scheduled rebuild or do not promise exact publication time.
 
+### Legal source check (official texts effective 2026)
+- Vietnam's Law on Personal Data Protection No. 91/2025/QH15 is effective **01/01/2026**: https://vanban.chinhphu.vn/?classid=1&docid=214590&pageid=27160&typegroup=
+- Implementing Decree 356/2025/ND-CP is effective **01/01/2026**: https://vanban.chinhphu.vn/?classid=1&docid=216387&pageid=27160
+- The earlier Decree 13/2023/ND-CP should not be used as the sole basis for new consent/legal wording. Legal review must cover both newsletter and membership, rights of data subjects and data retention/deletion, and any applicable cross-border processing obligations.
+- This is a CTO check of relevant sources, **not a substitute for written legal approval**.
+
 ### P0 — Supabase tenant and privacy
 - Create an isolated VBFA Supabase project **only after owner approval for billing/project limits**. Do not reuse the three unrelated projects in the connected account.
 - Apply `0001_website_leads.sql`, then `0002_form_throttle.sql`. Inspect RLS, API grants, RPC EXECUTE rights, explicit service-role INSERT, indexes and pg_cron retention task in the real database.
