@@ -1,0 +1,51 @@
+name: VBFA Preview real-service E2E
+# Runs only after a human configures Vercel Preview, with service secrets held in Vercel.
+# Does NOT run on push and NEVER targets the production hostname.
+on:
+  workflow_dispatch:
+    inputs:
+      preview_url:
+        type: string
+        required: true
+        description: "URL of the VBFA Vercel Preview deployment (not Production)"
+        default: "https://vfba-website-qzim3ziwg-quangnm.vercel.app"
+      confirmation:
+        type: string
+        required: true
+        description: "Type write-test-rows to authorize 3 controlled test inserts"
+permissions:
+  contents: read
+concurrency:
+  group: vbfa-preview-e2e
+  cancel-in-progress: false
+jobs:
+  test-live-preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Validate target and confirmation before any data-write test
+        env:
+          TEST_URL: ${{ inputs.preview_url }}
+          CONFIRM: ${{ inputs.confirmation }}
+        shell: bash
+        run: |
+          test "$CONFIRM" = "write-test-rows" || { echo "::error::Explicit consent to test rows is required"; exit 1; }
+          [[ "$TEST_URL" =~ ^https://vfba-website-[a-z0-9-]+-quangnm\.vercel\.app/?$ ]] || { echo "::error::Only VBFA branch-scoped Vercel Preview hosts are allowed"; exit 1; }
+          [[ "$TEST_URL" != "https://vfba-website-alpha.vercel.app" ]] || exit 1
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/vbfa-services-activation-20261022
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Verify HTTPS Function + Turnstile + actual Supabase writes
+        env:
+          LIVE_E2E_BASE_URL: ${{ inputs.preview_url }}
+          LIVE_E2E_CONFIRM: write-test-rows
+          VERCEL_PROTECTION_BYPASS: ${{ secrets.VERCEL_PROTECTION_BYPASS }}
+        run: |
+          node scripts/qa/live-e2e.mjs | tee /tmp/vbfa-e2e.log
+          echo "HTTP tests ran on the Preview URL; results do not prove DB writes until the SQL verification below is checked." >> "$GITHUB_STEP_SUMMARY"
+          echo "Run the SELECT query printed by live-e2e.mjs in Supabase SQL Editor; expect 3 controlled test rows, then run the DELETE query." >> "$GITHUB_STEP_SUMMARY"
+          echo "Source SHA: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
