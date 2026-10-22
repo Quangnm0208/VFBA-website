@@ -121,7 +121,9 @@ export async function loadFromSanity() {
   }
   const homeMerged = deepMerge(homeSeed as unknown as Json, homeRaw as Json) as unknown as HomeContent;
   // Fewer than three valid picks: complete the set with the newest articles (never fail the build for an editorial gap).
-  const picks = [...(homeMerged.news.picks ?? [])];
+  // Filter again after the merge: when the Sanity home document has no picks, the seed's picks apply, and they may name
+  // sample articles that do not exist in the real dataset (NewsPreview resolves every pick to an article).
+  const picks = (homeMerged.news.picks ?? []).filter((p) => articles.some((a) => a.slug === p.slug));
   for (const a of articles) {
     if (picks.length >= 3) break;
     if (!picks.some((p) => p.slug === a.slug)) picks.push({ slug: a.slug, link: homeSeed.news.picks[picks.length]?.link ?? homeSeed.news.allLink });

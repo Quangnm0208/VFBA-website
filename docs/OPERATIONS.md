@@ -34,6 +34,19 @@ Tạo widget (Managed) cho domain website → lấy **Site key** và **Secret ke
 3. Sanity: manage → API → **Webhooks** → Create: URL = Deploy Hook ở trên; Dataset `production`; Trigger on *Create, Update, Delete*; **tắt** "Include drafts"; Filter: `_type in ["article","page","homePage","newsPage","siteSettings","popup"]`; Method `POST`. Từ giờ mỗi lần *Publish* sẽ tự build lại.
 4. (Tuỳ chọn) Vercel → Observability / Log Drains để chuyển log kỹ thuật sang công cụ giám sát.
 
+### E. Kiểm thử Sanity sau khi kích hoạt (làm trên Preview trước, ghi kết quả vào biên bản)
+
+Điều kiện: đã có Project ID, Studio đã `deploy`, `PUBLIC_SANITY_PROJECT_ID` đặt ở **Preview** (không đặt ở Production cho tới khi bước 1–5 đạt), webhook trỏ tới một Deploy Hook của nhánh thử chứ chưa phải `main`.
+
+1. **Gói và vai trò (không giả định).** Mở manage.sanity.io → project → Members/Billing và ghi lại: gói đang dùng, vai trò thực tế của từng biên tập viên. Biên tập viên cần vai trò *Editor* (sửa + xuất bản); nếu gói hiện tại không cấp được vai trò này thì **dừng và xin chủ dự án phê duyệt** trước khi nâng gói trả phí. Không nâng gói khi chưa có chấp thuận.
+2. **Dữ liệu ban đầu.** Sau `seed:export` + `dataset import --missing`, Studio hiển thị 3 tài liệu đơn (Trang chủ, Trang Tin tức, Thông tin chung) và 10 bài; build Preview ra trang giống hệt bản seed.
+3. **Publish.** Sửa tiêu đề một bài → *Publish* → trong vài phút Vercel có deployment mới (nguồn: webhook, không phải commit) → trang bài và `/tin-tuc/` đổi tiêu đề, `sitemap.xml` giữ nguyên số URL.
+4. **Unpublish / xoá.** *Unpublish* một bài → webhook ở mục Attempts có lượt **Delete** → deployment mới không còn trang bài đó (URL trả 404 có CSP) và bài biến khỏi `/tin-tuc/`, trang chủ, `search-index.json`. Nếu webhook không bắn khi Delete, kiểm tra bộ lọc GROQ và tắt/bật "Include drafts" (phải tắt).
+5. **Nội dung sai phải không lên được.** Studio chặn phần lớn lỗi ngay khi nhập; lớp bảo vệ thứ hai là kiểm tra `zod` lúc build (`src/lib/content/schema.ts`), dành cho nội dung đi vòng qua Studio (import, API). Trong dataset thử, tạo bằng `sanity dataset import`/`sanity documents create` một bài có `slug` viết hoa (hoặc `title` ngắn hơn 8 ký tự) → build **thất bại** với thông báo `Invalid article "…"`, deployment đang chạy không đổi (Vercel không chuyển bản lỗi sang production). Sửa nội dung → build lại → thành công. Lưu ý: bài **không có** `slug` bị truy vấn bỏ qua im lặng (không gây lỗi build).
+6. **Bộ lọc webhook luôn khớp schema.** `scripts/webhook-filter.test.mjs` (chạy trong `npm test`) so danh sách loại tài liệu trong Studio với bộ lọc ở mục D.3 và với mọi truy vấn của website; thêm loại tài liệu mới mà quên cập nhật bộ lọc sẽ làm CI đỏ.
+7. **Đặt lịch xuất bản.** Website là tĩnh: bài có "Ngày hiển thị" ở tương lai **chưa** hiện cho tới lần build kế tiếp sau thời điểm đó (không có lần build nào tự chạy). Hoặc đặt ngày hiện tại, hoặc nhờ người quản trị gọi Deploy Hook đúng giờ; nếu cần tự động, tạo một lịch (ví dụ GitHub Actions `schedule` gọi Deploy Hook lưu như secret) — chưa bật vì thêm hạ tầng, cần chủ dự án quyết định.
+8. **Quyền đọc.** Trình duyệt không bao giờ gọi Sanity (CSP `connect-src 'self'`): không cần cấu hình CORS cho website. Ảnh đến từ `cdn.sanity.io` (đã nằm trong `img-src`). Dataset công khai không cần `SANITY_API_READ_TOKEN`; nếu đặt dataset ở chế độ private thì đặt token đọc (Viewer) làm secret.
+
 ## 2. Biến môi trường
 
 | Biến | Môi trường | Bí mật | Mục đích |
