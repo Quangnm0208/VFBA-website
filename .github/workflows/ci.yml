@@ -1,20 +1,37 @@
-name: VBFA Frontend CI
+name: VBFA Frontend and Sanity CMS CI
 on:
   push:
-    branches: [feat/astro-sanity-v1]
+    branches: [feat/astro-sanity-v1, feat/sanity-cms-editorial]
   pull_request:
-    branches: [main]
+    branches: [main, feat/astro-sanity-v1]
+permissions:
+  contents: read
 jobs:
-  build:
+  website:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Install dependencies
+      - name: Install frontend dependencies
         run: npm install --no-audit --no-fund
-      - name: Build and typecheck
+      - name: Typecheck and build Astro
+        run: npm run build
+  sanity-studio:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Sanity Studio dependencies
+        working-directory: studio
+        run: npm install --no-audit --no-fund
+      - name: Build Sanity Studio with CI-only nonworking project identifier
+        working-directory: studio
+        env:
+          SANITY_STUDIO_PROJECT_ID: abcdefgh
+          SANITY_STUDIO_DATASET: production
+          CI: "true"
         run: npm run build
