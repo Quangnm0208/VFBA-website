@@ -49,7 +49,7 @@ const SECURITY_HEADERS: Record<string, string> = {
   Vary: 'Cookie',
 };
 
-function respond(status: number, body: Safe | string | null, extra: Record<string, string> = {}, cookies: string[] = []): Response {
+export function respond(status: number, body: Safe | string | null, extra: Record<string, string> = {}, cookies: string[] = []): Response {
   const headers = new Headers({ ...SECURITY_HEADERS, 'Content-Type': 'text/html; charset=utf-8', ...extra });
   for (const cookie of cookies) headers.append('Set-Cookie', cookie);
   return new Response(body === null ? null : String(body), { status, headers });

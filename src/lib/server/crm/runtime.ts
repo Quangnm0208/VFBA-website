@@ -4,7 +4,7 @@
  */
 import { CRM_ENABLED, FORM_ALLOWED_ORIGINS, IP_HASH_SALT, SUPABASE_PUBLISHABLE_KEY, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_URL } from 'astro:env/server';
 import { createLogger } from '../log';
-import { handleCrm, type CrmDeps } from './app';
+import { handleCrm, respond, type CrmDeps } from './app';
 import { createAuthClient } from './auth';
 import { createSupabaseCrmStore } from './store';
 import { errorPage } from './views';
@@ -27,17 +27,15 @@ function getWiring(): Wiring {
   return wiring;
 }
 
-const PLAIN = { 'Cache-Control': 'private, no-store', 'X-Robots-Tag': 'noindex, nofollow, noarchive', 'Content-Type': 'text/html; charset=utf-8' };
-
 export async function crmRoute({ request, clientAddress }: { request: Request; clientAddress?: string }): Promise<Response> {
   // Not switched on (production until the CRM is approved): the area simply does not exist.
-  if (CRM_ENABLED !== 'true') return new Response(String(errorPage('Không tìm thấy trang', 'Đường dẫn này không tồn tại.')), { status: 404, headers: PLAIN });
+  if (CRM_ENABLED !== 'true') return respond(404, errorPage('Không tìm thấy trang', 'Đường dẫn này không tồn tại.'));
   const requestId = request.headers.get('x-vercel-id') ?? crypto.randomUUID();
   const log = createLogger(requestId);
   const parts = getWiring();
   if (!parts) {
     log.error('crm.not_configured');
-    return new Response(String(errorPage('CRM chưa được cấu hình', 'Thiếu cấu hình máy chủ. Hãy báo cho quản trị hệ thống.')), { status: 503, headers: PLAIN });
+    return respond(503, errorPage('CRM chưa được cấu hình', 'Thiếu cấu hình máy chủ. Hãy báo cho quản trị hệ thống.'));
   }
   let ip: string | undefined;
   try {
