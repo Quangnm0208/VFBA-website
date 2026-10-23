@@ -49,8 +49,17 @@ jobs:
           QA_ARTICLE: /tin-tuc/test/
           QA_OUT: qa-artifacts/preview-responsive
         run: node scripts/qa/responsive.mjs "$SITE"
+      - name: Fonts on this runner (does local("Arial") resolve?)
+        run: fc-match Arial; fc-match sans-serif; fc-list | wc -l
       - name: Lighthouse mobile + desktop (median of 3)
         run: node scripts/qa/lh-live.mjs / /tin-tuc/ /tin-tuc/test/
+      - name: Lighthouse diagnosis, home page with the Cloudflare challenge widget blocked (1 run, informational)
+        # Separates what the site itself logs from what the third-party widget logs; never a gate.
+        continue-on-error: true
+        env:
+          LH_BLOCKED: '*challenges.cloudflare.com*'
+          LH_RUNS: '1'
+        run: node scripts/qa/lh-live.mjs /
       - name: Upload screenshots and reports
         if: always()
         uses: actions/upload-artifact@v4
