@@ -14,12 +14,26 @@ Kỹ sư không soạn nội dung pháp lý và không đưa khẳng định ph�
 
 Không lưu: IP thô, user-agent. Website không đặt cookie. Trình duyệt chỉ lưu cục bộ (không gửi đi) khoá `vbfa:popup:<id>` trong `localStorage`/`sessionStorage` để nhớ pop-up đã đóng, và chỉ khi có pop-up được tạo trong Sanity. Vercel Web Analytics tắt mặc định (`ENABLE_VERCEL_ANALYTICS`). Widget Cloudflare Turnstile (khi bật) do Cloudflare vận hành và có thể lưu dữ liệu riêng của họ **[PHÁP LÝ QUYẾT ĐỊNH nội dung thông báo]**.
 
+### 1b. Dữ liệu do CRM (Lead Inbox) tạo thêm (Beta, `docs/CRM.vi.md`)
+
+| Dữ liệu | Nội dung | Có dữ liệu cá nhân của khách? | Bảng |
+|---|---|---|---|
+| Ghi chú nội bộ | văn bản do nhân sự nhập (≤ 2000 ký tự), email người viết, thời gian | **có thể** (nhân sự có thể ghi tên, số điện thoại...). Xoá cùng khách (cascade) | `lead_notes` |
+| Nhật ký thao tác | ai (email nhân sự), làm gì (`login`, `logout`, `lead_view`, `lead_status` từ→sang, `lead_note` chỉ id ghi chú, `staff_*`), khi nào, id khách | **không** (chỉ id khách và trạng thái); chứa email nhân sự | `crm_audit_log` |
+| Danh sách nhân sự CRM | email, vai trò, phạm vi, bật/tắt, id tài khoản Supabase Auth, lần đăng nhập cuối | dữ liệu của **nhân sự**, không phải khách | `crm_staff` |
+| Bộ đếm đăng nhập | băm HMAC có muối của địa chỉ và của email gõ vào, thời gian; tự xoá sau 1 ngày | không (chỉ băm) | `crm_login_attempts` |
+| Tài khoản đăng nhập | email + mật khẩu (băm) do **Supabase Auth** quản lý | dữ liệu của nhân sự | `auth.users` (Supabase) |
+
+Cookie của CRM (`__Secure-vbfa-at/-rt/-ss`) là cookie **phiên đăng nhập của nhân sự**, chỉ đặt dưới `/admin`; website công khai vẫn không đặt cookie.
+
+**Lưu ý nhật ký hạ tầng của Vercel (CRM):** địa chỉ yêu cầu `/admin/leads/?q=<từ khoá>` có thể xuất hiện trong nhật ký request của Vercel và lịch sử trình duyệt của nhân sự. Nhật ký **ứng dụng** (log của Function) không chứa từ khoá. **[CHỜ PHÁP LÝ/OWNER]** chấp nhận cho Beta hay chuyển tìm kiếm sang POST trước khi dùng dữ liệu thật (`docs/SECURITY_REPORT.md` SEC-C2).
+
 ## 2. Bên xử lý và vị trí
 
 | Bên | Vai trò | Dữ liệu đi qua | Vị trí |
 |---|---|---|---|
 | Vercel | lưu trang tĩnh, chạy Function nhận biểu mẫu, nhật ký kỹ thuật | nội dung biểu mẫu trong lúc xử lý; nhật ký đã lọc (không có e-mail, tên, IP, khoá) | Function ở `sin1` (Singapore) |
-| Supabase (dự án `bzrtllytykldnawbuszu`) | cơ sở dữ liệu lead | toàn bộ trường ở mục 1 | `ap-northeast-2` (Seoul) |
+| Supabase (dự án `bzrtllytykldnawbuszu`) | cơ sở dữ liệu lead, đăng nhập CRM (Supabase Auth) | toàn bộ trường ở mục 1 và 1b | `ap-northeast-2` (Seoul) |
 | Cloudflare Turnstile | chống bot trên cả hai biểu mẫu | token trình duyệt, IP của người truy cập (gửi tới Cloudflare khi xác minh) | Cloudflare |
 | Sanity | nội dung biên tập | không có dữ liệu người truy cập | Sanity Content Lake |
 

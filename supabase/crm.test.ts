@@ -188,7 +188,7 @@ describe('Lead Inbox list', () => {
   it('filters by kind, status and creation date (Vietnam calendar days)', async () => {
     expect((await list(STAFF, { kind: 'newsletter' })).every((r) => r.kind === 'newsletter')).toBe(true);
     expect((await list(STAFF, { status: 'contacted' })).map((r) => r.email)).toEqual(['reader2@news.vn']);
-    expect((await list(STAFF, { status: 'deleted' })).map((r) => r.email)).toEqual(['erase@me.vn']);
+    expect(await code(list(STAFF, { status: 'deleted' }))).toBe('22023'); // pending erasure cannot be requested, not even by an in-scope person
     // 2026-01-15 03:00 UTC = 10:00 on the 15th in Vietnam
     expect((await list(STAFF, { from: '2026-01-15', to: '2026-01-15' })).map((r) => r.email)).toEqual(['organic@co.vn']);
     expect(await list(STAFF, { from: '2026-01-16', to: '2026-01-31' })).toEqual([]);
@@ -341,13 +341,23 @@ describe('staff management (admin only)', () => {
     expect(await code(upsert(ADMIN, 'ok@vbfa.test', 'staff', ['spam']))).toBe('22023');
   });
 
-  it('never leaves the CRM without an active admin', async () => {
+  it('never leaves the CRM without an administrator who can sign in', async () => {
     expect(await upsert(ADMIN, 'admin@vbfa.test', 'staff', ['membership'])).toBe('last_admin');
     expect(await setActive(ADMIN, 'admin@vbfa.test', false)).toBe('last_admin');
     expect(await upsert(ADMIN, 'second.admin@vbfa.test', 'admin', ['membership', 'newsletter', 'contact'])).toBe('created');
-    expect(await setActive(ADMIN, 'second.admin@vbfa.test', false)).toBe('ok'); // another active admin remains
+    // the second administrator has never signed in (no Auth user bound yet): they cannot be relied on, so the first one stays
+    expect(await upsert(ADMIN, 'admin@vbfa.test', 'staff', ['membership'])).toBe('last_admin');
+    expect(await setActive(ADMIN, 'admin@vbfa.test', false)).toBe('last_admin');
+    expect(await setActive(ADMIN, 'second.admin@vbfa.test', false)).toBe('ok'); // the other (bound) administrator remains
     expect(await setActive(ADMIN, 'second.admin@vbfa.test', true)).toBe('ok');
     expect(await setActive(ADMIN, 'ghost@vbfa.test', false)).toBe('not_found');
+  });
+
+  it('serialises the two staff mutators with an advisory lock (the last-admin rule cannot be raced)', async () => {
+    for (const fn of ['crm_staff_upsert', 'crm_staff_set_active']) {
+      const def = (await one<{ d: string }>("select pg_get_functiondef(p.oid) as d from pg_proc p where p.proname = $1 and p.pronamespace = 'public'::regnamespace", [fn])).d;
+      expect(def, fn).toContain("pg_advisory_xact_lock(hashtext('vbfa.crm_staff'))");
+    }
   });
 
   it('a deactivated person is locked out immediately, and can be re-enabled', async () => {
@@ -377,6 +387,18 @@ describe('sign-in throttle and events', () => {
     for (let i = 0; i < 8; i++) expect(await attempt(`ip-${i}`, 'subject-target')).toBe('ok');
     expect(await attempt('ip-fresh', 'subject-target')).toBe('account');
     expect(await attempt('ip-fresh', 'subject-other')).toBe('ok');
+  });
+
+  it('does not store refused attempts (a flood cannot extend a lock or grow the table)', async () => {
+    for (let i = 0; i < 25; i++) await attempt('ip-store', `subject-store-${i}`);
+    expect((await one<{ n: number }>("select count(*)::int as n from public.crm_login_attempts where ip_hash = 'ip-store'")).n).toBe(20);
+    for (let i = 0; i < 12; i++) await attempt(`ip-s-${i}`, 'subject-store-target');
+    expect((await one<{ n: number }>("select count(*)::int as n from public.crm_login_attempts where subject_hash = 'subject-store-target'")).n).toBe(8);
+  });
+
+  it('serves the clean-up of old rows with an index on created_at', async () => {
+    const { rows: idx } = await db.query<{ indexdef: string }>("select indexdef from pg_indexes where indexname = 'crm_login_attempts_created_idx'");
+    expect(idx[0]?.indexdef).toContain('(created_at)');
   });
 
   it('ignores attempts older than the window and deletes rows older than a day', async () => {

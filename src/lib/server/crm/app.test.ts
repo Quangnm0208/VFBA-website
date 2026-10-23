@@ -146,16 +146,25 @@ describe('sign-in', () => {
     expect(auth.state.calls.signIn).toBe(0);
   });
 
-  it('throttles repeated attempts for one e-mail (even a correct password is refused during the window)', async () => {
+  it('throttles repeated attempts for one e-mail FROM ONE ADDRESS (even a correct password is refused during the window)', async () => {
     const b = newBrowser();
     for (let i = 0; i < 8; i++) expect((await b.send('/admin/login/', { form: { email: STAFF.email, password: `wrong-${i}` } })).status).toBe(401);
-    const blocked = await b.send('/admin/login/', { form: { email: STAFF.email, password: STAFF.password }, ip: '198.51.100.77' });
+    const blocked = await b.send('/admin/login/', { form: { email: STAFF.email, password: STAFF.password } });
     expect(blocked.status).toBe(429);
     expect(blocked.headers.get('retry-after')).toBe('60');
     expect(auth.state.calls.signIn).toBe(8);
     // the throttle window is measured by the database clock: age the attempts instead of moving the test clock
     await db.exec("update public.crm_login_attempts set created_at = created_at - interval '11 minutes'");
     expect((await newBrowser().send('/admin/login/', { form: { email: STAFF.email, password: STAFF.password } })).status).toBe(303);
+  });
+
+  it('a stranger cannot lock a real person out: guesses at an account from another address do not touch that person\'s own budget', async () => {
+    for (let i = 0; i < 12; i++) await newBrowser().send('/admin/login/', { form: { email: STAFF.email, password: `guess-${i}` }, ip: '198.51.100.99' });
+    expect((await newBrowser().send('/admin/login/', { form: { email: STAFF.email, password: STAFF.password }, ip: '203.0.113.9' })).status).toBe(303);
+    // refused attempts are not stored: the attacker cannot keep the lock alive or grow the table by hammering
+    const rows = (await db.query<{ n: number }>("select count(*)::int as n from public.crm_login_attempts")).rows[0]!.n;
+    for (let i = 0; i < 20; i++) await newBrowser().send('/admin/login/', { form: { email: STAFF.email, password: 'x' }, ip: '198.51.100.99' });
+    expect((await db.query<{ n: number }>("select count(*)::int as n from public.crm_login_attempts")).rows[0]!.n).toBe(rows);
   });
 
   it('throttles one address across many e-mails', async () => {
@@ -204,11 +213,10 @@ describe('same-origin enforcement on posts', () => {
     expect(await status(id)).toBe('new');
   });
 
-  it('allows an extra origin only when configured', async () => {
-    const d = { ...deps(), allowedOrigins: ['https://www.vbfa.example'] };
+  it('is same-origin only: an extra origin that the public forms accept is refused here', async () => {
     const make = (origin: string) => new Request(`${ORIGIN}/admin/login/`, { method: 'POST', headers: { origin, 'content-type': 'application/x-www-form-urlencoded' }, body: 'email=&password=' });
-    expect((await handleCrm(make('https://www.vbfa.example'), '203.0.113.1', d)).status).toBe(400); // reached validation
-    expect((await handleCrm(make('https://evil.example'), '203.0.113.1', d)).status).toBe(403);
+    expect((await handleCrm(make(ORIGIN), '203.0.113.1', deps())).status).toBe(400); // reached validation
+    for (const other of ['https://www.vbfa.example', 'https://evil.example', 'null']) expect((await handleCrm(make(other), '203.0.113.1', deps())).status, other).toBe(403);
   });
 });
 
@@ -265,13 +273,63 @@ describe('sessions', () => {
     const b = newBrowser();
     await signIn(b, STAFF);
     const real = b.jar.get(COOKIE_SESSION)!;
-    const [started, last, sig] = real.split('.');
-    for (const forged of [`${Number(started) + 5}.${last}.${sig}`, `${started}.${Number(last) + 5}.${sig}`, `${started}.${last}.${'0'.repeat(64)}`, `${started}.${last}`, 'junk', '', await signSession('another-secret', now, now)]) {
+    const [started, last, uid, sig] = real.split('.');
+    for (const forged of [`${Number(started) + 5}.${last}.${uid}.${sig}`, `${started}.${Number(last) + 5}.${uid}.${sig}`, `${started}.${last}.${ADMIN.id}.${sig}`, `${started}.${last}.${uid}.${'0'.repeat(64)}`, `${started}.${last}.${uid}`, `${started}.${last}.${sig}`, 'junk', '', await signSession('another-secret', now, now, STAFF.id)]) {
       const c = newBrowser();
       for (const [k, v] of b.jar) c.setCookie(k, v);
       c.setCookie(COOKIE_SESSION, forged);
       expect((await c.send('/admin/leads/')).status, forged.slice(0, 30)).toBe(401);
     }
+  });
+
+  it('binds the clock to its owner: another person\'s tokens with my valid clock are refused (and that session is ended)', async () => {
+    const victim = newBrowser();
+    await signIn(victim, ADMIN);
+    const attacker = newBrowser();
+    await signIn(attacker, STAFF);
+    const mixed = newBrowser();
+    mixed.setCookie(COOKIE_ACCESS, victim.jar.get(COOKIE_ACCESS)!);
+    mixed.setCookie(COOKIE_REFRESH, victim.jar.get(COOKIE_REFRESH)!);
+    mixed.setCookie(COOKIE_SESSION, attacker.jar.get(COOKIE_SESSION)!);
+    expect((await mixed.send('/admin/staff/')).status).toBe(401);
+    expect((await mixed.send('/admin/leads/')).status).toBe(401);
+  });
+
+  it('ends the Supabase session when the idle or absolute limit passes, so the refresh token left in a cookie jar is dead', async () => {
+    const b = newBrowser();
+    await signIn(b, STAFF);
+    const stolen = new Map(b.jar);
+    expect(auth.activeSessions()).toBe(1);
+    now += IDLE_MS + 1000;
+    expect((await b.send('/admin/leads/')).status).toBe(401);
+    expect(auth.activeSessions()).toBe(0);
+    const thief = newBrowser();
+    for (const [k, v] of stolen) thief.setCookie(k, v);
+    thief.setCookie(COOKIE_SESSION, await signSession(SECRET, now, now, STAFF.id)); // even with a forged fresh clock the tokens are dead
+    expect((await thief.send('/admin/leads/')).status).toBe(401);
+  });
+
+  it('signs out for real even when the access token already expired (the refresh token is used to revoke the session)', async () => {
+    const b = newBrowser();
+    await signIn(b, STAFF);
+    auth.expireAccess(b.jar.get(COOKIE_ACCESS)!);
+    expect(auth.activeSessions()).toBe(0);
+    const refreshToken = b.jar.get(COOKIE_REFRESH)!;
+    const copy = newBrowser();
+    copy.setCookie(COOKIE_REFRESH, refreshToken);
+    await b.send('/admin/logout/', { form: {} });
+    expect((await auth.client.refresh(refreshToken)).ok).toBe(false); // the refresh token no longer works
+    expect((await audit('logout')).at(-1)).toMatchObject({ actor_email: STAFF.email });
+  });
+
+  it('treats a cookie name that appears twice as signed out (cookie tossing)', async () => {
+    const b = newBrowser();
+    await signIn(b, STAFF);
+    const header = [...b.jar].map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('; ');
+    const doubled = `${header}; ${COOKIE_ACCESS}=attacker-value`;
+    const r = await handleCrm(new Request(`${ORIGIN}/admin/leads/`, { headers: { cookie: doubled } }), '203.0.113.9', deps());
+    expect(r.status).toBe(401);
+    expect((await b.send('/admin/leads/')).status).toBe(200);
   });
 
   it('needs all three cookies: Auth tokens without the signed clock are not enough', async () => {
@@ -314,7 +372,10 @@ describe('sessions', () => {
     const b = newBrowser();
     await signIn(b, STAFF);
     await db.exec(`update public.crm_staff set active = false where email = '${STAFF.email}'`);
+    const deniedBefore = (await audit('denied')).length;
     const r = await b.send('/admin/leads/');
+    expect((await b.send('/admin/leads/')).status).toBe(403);
+    expect((await audit('denied')).length).toBe(deniedBefore); // repeated requests do not flood the audit trail
     expect(r.status).toBe(403);
     expect(r.text).toContain('Không có quyền truy cập');
     expect(r.text).toContain('action="/admin/logout/"');
@@ -330,7 +391,7 @@ describe('sessions', () => {
     if (!tokens.ok) throw new Error('fixture');
     b.setCookie(COOKIE_ACCESS, tokens.tokens.accessToken);
     b.setCookie(COOKIE_REFRESH, tokens.tokens.refreshToken);
-    b.setCookie(COOKIE_SESSION, await signSession(SECRET, now, now));
+    b.setCookie(COOKIE_SESSION, await signSession(SECRET, now, now, OUTSIDER.id));
     for (const path of ['/admin/leads/', '/admin/staff/', '/admin/account/']) {
       const r = await b.send(path);
       expect(r.status, path).toBe(403);
@@ -575,7 +636,7 @@ describe('response hygiene', () => {
       expect(r.headers.get('x-robots-tag')).toContain('noindex');
       expect(r.headers.get('x-frame-options')).toBe('DENY');
       expect(r.headers.get('x-content-type-options')).toBe('nosniff');
-      expect(r.headers.get('referrer-policy')).toBe('no-referrer');
+      expect(r.headers.get('referrer-policy')).toBe('same-origin'); // 'no-referrer' would make browsers send `Origin: null` on form posts
       const csp = r.headers.get('content-security-policy') ?? '';
       expect(csp).toContain("default-src 'none'");
       expect(csp).not.toMatch(/script-src|unsafe-inline|unsafe-eval|\*/);
@@ -583,6 +644,7 @@ describe('response hygiene', () => {
       if (r.status !== 303) {
         expect(r.headers.get('content-type')).toContain('text/html');
         expect(r.text).toContain('name="robots" content="noindex');
+        expect(r.text).toContain('<meta name="referrer" content="same-origin">');
         expect(r.text).not.toMatch(/<script|<style|\sstyle=|\son[a-z]+=|javascript:/i);
         expect(r.text).toContain('<link rel="stylesheet" href="/admin/crm.css">');
       }
@@ -621,5 +683,56 @@ describe('response hygiene', () => {
     const text = await r.text();
     expect(text).not.toMatch(/db\.internal|hunter2|5432/);
     expect(logs.lines.join('\n')).not.toContain('hunter2');
+  });
+});
+
+describe('review hardening', () => {
+  it('ends every other session of a person when they change their password', async () => {
+    const laptop = newBrowser();
+    const phone = newBrowser();
+    await signIn(laptop, STAFF);
+    await signIn(phone, STAFF);
+    expect(auth.activeSessions()).toBe(2);
+    const next = 'A-much-longer-passphrase-2026';
+    expect((await laptop.send('/admin/account/', { form: { current: STAFF.password, next, confirm: next } })).location).toBe('/admin/account/?done=password');
+    expect(auth.state.calls.signOutOthers).toBe(1);
+    expect(auth.activeSessions()).toBe(1);
+    expect((await laptop.send('/admin/leads/')).status).toBe(200);
+    expect((await phone.send('/admin/leads/')).status).toBe(401);
+  });
+
+  it('turns a pasted NUL character into a normal answer, not a 503', async () => {
+    const id = await insertLead({ email: 'nul@lead.test' });
+    const b = newBrowser();
+    await signIn(b, STAFF);
+    expect((await b.send('/admin/leads/?q=nul%00@lead')).status).toBe(200);
+    expect((await b.send(`/admin/leads/${id}/note/`, { form: { body: 'ghi\u0000chú' } })).location).toBe(`/admin/leads/${id}/?done=note`);
+    expect((await b.send(`/admin/leads/${id}/`)).text).toContain('ghichú');
+    expect((await b.send('/admin/staff/')).status).toBe(403);
+    expect((await signIn(newBrowser(), { ...STAFF, email: `${STAFF.email}\u0000` })).status).toBe(303); // the NUL is dropped, the rest is the normal address
+  });
+
+  it('keeps rotated cookies on an error page, so a refresh that already happened is not lost', async () => {
+    const b = newBrowser();
+    await signIn(b, STAFF);
+    const before = b.jar.get(COOKIE_ACCESS)!;
+    auth.expireAccess(before);
+    const broken: CrmDeps = { ...deps(), store: { ...pgliteStore(db), listLeads: async () => { throw new Error('boom'); } } };
+    const request = new Request(`${ORIGIN}/admin/leads/`, { headers: { cookie: [...b.jar].map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('; ') } });
+    const r = await handleCrm(request, '203.0.113.9', broken);
+    expect(r.status).toBe(503);
+    expect(r.headers.getSetCookie().some((c) => c.startsWith(`${COOKIE_ACCESS}=`) && !/Max-Age=0/.test(c))).toBe(true);
+    expect(r.headers.getSetCookie().some((c) => c.startsWith(`${COOKIE_REFRESH}=`))).toBe(true);
+  });
+
+  it('hides erased (pending-erasure) leads from every screen, and the database refuses to list them', async () => {
+    const erased = await insertLead({ name: 'Erased Person', email: 'erased.person@lead.test', status: 'deleted' });
+    const b = newBrowser();
+    await signIn(b, STAFF);
+    expect((await b.send('/admin/leads/?status=deleted')).text).not.toContain('Erased Person');
+    expect((await b.send('/admin/leads/?q=erased.person')).text).not.toContain('Erased Person');
+    expect((await b.send('/admin/leads/?q=erased.person')).text).toContain('Không có khách nào khớp bộ lọc.');
+    expect((await b.send(`/admin/leads/${erased}/`)).status).toBe(404);
+    await expect(db.query("select * from public.crm_list_leads($1, null, 'deleted')", [STAFF.id])).rejects.toMatchObject({ code: '22023' });
   });
 });

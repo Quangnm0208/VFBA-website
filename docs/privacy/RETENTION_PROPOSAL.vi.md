@@ -62,3 +62,15 @@ Lưu ý khi viết bản thật:
 2. Mốc tính: `created_at` hay "tương tác cuối".
 3. Có cần thông báo trước cho người sắp bị xoá hay không.
 4. Chu kỳ sao lưu của gói Supabase đang dùng, để ghi đúng vào Chính sách bảo mật (dữ liệu đã xoá còn trong sao lưu bao lâu).
+
+## 5. Dữ liệu do CRM tạo thêm (cần Owner quyết cùng các số ở mục 2)
+
+| Dữ liệu | Hiện trạng | Đề xuất |
+|---|---|---|
+| Ghi chú nội bộ (`lead_notes`) | xoá cùng hàng lead (cascade); không tự xoá | theo thời hạn của hàng lead (mục 2) |
+| Nhật ký thao tác (`crm_audit_log`) | không tự xoá; **không chứa dữ liệu cá nhân của khách** | giữ **12 tháng** (đủ để điều tra sự cố/lạm quyền), rồi xoá hoặc lưu trữ; thêm hàm xoá có `p_dry_run` như mục 3 |
+| Bộ đếm đăng nhập (`crm_login_attempts`) | tự xoá hàng cũ hơn **1 ngày** mỗi lần có lượt đăng nhập | giữ nguyên |
+| Danh sách nhân sự (`crm_staff`) | vô hiệu hoá không xoá hàng | xoá hàng của người đã nghỉ sau khi hết nghĩa vụ lưu nhật ký |
+
+Quyết định cần từ Owner / pháp lý (bổ sung mục 4): thời hạn nhật ký thao tác; ai được xem nhật ký; có cần ghi nhận việc **xem** khách (hiện đã ghi `lead_view`) hay chỉ ghi thay đổi.
+

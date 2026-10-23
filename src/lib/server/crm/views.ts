@@ -46,7 +46,7 @@ export function layout(title: string, body: Safe | string, staff?: StaffIdentity
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
-<meta name="referrer" content="no-referrer">
+<meta name="referrer" content="same-origin">
 <title>${title} · VBFA CRM</title>
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
 <link rel="stylesheet" href="/admin/crm.css">

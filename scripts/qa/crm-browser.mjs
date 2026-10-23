@@ -45,6 +45,7 @@ await q("insert into public.website_leads (kind, name, company, email, message, 
 
 /* ───────── front proxy: public/ files first (like Vercel), then the function ───────── */
 const staticRoot = resolve('.vercel/output/static');
+const browserOrigins = []; // the Origin header the BROWSER sent on form posts, before the QA shim below rewrites it
 const types = { '.css': 'text/css', '.png': 'image/png', '.js': 'text/javascript' };
 const proxy = http.createServer(async (req, res) => {
   const pathname = new URL(req.url, 'http://x').pathname;
@@ -57,6 +58,7 @@ const proxy = http.createServer(async (req, res) => {
   for await (const c of req) chunks.push(c);
   const headers = {};
   for (const [k, v] of Object.entries(req.headers)) if (!['host', 'connection', 'content-length'].includes(k)) headers[k] = String(v);
+  if (req.method === 'POST') browserOrigins.push(String(req.headers.origin));
   if (headers.origin) headers.origin = ORIGIN; // QA shim: the host script serves every request as ORIGIN
   const response = await fetch(`http://127.0.0.1:${host.port}${req.url}`, { method: req.method, headers, body: ['GET', 'HEAD'].includes(req.method) ? undefined : Buffer.concat(chunks), redirect: 'manual' });
   const out = Object.fromEntries([...response.headers].filter(([k]) => k !== 'set-cookie'));
@@ -185,6 +187,8 @@ const wideElements = (page) => page.evaluate(() => [...document.querySelectorAll
   check('staff session: no console error, no failed request', page.problems.length === 0, page.problems.join('; '));
   await context.close();
 }
+
+check('the browser sends the real same-origin Origin header on every form post (not "null"): the CSRF check works in a real browser', browserOrigins.length >= 6 && browserOrigins.every((o) => o === BASE), [...new Set(browserOrigins)].join(', '));
 
 /* ───────── 3. roles: staff cannot reach staff management; admin can use it ───────── */
 {

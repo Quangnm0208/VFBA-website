@@ -64,6 +64,8 @@ delete from public.website_leads where lower(email) = lower('<email đã xác mi
 commit;
 ```
 
+Khi có CRM: xoá hàng `website_leads` cũng **xoá ghi chú nội bộ** của khách (`lead_notes`, cascade). Nhật ký thao tác (`crm_audit_log`) chỉ còn id khách, trạng thái và email nhân sự, không có dữ liệu của khách. Nếu chỉ cần ẩn khỏi CRM trước khi xoá hẳn: `update public.website_leads set status = 'deleted' where id = '<id>';` (CRM không hiển thị hàng `deleted`).
+
 Lựa chọn khác cho **rút lại đồng ý bản tin** (không xoá hàng): `update public.website_leads set status = 'unsubscribed' where lower(email) = lower('<email đã xác minh>') and kind = 'newsletter' returning id;`
 — giữ lại một dấu vết tối thiểu để không thêm lại địa chỉ đó vào danh sách gửi. Giữ hay xoá hẳn là **[CHỜ PHÁP LÝ]**; nếu người dùng yêu cầu **xoá**, luôn xoá hàng.
 

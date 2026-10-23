@@ -20,7 +20,10 @@ export interface AuthClient {
   signIn(email: string, password: string): Promise<TokenResult>;
   refresh(refreshToken: string): Promise<TokenResult>;
   getUser(accessToken: string): Promise<UserResult>;
+  /** Revokes this session at Supabase. */
   signOut(accessToken: string): Promise<void>;
+  /** Revokes every OTHER session of the same user (used after a password change). */
+  signOutOthers(accessToken: string): Promise<void>;
   updatePassword(accessToken: string, password: string): Promise<'ok' | 'weak' | 'same' | 'invalid' | 'unavailable'>;
 }
 
@@ -81,6 +84,13 @@ export function createAuthClient(baseUrl: string, publishableKey: string, fetchI
         await call('/logout?scope=local', { method: 'POST', token: accessToken });
       } catch {
         /* best effort: the cookies are cleared either way */
+      }
+    },
+    async signOutOthers(accessToken) {
+      try {
+        await call('/logout?scope=others', { method: 'POST', token: accessToken });
+      } catch {
+        /* best effort */
       }
     },
     async updatePassword(accessToken, password) {

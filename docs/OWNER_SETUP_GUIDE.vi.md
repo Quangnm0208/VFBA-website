@@ -20,8 +20,8 @@
 | 4. Biến Vercel | đã thêm; còn 2 chỗ cần sửa: `IP_HASH_SALT` đang ở **Production** (cần Preview + nhánh), `SUPABASE_SERVICE_ROLE_KEY` có thêm 1 dòng Preview **không gắn nhánh** (nên xoá) | tuỳ chọn: gắn nhánh cho `PUBLIC_TURNSTILE_SITE_KEY`, bật Sensitive cho `TURNSTILE_SECRET_KEY` |
 | 4. Chạy E2E thật | **ĐẠT** (HTTP 24/24, SQL đúng 3 hàng, log không PII, đã xoá, count = 0) | `docs/evidence/E2E_REAL_2026-10-23.md`; **lưu ý**: ảnh danh sách biến mới nhất **không còn `IP_HASH_SALT`** ở Production lẫn Preview — build kế tiếp sẽ mất salt và form trả 503 nếu không thêm lại (Preview + nhánh, Sensitive) |
 | 4. Secret GitHub | đã có `SANITY_DEPLOY_TOKEN` và `VERCEL_PROTECTION_BYPASS` (repository secrets) | thấy trong ảnh |
-| 5. Người dùng Beta / Supabase Auth | chưa | chờ đồng ý ở bước 6 |
-| 6. Xác nhận phạm vi Beta + người duyệt | chưa | cần để bắt đầu xây Lead Inbox |
+| 5. Người dùng Beta / Supabase Auth | **xem Bước 7** (CRM Beta đã xây xong, đang chờ 3 thao tác của Owner) | agents tạo được tài khoản kiểm thử tổng hợp; tài khoản **thật** của quản trị/nhân viên do Owner tạo |
+| 6. Xác nhận phạm vi Beta + người duyệt | phạm vi CRM Beta đã được giao trong prompt Beta-first của Owner (migration `0007` chỉ **thêm**, không cấp quyền cho `anon`/`authenticated`) | vẫn cần người duyệt nội dung/pháp lý trước khi dùng dữ liệu thật |
 
 ---
 
@@ -139,3 +139,23 @@ Beta dùng khoá Turnstile thử nên **không cần** Cloudflare. Khi chuyển 
 6. **WAF `/api/*`**: nếu Bước 1 thành công (có quyền firewall), agents tự tạo quy tắc (đường dẫn bắt đầu `/api/`, 30 yêu cầu / 60 giây theo IP, hành động 429, phạt 10 phút) và đọc lại để xác minh. Nếu không, bạn tạo tay theo đúng thông số đó: Vercel → Firewall → Add rule.
 
 **Còn lại chỉ Owner quyết định**: branch protection cho `main` (GitHub → Settings → Branches: yêu cầu PR + CI xanh, cấm force-push) và bảo vệ GitHub Environment `vbfa-cms` (người duyệt bắt buộc), duyệt pháp lý và nội dung, quyết định domain/chỉ mục, và **GO** cho Release A / B.
+
+---
+
+## Bước 7 — Bật CRM Beta (khoảng 10 phút)  ·  3 thao tác, vì kết nối Vercel/Supabase của agents không đổi được các thiết lập này
+
+CRM đã xây, đã chạy cơ sở dữ liệu thật (migration `0007`, schema thật = schema trong repo) và đang **tắt**. Bật cho Preview Beta:
+
+- [ ] **7a. Vercel → project `vfba-website` → Settings → Environment Variables** → thêm 2 biến, *Environment* = **Preview**, *Git Branch* = `feat/vbfa-services-activation-20261022` (đúng như các biến khác):
+  - `SUPABASE_PUBLISHABLE_KEY` = `sb_publishable__yum5tUJdlQAjBw08FJDpQ_Lef4GGoZ` (khoá **công khai** theo thiết kế của Supabase, gửi chat được; để **không** Sensitive)
+  - `CRM_ENABLED` = `true`
+  Sau đó **Deployments → bản mới nhất của nhánh → ⋯ → Redeploy → chọn Preview** (đừng chọn Production).
+- [ ] **7b. Supabase → Authentication → Sign In / Providers → Email** → **tắt "Allow new users to sign up"** → Save. (Kiểm thử tự động sẽ báo ĐỎ nếu còn bật.)
+- [ ] **7c. Tạo tài khoản quản trị thật của bạn**: *Authentication → Users → Add user → Create new user* (email + mật khẩu mạnh, tích **Auto Confirm User**). Rồi *SQL Editor* chạy (thay email của bạn):
+  ```sql
+  insert into public.crm_staff (email, role, created_by) values (lower('email-cua-ban@vi-du.vn'), 'admin', 'bootstrap');
+  ```
+  Mở `<địa chỉ Preview>/admin/` và đăng nhập. Mật khẩu chỉ gõ ở Supabase/CRM, không gửi chat.
+
+Nhắn `xong bước 7`. Agents sẽ tự: tạo 4 tài khoản kiểm thử tổng hợp (`crm-e2e-*@vbfa-beta.invalid`, không cần bạn làm gì), chạy kiểm thử thật (form → Supabase → CRM, phân quyền, đăng xuất thu hồi phiên…), xoá dữ liệu thử và ghi biên bản.
+Hướng dẫn dùng CRM cho quản trị/nhân viên: `docs/CRM.vi.md`.

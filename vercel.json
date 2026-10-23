@@ -20,6 +20,7 @@
       "headers": [
         { "key": "Cache-Control", "value": "private, no-store, max-age=0" },
         { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "Referrer-Policy", "value": "same-origin" },
         { "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive, nosnippet" }
       ]
     },

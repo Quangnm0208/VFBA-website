@@ -2,7 +2,7 @@
  * Wires the CRM to the deployment environment (astro:env, schema in astro.config.ts). Kept apart from app.ts so the handler
  * stays free of Astro imports and is unit-testable.
  */
-import { CRM_ENABLED, FORM_ALLOWED_ORIGINS, IP_HASH_SALT, SUPABASE_PUBLISHABLE_KEY, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_URL } from 'astro:env/server';
+import { CRM_ENABLED, IP_HASH_SALT, SUPABASE_PUBLISHABLE_KEY, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_URL } from 'astro:env/server';
 import { createLogger } from '../log';
 import { handleCrm, respond, type CrmDeps } from './app';
 import { createAuthClient } from './auth';
@@ -43,9 +43,5 @@ export async function crmRoute({ request, clientAddress }: { request: Request; c
   } catch {
     ip = undefined;
   }
-  return handleCrm(request, ip ?? request.headers.get('x-real-ip') ?? undefined, {
-    ...parts,
-    log,
-    allowedOrigins: (FORM_ALLOWED_ORIGINS ?? '').split(',').map((s) => s.trim()).filter(Boolean),
-  });
+  return handleCrm(request, ip ?? request.headers.get('x-real-ip') ?? undefined, { ...parts, log });
 }

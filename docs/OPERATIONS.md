@@ -64,11 +64,21 @@ Tạo widget (Managed) cho domain website → lấy **Site key** và **Secret ke
 | `SUPABASE_SERVICE_ROLE_KEY` | Production (Preview tuỳ chọn) | **có** | Ghi lead (chỉ Function đọc) |
 | `IP_HASH_SALT` | Production | **có** | Muối băm IP cho giới hạn tốc độ (`openssl rand -hex 32`). **Bắt buộc**: thiếu thì form trả 503 (không còn dùng service-role key thay thế) |
 | `LEADS_ENABLED` | Production | **có** | Công tắc ra mắt thu thập dữ liệu cá nhân: chỉ đặt `true` **sau khi** chính sách bảo mật và câu đồng ý được duyệt. Khác `true` thì form trả 503 dù đã có khoá Supabase |
+| `CRM_ENABLED` | Preview Beta (Production chỉ sau khi được duyệt) | không | Công tắc `/admin/` (CRM). Khác `true` ⇒ mọi `/admin/` trả 404 (`docs/CRM.vi.md`) |
+| `SUPABASE_PUBLISHABLE_KEY` | Preview Beta (Production khi bật CRM) | không (khoá công khai) | Chỉ để đăng nhập Supabase Auth của CRM; dùng cùng `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `IP_HASH_SALT` |
 | `PUBLIC_TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY` | Production | secret: có | Chống spam (cả hai form) |
 | `FORM_ALLOWED_ORIGINS` | Production | không | Origin bổ sung được phép POST (vd. domain mới khi chuyển đổi) |
 | `ENABLE_VERCEL_ANALYTICS` | Production | không | `true` bật Web Analytics không cookie |
 
 Preview **không** nên có `SUPABASE_SERVICE_ROLE_KEY`: form ở preview sẽ trả `503` thay vì ghi vào dữ liệu thật. Đây là hành vi mong muốn.
+
+### CRM: tài khoản kiểm thử tổng hợp và kiểm thử thật
+
+- Kiểm thử thật của CRM chạy trong workflow *VBFA Preview real-service E2E* (sau phần biểu mẫu): `scripts/qa/live-crm-e2e.mjs`. Nó dùng 4 tài khoản tổng hợp
+  (`crm-e2e-admin|staff|news|outsider@vbfa-beta.invalid`, địa chỉ `.invalid` không nhận được thư). Mật khẩu **dẫn xuất** từ secret `VERCEL_PROTECTION_BYPASS`
+  (`"Pw-" + 40 ký tự hex đầu của HMAC-SHA256(secret, "vbfa-crm-e2e-v1:<vai trò>")`), không lưu ở đâu. Nếu tài khoản chưa có, script in SQL tạo (chỉ **mã băm** bcrypt) và thoát mã 3.
+- Cuối Beta: vô hiệu hoá (`update public.crm_staff set active = false where email like 'crm-e2e-%'`) và ban/xoá 4 tài khoản trong Supabase Auth. Xoá cần xác nhận của Owner.
+- Chạy cục bộ không cần dịch vụ thật: `npm run build && node scripts/qa/crm-function.mjs && node scripts/qa/crm-browser.mjs && node scripts/qa/live-crm-selftest.mjs`.
 
 ## 3. Danh sách kiểm tra trước khi ra mắt
 

@@ -68,6 +68,12 @@ Chưa có "user event log" kiểu theo dõi hành vi. Nếu sau này cần (đo 
 3. Đăng ký bản tin trùng email trả về giống hệt lần đầu (không lộ ai đã đăng ký).
 4. Trình duyệt hiện toast thành công hoặc thông báo lỗi trong hộp thoại, giữ nguyên dữ liệu đã nhập.
 
+### 3b. CRM Lead Inbox (Beta)
+
+`/admin/*` là các route **không prerender** trong cùng Vercel Function với `/api/*` (`src/pages/admin/[...path].ts` → `src/lib/server/crm/`). HTML dựng phía máy chủ, **không có JavaScript phía trình duyệt**.
+Danh tính: Supabase Auth (kiểm tra phiên ở mỗi request); quyền: bảng `crm_staff` do quản trị quản lý; dữ liệu: 11 hàm SQL `SECURITY DEFINER` (migration `0007`) gọi bằng service-role key ở máy chủ.
+Tắt mặc định (`CRM_ENABLED`). Chi tiết, bảo mật và hướng dẫn: `docs/CRM.vi.md`.
+
 ## 4. Mô hình nội dung (Sanity ↔ `src/lib/content/schema.ts`)
 
 | Loại | Dạng | Ghi chú |
@@ -118,17 +124,19 @@ Chưa tạo `resource`, `event`, `partner`: guide thiết kế ghi các trang Th
 astro.config.ts        Astro + Vercel adapter, Fonts API, CSP, schema biến môi trường
 vercel.json            framework, vùng Function, header
 src/
-  pages/               index, tin-tuc/, [slug] (trang tĩnh), 404, api/ (Functions), sitemap, robots, search-index
+  pages/               index, tin-tuc/, [slug] (trang tĩnh), 404, api/ và admin/ (Functions; admin = CRM), sitemap, robots, search-index
   layouts/BaseLayout   khung chung: head/SEO, header, footer, hộp thoại, script
   components/          ui/ layout/ home/ news/ article/ seo/
   lib/content/         schema (zod), seed, queries GROQ, loader Sanity, entry getContent()
   lib/server/          handler form, validation, store Supabase, turnstile, log, hash
+  lib/server/crm/      CRM: phiên, client Supabase Auth, store (RPC), router/handler, giao diện HTML, test
   scripts/             TypeScript phía trình duyệt, theo tính năng
   styles/              CSS tách khối, giữ nguyên thứ tự cascade của bản thiết kế
   assets/              font, ảnh thương hiệu, ảnh seed (được fingerprint)
 studio/                Sanity Studio (host riêng)
-supabase/migrations/   SQL + test migration (PGlite)
-scripts/               check_site.py, export-seed.mjs, build-fonts.mjs, qa/ (e2e, serve)
+supabase/migrations/   SQL + test migration (PGlite): 0001-0006 form/throttle/retention, 0007 CRM
+public/admin/crm.css   CSS của CRM (tệp tĩnh, không nội tuyến)
+scripts/               check_site.py, export-seed.mjs, build-fonts.mjs, qa/ (e2e, serve, api-function, crm-*, live-*)
 docs/                  tài liệu này + design/ (handoff gốc)
 ```
 

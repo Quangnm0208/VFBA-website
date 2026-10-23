@@ -101,6 +101,7 @@ Bản sao lưu của nhà cung cấp cơ sở dữ liệu có thể giữ dữ l
 - Biểu mẫu kiểm tra nguồn gửi, định dạng, kích thước, email và sự đồng ý trước khi lưu; có bẫy chống tự động và giới hạn số lần gửi.
 - Cơ sở dữ liệu bật kiểm soát truy cập ở mức hàng (RLS); người truy cập website **không** thể đọc hay ghi trực tiếp vào dữ liệu; chỉ chức năng
   máy chủ của VBFA, bằng khoá bí mật không bao giờ nằm trong trình duyệt, được ghi dữ liệu.
+- Nhân sự VBFA chỉ xem và xử lý dữ liệu của bạn qua hệ thống quản lý có đăng nhập riêng, theo vai trò và phạm vi được cấp; mỗi lần đăng nhập, xem, đổi trạng thái hoặc ghi chú đều để lại nhật ký thao tác (không chứa nội dung dữ liệu của bạn). Ghi chú nội bộ về bạn bị xoá cùng dữ liệu của bạn khi bạn yêu cầu xoá. **[CHỜ OWNER: xác nhận mô tả này và thời hạn lưu nhật ký]**
 - Không có dữ liệu cá nhân trong nhật ký kỹ thuật của ứng dụng.
 - Không có biện pháp nào an toàn tuyệt đối. Nếu xảy ra sự cố ảnh hưởng đến dữ liệu của bạn, chúng tôi sẽ thông báo theo quy định
   **[CHỜ PHÁP LÝ: nghĩa vụ và thời hạn thông báo vi phạm dữ liệu]**.

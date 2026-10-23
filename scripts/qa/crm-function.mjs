@@ -10,6 +10,7 @@
  * What is NOT real: Supabase Auth (a small in-memory emulation of /auth/v1) and Postgres/PostgREST themselves. The real-service
  * run (docs/evidence/CRM_REAL_*.md) covers those against the live project.
  */
+import { createHmac } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { ENTRY, ORIGIN, PASSWORD, PUBLISHABLE_KEY, SALT, SERVICE_KEY, startStack } from './crm-stack.mjs';
 
@@ -117,7 +118,10 @@ const outsider = host.client();
   // A valid Auth session that is not on the allowlist: sign in at the Auth server directly, then present the cookies.
   const direct = await fetch(`${SUPABASE}/auth/v1/token?grant_type=password`, { method: 'POST', headers: { apikey: PUBLISHABLE_KEY, 'content-type': 'application/json' }, body: JSON.stringify({ email: USERS.outsider.email, password: PASSWORD }) });
   const tokens = await direct.json();
-  const clock = staff.jar.get('__Secure-vbfa-ss'); // a genuine signed clock; the Auth tokens are what differ
+  // A genuine clock for THIS user, signed the way the Function signs it (key derived from the service-role key; format started.lastSeen.userId.signature).
+  const derived = createHmac('sha256', SERVICE_KEY).update('vbfa-crm-session-v1').digest();
+  const payload = `${Date.now()}.${Date.now()}.${USERS.outsider.id}`;
+  const clock = `${payload}.${createHmac('sha256', derived).update(payload).digest('hex')}`;
   outsider.jar.set('__Secure-vbfa-at', tokens.access_token);
   outsider.jar.set('__Secure-vbfa-rt', tokens.refresh_token);
   outsider.jar.set('__Secure-vbfa-ss', clock);
@@ -183,13 +187,27 @@ check('an expired access token is renewed with the refresh token and the cookies
 // Throttle
 const brute = host.client();
 const statuses = [];
-for (let i = 0; i < 10; i++) statuses.push((await brute.call('/admin/login/', { form: { email: 'victim@vbfa.test', password: `guess-${i}` }, ip: `192.0.2.${i + 1}` })).status);
-check('sign-in throttle: repeated guesses against one e-mail (from different addresses) end in 429 with Retry-After', statuses.slice(0, 8).every((s) => s === 401) && statuses.slice(8).every((s) => s === 429), statuses.join(','));
+for (let i = 0; i < 10; i++) statuses.push((await brute.call('/admin/login/', { form: { email: 'victim@vbfa.test', password: `guess-${i}` }, ip: '192.0.2.1' })).status);
+check('sign-in throttle: repeated guesses at one e-mail from one address end in 429', statuses.slice(0, 8).every((s) => s === 401) && statuses.slice(8).every((s) => s === 429), statuses.join(','));
+
+const elsewhere = [];
+for (let i = 0; i < 12; i++) elsewhere.push((await host.client().call('/admin/login/', { form: { email: USERS.staff.email, password: `guess-${i}` }, ip: '198.51.100.250' })).status);
+const realIn = await host.client().call('/admin/login/', { form: { email: USERS.staff.email, password: PASSWORD }, ip: '203.0.113.9' });
+check('a stranger guessing at an account from another address cannot lock the real person out (429 for the stranger, 303 for the person)', elsewhere.slice(8).every((st) => st === 429) && realIn.status === 303, `${elsewhere.join(',')} / ${realIn.status}`);
+const mixed = host.client();
+{
+  const a = host.client(); await login(a, 'admin');
+  const b = host.client(); await login(b, 'staff');
+  mixed.jar.set('__Secure-vbfa-at', a.jar.get('__Secure-vbfa-at'));
+  mixed.jar.set('__Secure-vbfa-rt', a.jar.get('__Secure-vbfa-rt'));
+  mixed.jar.set('__Secure-vbfa-ss', b.jar.get('__Secure-vbfa-ss'));
+}
+check("a session clock is bound to its owner: another person's tokens with my clock are refused (401)", (await mixed.call('/admin/staff/')).status === 401);
 
 // Headers on everything
 const everything = [home, ...protectedAnswers, loginOk, empty, list, detail, withNote, outsiderList, newsList, staffPage, await admin.call('/admin/account/'), await anon.call('/admin/login/')];
 const sample = everything.filter((r) => r.status !== 303);
-check('every CRM response is private, no-store and noindex, framed by nobody, with a script-free CSP', everything.every((r) => r.headers.get('cache-control') === 'private, no-store, max-age=0' && /noindex/.test(r.headers.get('x-robots-tag') ?? '') && r.headers.get('x-frame-options') === 'DENY' && /default-src 'none'/.test(r.headers.get('content-security-policy') ?? '') && !/script-src|unsafe-/.test(r.headers.get('content-security-policy') ?? '')));
+check('every CRM response is private, no-store and noindex, framed by nobody, same-origin referrer policy, with a script-free CSP', everything.every((r) => r.headers.get('cache-control') === 'private, no-store, max-age=0' && r.headers.get('referrer-policy') === 'same-origin' && /noindex/.test(r.headers.get('x-robots-tag') ?? '') && r.headers.get('x-frame-options') === 'DENY' && /default-src 'none'/.test(r.headers.get('content-security-policy') ?? '') && !/script-src|unsafe-/.test(r.headers.get('content-security-policy') ?? '')));
 check('no CRM page contains a script, an inline style or an event handler; each links the same-origin stylesheet', sample.every((r) => !/<script|<style|\sstyle=|\son[a-z]+=|javascript:/i.test(r.text) && r.text.includes('href="/admin/crm.css"') && /name="robots" content="noindex/.test(r.text)));
 
 // Logs

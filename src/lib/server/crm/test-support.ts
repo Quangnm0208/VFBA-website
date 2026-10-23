@@ -83,7 +83,7 @@ export function fakeAuth(initial: FakeUser[]) {
   const sessions = new Map<string, { userId: string; refresh: string }>();
   const refreshTokens = new Map<string, string>();
   let counter = 0;
-  const state = { down: false, calls: { signIn: 0, getUser: 0, refresh: 0, signOut: 0 } };
+  const state = { down: false, calls: { signIn: 0, getUser: 0, refresh: 0, signOut: 0, signOutOthers: 0 } };
   const asUser = (u: FakeUser & { confirmed: boolean }): AuthUser => ({ id: u.id, email: u.email, confirmed: u.confirmed });
   const byId = (id: string) => [...users.values()].find((u) => u.id === id);
   const issue = (userId: string): TokenResult => {
@@ -122,6 +122,17 @@ export function fakeAuth(initial: FakeUser[]) {
       if (session) {
         refreshTokens.delete(session.refresh);
         sessions.delete(accessToken);
+      }
+    },
+    async signOutOthers(accessToken) {
+      state.calls.signOutOthers++;
+      const mine = sessions.get(accessToken);
+      if (!mine) return;
+      for (const [token, other] of [...sessions]) {
+        if (other.userId === mine.userId && token !== accessToken) {
+          refreshTokens.delete(other.refresh);
+          sessions.delete(token);
+        }
       }
     },
     async updatePassword(accessToken, password) {

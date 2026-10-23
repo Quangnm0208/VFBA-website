@@ -97,3 +97,55 @@ Chính sách bảo mật, sổ câu đồng ý, đề xuất thời hạn lưu v
 | SEC-O8 | Thấp | Xuất dữ liệu lead ra bảng tính: ô bắt đầu bằng `=`, `+`, `-`, `@` có thể chạy công thức. Khi xuất CSV, thêm dấu nháy đơn đầu ô | Vận hành | trước khi xuất lần đầu |
 | SEC-O9 | Thông tin | Nhật ký hạ tầng của Vercel có thể chứa IP; chính sách bảo mật nêu rõ (đang chờ pháp lý duyệt cách diễn đạt) | Pháp lý | trước Release B |
 | SEC-O10 | Thông tin | Font SVN còn trong lịch sử Git công khai và deployment production hiện tại (vấn đề giấy phép, không phải lỗ hổng) | Owner | trước Release A |
+
+## 7. CRM Lead Inbox (Beta), rà soát 2026-10-23
+
+Phạm vi: `/admin/*` (`src/lib/server/crm/`, `src/pages/admin/`, `public/admin/crm.css`), migration `0007` + `0008`, `vercel.json`. Hướng dẫn và kiến trúc: `docs/CRM.vi.md`. Bằng chứng: `docs/evidence/CRM_2026-10-23.md`.
+
+### 7.1 Kiểm soát
+
+| Yêu cầu | Cài đặt | Loại bằng chứng |
+|---|---|---|
+| Dữ liệu CRM không đọc/ghi được từ trình duyệt | 4 bảng mới: RLS bật, 0 policy, `anon`/`authenticated` không có quyền; 11 hàm `SECURITY DEFINER` (`search_path=""`), `EXECUTE` chỉ cho `service_role` | **THẬT** (truy vấn quyền trên dự án thật; vân tay schema `d78e5f73…` thật = bản dựng từ 8 migration; Security Advisor chỉ INFO `rls_enabled_no_policy`) |
+| Không yếu đi quyền hiện có | `website_leads`, `form_attempts` không đổi cột/quyền/policy | **THẬT** (vân tay) · PGlite |
+| Xác thực | Supabase Auth, kiểm tra phiên với Supabase **ở mỗi request**, làm mới khi hết hạn | MÔ PHỎNG (Auth giả lập) · **CHƯA THẬT** (chờ bật CRM trên Preview) |
+| Phân quyền phía máy chủ | danh sách cho phép `crm_staff` do quản trị quản lý, gắn `user_id` lần đầu, vai trò `admin`/`staff`, phạm vi loại khách; mỗi hàm SQL tự kiểm tra lại | PGlite (36 kiểm thử) · hàm biên dịch (56) |
+| 401 / 403 / 404 | chưa đăng nhập 401; đăng nhập nhưng không có quyền 403; khách ngoài phạm vi/đã xoá/id sai 404 (cùng một câu trả lời, không lộ sự tồn tại) | PGlite · hàm biên dịch · Chromium |
+| IDOR | thử đọc/đổi trạng thái/ghi chú khách ngoài phạm vi: 404 và dữ liệu không đổi | PGlite · hàm biên dịch |
+| Phiên | cookie `__Secure-…` HttpOnly, Secure, SameSite=Strict, Path=/admin; đồng hồ ký HMAC **gắn với người dùng** (không nghỉ 30 phút, tối đa 8 giờ); hết phiên và đăng xuất **thu hồi phiên Supabase** (kể cả khi access token đã hết hạn); đổi mật khẩu thu hồi phiên khác; cookie trùng tên bị từ chối | PGlite · hàm biên dịch · Chromium (cờ cookie, nút Back sau khi đăng xuất) |
+| CSRF | chỉ POST từ form cùng nguồn: `Origin` bắt buộc **cùng origin** (không dùng `FORM_ALLOWED_ORIGINS`), `Sec-Fetch-Site`, SameSite=Strict, kiểm tra origin của Astro; `Referrer-Policy: same-origin` (với `no-referrer` trình duyệt gửi `Origin: null` và mọi form bị từ chối: lỗi chức năng đã phát hiện và sửa, mục 7.2 #9) | hàm biên dịch · **Chromium thật** (header `Origin` trình duyệt gửi) |
+| Chống dò mật khẩu | giới hạn theo địa chỉ (20/10 phút) và theo cặp (email, địa chỉ) (8/10 phút), chỉ lưu băm HMAC có muối, lượt bị từ chối không được lưu; người lạ ở địa chỉ khác không khoá được người thật; 4 trường hợp lỗi cho cùng một thông báo | PGlite · hàm biên dịch |
+| Không cache, không index | `Cache-Control: private, no-store, max-age=0`, `X-Robots-Tag: noindex…`, `X-Frame-Options: DENY`, CSP `default-src 'none'; style-src 'self'` (không script), `robots.txt` chặn `/admin/`, `vercel.json` đặt lại các header ở tầng nền tảng | **THẬT** ở trạng thái tắt (Preview trả 404 với đủ header: `x-frame-options: DENY`, CSP, `cache-control: private, no-store, max-age=0`, `x-vercel-cache: MISS`) · hàm biên dịch |
+| XSS | mẫu HTML tự escape; không `<script>`, `<style>`, thuộc tính `style=`/`on*` | PGlite · hàm biên dịch · Chromium |
+| Log không dữ liệu cá nhân | chỉ `route`, `status`, `role`, `durationMs`, mã lỗi cố định; nhãn lỗi lạ rút về tên lớp | unit test · hàm biên dịch (log của tiến trình) |
+| Tắt mặc định, đóng khi thiếu cấu hình | `CRM_ENABLED` khác `true` ⇒ 404; thiếu khoá/muối/HTTPS ⇒ 503, không gọi backend | hàm biên dịch (6 tổ hợp) · **THẬT** (404 trên Preview) |
+| Nhật ký thao tác | đăng nhập/đăng xuất/từ chối, mở khách, đổi trạng thái (từ→sang), ghi chú (chỉ id), đổi người dùng; không có dữ liệu cá nhân của khách | PGlite · hàm biên dịch |
+
+### 7.2 Rà soát độc lập (một tác nhân khác, chỉ đọc mã) và cách xử lý
+
+Kết quả: không có mức Nghiêm trọng/Cao. Các phát hiện và trạng thái:
+
+| # | Mức | Phát hiện | Xử lý |
+|---|---|---|---|
+| 1 | Trung bình | Khoá tài khoản bởi người lạ: bất kỳ ai gửi 9 lượt đăng nhập với email của quản trị khoá được họ; lượt bị từ chối vẫn được ghi và kéo dài khoá; xoá hàng cũ quét cả bảng | **ĐÃ SỬA** (`0008` + Function): nhóm theo (email, địa chỉ); lượt bị từ chối không ghi; chỉ mục `created_at`; kiểm thử "người lạ không khoá được người thật" |
+| 2 | Trung bình | Lần đăng nhập đầu gắn tài khoản chỉ dựa vào email: nếu cho phép đăng ký công khai (hoặc tài khoản được tạo trước), người đến trước chiếm quyền | **GIẢM THIỂU + CỔNG BẮT BUỘC**: tắt "Allow new users to sign up" (kiểm tự động trong `live-crm-e2e.mjs`, **ĐỎ nếu còn bật**); chỉ chấp nhận tài khoản đã xác nhận email; thứ tự tạo: tài khoản Auth trước, hàng cho phép sau (`docs/CRM.vi.md` 5.1). Rủi ro còn lại ghi ở SEC-C1 |
+| 3 | Trung bình/Thấp | Đồng hồ phiên không gắn người dùng (ghép với cookie đánh cắp của người khác); hết phiên không thu hồi refresh token; đăng xuất khi access token đã hết hạn không thu hồi | **ĐÃ SỬA**: đồng hồ ký kèm `user_id`; hết phiên và đăng xuất dùng refresh token để thu hồi |
+| 4 | Thấp | Cuộc đua "quản trị cuối cùng" (hai yêu cầu đồng thời) và quản trị chưa từng đăng nhập vẫn được tính | **ĐÃ SỬA** (`0008`): khoá `pg_advisory_xact_lock`; chỉ đếm quản trị đã đăng nhập |
+| 5 | Thấp | Đổi mật khẩu không kết thúc các phiên khác | **ĐÃ SỬA**: `logout?scope=others` |
+| 6 | Thấp | Hàm SQL cho phép liệt kê khách `deleted` (chờ xoá) | **ĐÃ SỬA** (`0008`): từ chối `deleted`, CSDL tự bảo đảm điều giao diện giả định |
+| 7 | Thấp | Mỗi request của người bị vô hiệu hoá ghi một dòng `denied` | **ĐÃ SỬA**: chỉ ghi lúc đăng nhập |
+| 8 | Thấp | Từ khoá tìm kiếm (tên/email) nằm trong URL (GET): có thể xuất hiện trong nhật ký request của Vercel và lịch sử trình duyệt | **CHẤP NHẬN CHO BETA** (SEC-C2): đã nêu trong `DATA_MAP.md`; đề xuất chuyển tìm kiếm sang POST + cookie trước Release B nếu pháp lý yêu cầu |
+| 9 | Thấp/Thông tin | Cổng CSRF dùng chung danh sách origin của form công khai; và `Referrer-Policy: no-referrer` làm trình duyệt gửi `Origin: null` | **ĐÃ SỬA**: CRM chỉ cùng origin; `Referrer-Policy: same-origin` (header + meta + `vercel.json`). **Đây là lỗi chức năng P0 thật**: Chromium gửi `Origin: null` cho form cùng nguồn khi `no-referrer`, mọi nút trong CRM sẽ bị 403. Bộ kiểm thử trình duyệt cũ che mất lỗi này vì lớp giả lập Origin; nay có kiểm tra "trình duyệt gửi đúng Origin" |
+| 10 | Thông tin | Cookie trùng tên (cookie tossing từ tên miền con) | **ĐÃ SỬA**: tên trùng ⇒ coi như chưa đăng nhập |
+| 11 | Thông tin | NUL trong ô tìm/ghi chú gây 503; cookie làm mới bị mất khi trang lỗi; đọc thân yêu cầu trước xác thực; ghi đè trạng thái `qualified`; chặn tốc độ bị vòng qua khi gọi thẳng Supabase `/token`; chưa bắt buộc MFA | NUL và cookie: **ĐÃ SỬA**. Còn lại **ghi nhận**: thân ≤ 32 KB (nền tảng giới hạn 4,5 MB); `qualified` ghi đè là chủ ý; giới hạn của Supabase Auth áp dụng cho `/token` (Owner có thể bật CAPTCHA/time-box phiên trong Supabase); MFA: giới hạn đã biết |
+
+### 7.3 Mở / rủi ro còn lại của CRM
+
+| ID | Mức | Nội dung | Ai | Hạn |
+|---|---|---|---|---|
+| SEC-C1 | Trung bình | Gắn tài khoản theo email phụ thuộc việc **tắt đăng ký công khai** của Supabase Auth và việc tạo tài khoản Auth trước hàng cho phép | Owner (Bước 7b của `OWNER_SETUP_GUIDE.vi.md`) | trước khi dùng dữ liệu thật |
+| SEC-C2 | Thấp | Từ khoá tìm kiếm trong URL (nhật ký Vercel, lịch sử trình duyệt) | Owner/pháp lý quyết | trước Release B |
+| SEC-C3 | Thấp | Chưa bắt buộc MFA; Supabase Auth có tuỳ chọn MFA, CAPTCHA, time-box phiên (một số cần gói trả phí, **không bật khi chưa được phê duyệt chi phí**) | Owner | trước Release B |
+| SEC-C4 | Trung bình | Quy tắc WAF/rate limit cho `/api/*` và `/admin/*`: kết nối Vercel trả `404 Seawall Config not found` cho cả đọc, `PATCH` và `PUT` (đã thử 3 cách) nên **chưa có quy tắc**. Mô tả quy tắc đề xuất: đường dẫn bắt đầu bằng `/api/` hoặc `/admin/`, giới hạn 120 yêu cầu/phút/IP, hành động từ chối 1 phút | Owner (UI Vercel → Firewall) | trước Release B |
+| SEC-C5 | — | Chưa có kết quả THẬT cho đăng nhập/RBAC/IDOR trên Preview (cần Bước 7) | Owner bật CRM; kỹ sư chạy `live-crm-e2e.mjs` | trước khi tuyên bố Beta |
+
