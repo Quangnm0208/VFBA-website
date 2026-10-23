@@ -10,6 +10,20 @@
 
 ---
 
+## Tiến độ (cập nhật 2026-10-23; nguồn: ảnh chụp màn hình của Owner, chưa tự xác minh bằng công cụ trừ khi ghi rõ)
+
+| Bước | Trạng thái | Ghi chú |
+|---|---|---|
+| 1. Quyền Vercel | đã bật *Always allow* cho 147 công cụ đọc + 97 công cụ ghi | phiên hiện tại vẫn `403` khi đọc biến môi trường (kết nối chỉ nạp quyền mới khi mở phiên mới); không cản E2E |
+| 2. Deploy Hook | đã tạo `sanity-preview`, nhánh `feat/vbfa-services-activation-20261022` | URL không lộ trong ảnh |
+| 3. Webhook Sanity | Owner báo đã tạo | chưa có bằng chứng build do webhook: cần một lần Publish thử |
+| 4. Biến Vercel | đã thêm; còn 2 chỗ cần sửa: `IP_HASH_SALT` đang ở **Production** (cần Preview + nhánh), `SUPABASE_SERVICE_ROLE_KEY` có thêm 1 dòng Preview **không gắn nhánh** (nên xoá) | tuỳ chọn: gắn nhánh cho `PUBLIC_TURNSTILE_SITE_KEY`, bật Sensitive cho `TURNSTILE_SECRET_KEY` |
+| 4. Secret GitHub | đã có `SANITY_DEPLOY_TOKEN` và `VERCEL_PROTECTION_BYPASS` (repository secrets) | thấy trong ảnh |
+| 5. Người dùng Beta / Supabase Auth | chưa | chờ đồng ý ở bước 6 |
+| 6. Xác nhận phạm vi Beta + người duyệt | chưa | cần để bắt đầu xây Lead Inbox |
+
+---
+
 ## Bước 1 — Cấp lại quyền cho kết nối Vercel (5 phút)  ·  tương ứng mục 1 của bảng Owner
 
 - [ ] Mở https://claude.ai/customize/connectors → chọn **Vercel** → đăng nhập lại.
