@@ -32,6 +32,8 @@ for (const formFactor of ['mobile', 'desktop']) {
       const file = `qa-artifacts/lighthouse/${blocked.length ? 'blocked-' : ''}${formFactor}-${path.replace(/\W+/g, '_')}-${i}.json`;
       const args = ['--yes', 'lighthouse@13.5.0', site + path, '--output=json', `--output-path=${file}`, '--quiet', `--form-factor=${formFactor}`, ...(formFactor === 'desktop' ? ['--screenEmulation.disabled', '--preset=desktop'] : []),
         '--only-categories=performance,accessibility,best-practices,seo', '--chrome-flags=--headless=new --no-sandbox --disable-dev-shm-usage', `--extra-headers=${JSON.stringify({ 'x-vercel-protection-bypass': bypass })}`, ...blocked.map((pattern) => `--blocked-url-patterns=${pattern}`)];
+      // LH_PACE_S: pause before each run (the protected Preview sits behind a platform rate limit of 120 requests per minute and address).
+      if (Number(process.env.LH_PACE_S)) await new Promise((resolve) => setTimeout(resolve, Number(process.env.LH_PACE_S) * 1000));
       try { execFileSync('npx', args, { stdio: ['ignore', 'ignore', 'pipe'], timeout: 180_000 }); } catch (error) { console.log(`run failed ${formFactor} ${path}: ${String(error.stderr ?? error.message).slice(0, 200)}`); continue; }
       const j = JSON.parse(readFileSync(file, 'utf8'));
       const failing = ['best-practices', 'seo'].flatMap((c) => j.categories[c].auditRefs.filter((r) => r.weight > 0 && j.audits[r.id].scoreDisplayMode !== 'notApplicable' && (j.audits[r.id].score ?? 0) < 1).map((r) => `${c === 'seo' ? 'seo' : 'bp'}:${r.id}`));

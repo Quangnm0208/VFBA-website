@@ -44,15 +44,19 @@ jobs:
           SMOKE_BASE_URL: ${{ env.SITE }}
           SMOKE_API_MODE: configured
         run: node scripts/qa/smoke.mjs
-      - name: Responsive audit, 9 widths x home / news / article / 404 (real Chromium on the real deployment)
+      - name: Responsive audit, 5 widths x home / news / article / 404, paced under the platform rate limit (real Chromium on the real deployment)
         env:
           QA_ARTICLE: /tin-tuc/test/
           QA_OUT: qa-artifacts/preview-responsive
-          QA_PACE_MS: '2500'
+          # The Preview is behind a platform rate limit (120 requests per minute and address, measured by vbfa-ratelimit-probe); stay well under it.
+          QA_REQ_BUDGET: '110'
+          QA_WIDTHS: '320,375,768,1024,1440'
         run: node scripts/qa/responsive.mjs "$SITE"
       - name: Fonts on this runner (does local("Arial") resolve?)
         run: fc-match Arial; fc-match sans-serif; fc-list | wc -l
       - name: Lighthouse mobile + desktop (median of 3)
+        env:
+          LH_PACE_S: '35'
         run: node scripts/qa/lh-live.mjs / /tin-tuc/ /tin-tuc/test/
       - name: Lighthouse diagnosis, home page with the Cloudflare challenge widget blocked (1 run, informational)
         # Separates what the site itself logs from what the third-party widget logs; never a gate.
@@ -60,6 +64,7 @@ jobs:
         env:
           LH_BLOCKED: '*challenges.cloudflare.com*'
           LH_RUNS: '1'
+          LH_PACE_S: '40'
         run: node scripts/qa/lh-live.mjs /
       - name: Upload screenshots and reports
         if: always()

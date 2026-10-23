@@ -30,6 +30,26 @@ const bypass = process.env.VERCEL_PROTECTION_BYPASS;
 const PACE_MS = Number(process.env.QA_PACE_MS || 0);
 const heightFor = (w) => (w <= 430 ? 800 : w <= 834 ? 1100 : 900);
 
+// QA_REQ_BUDGET: requests per 60 s window this audit may send to the audited origin. The protected Preview sits behind a platform rate limit
+// (measured by scripts/qa/ratelimit-probe.mjs: the 121st request of a window is denied with HTTP 429, whatever the path). A page load is ~50 requests,
+// so before each load the audit waits until the last window plus the size of the previous load fits the budget. 0 = no limit (local servers).
+const REQ_BUDGET = Number(process.env.QA_REQ_BUDGET || 0);
+const stamps = [];
+let lastLoadSize = 60;
+let stampsAtLastThrottle = 0;
+async function throttle() {
+  if (!REQ_BUDGET) return;
+  const sent = stamps.length - stampsAtLastThrottle;
+  if (sent > 5) lastLoadSize = Math.min(REQ_BUDGET - 10, sent);
+  for (;;) {
+    const now = Date.now();
+    while (stamps.length && now - stamps[0] > 61_000) stamps.shift();
+    if (stamps.length + lastLoadSize <= REQ_BUDGET) break;
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+  }
+  stampsAtLastThrottle = stamps.length;
+}
+
 await mkdir(outDir, { recursive: true });
 const findings = [];
 const add = (level, ctx, message, detail) => {
@@ -40,6 +60,7 @@ const add = (level, ctx, message, detail) => {
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
 
 async function open(width, path) {
+  await throttle();
   const context = await browser.newContext({
     viewport: { width, height: heightFor(width) },
     isMobile: width <= 834,
@@ -48,7 +69,7 @@ async function open(width, path) {
   });
   if (bypass) {
     const origin = new URL(base).origin;
-    await context.route((url) => url.origin === origin, (route) => route.continue({ headers: { ...route.request().headers(), 'x-vercel-protection-bypass': bypass } }));
+    await context.route((url) => url.origin === origin, (route) => { stamps.push(Date.now()); return route.continue({ headers: { ...route.request().headers(), 'x-vercel-protection-bypass': bypass } }); });
   }
   await context.addInitScript(() => {
     try { localStorage.setItem('vbfa:popup:demo-welcome', JSON.stringify({ rev: 'demo-1', at: Date.now() })); } catch {}

@@ -92,7 +92,7 @@ Không có lỗ hổng Cao/Nghiêm trọng mở trong mã. Một rà soát độ
 | 2 | Tắt “Allow new users to sign up” | Supabase → Authentication → Sign In / Providers | Bước 7b |
 | 3 | Tạo tài khoản quản trị thật + chạy 1 câu SQL cấp quyền | Supabase Auth + SQL Editor | Bước 7c |
 | 3b | **Tạo Cổng quản trị**: Vercel project `vbfa-admin` (Root Directory `studio`), 4 biến (khoá service-role: Sensitive), Ignored Build Step, secret bypass, rồi tự đăng nhập Sanity thử Quản lý Lead | Vercel + GitHub + trình duyệt | `OWNER_SETUP_GUIDE.vi.md` Bước 8 |
-| 4 | Quy tắc WAF `/api/*` + `/admin/*` (120 yêu cầu/phút/IP, chặn 1 phút; thêm cả project `vbfa-admin`) | Vercel → Firewall | `SECURITY_REPORT.md` SEC-C4 |
+| 4 | Quy tắc WAF: **đã có giới hạn 120 yêu cầu/cửa sổ/IP (đo hộp đen, `SECURITY_REPORT.md` 8.2) nhưng áp cả trang tĩnh**; Owner cân nhắc chỉ áp cho `/api/*`, `/admin/*`, `/api/portal` (người dùng chung IP sẽ bị 429); thêm quy tắc tương tự cho project `vbfa-admin` | Vercel → Firewall | `SECURITY_REPORT.md` SEC-C4 |
 | 5 | Branch protection cho `main`; sau Beta: thu hồi/hết hạn token Sanity `SANITY_DEPLOY_TOKEN` | GitHub / Sanity | `SECURITY_REPORT.md` SEC-O4 |
 | 6 | Quyết định lưu giữ (khách, ghi chú, nhật ký), chấp nhận tìm kiếm GET, duyệt chính sách bảo mật/câu đồng ý | tài liệu `docs/privacy/` | `RETENTION_PROPOSAL.vi.md` mục 4–5 |
 

@@ -177,3 +177,20 @@ Một tác nhân khác đọc mã (chỉ đọc) và báo 2 lỗi P2 + 5 P3 + 3 
 
 Bộ tư vấn bảo mật Supabase sau `0010`: 6 INFO "RLS bật, không policy" (chủ ý) và **1 WARN `auth_leaked_password_protection`** (kiểm tra mật khẩu bị lộ của Supabase Auth đang tắt; đây là cài đặt Auth, một số gói yêu cầu bản trả phí, **không bật khi chưa được Owner phê duyệt chi phí**; tài khoản CRM do Owner tạo với mật khẩu mạnh). Ghi nhận là SEC-C6 (thấp).
 
+### 8.2 Giới hạn tốc độ của nền tảng: đo được từ bên ngoài (2026-10-23)
+
+Kết nối Vercel của agents **không đọc được** cấu hình Firewall (`404 Seawall Config not found`), nhưng kiểm tra trình duyệt trên Preview thật nhận **HTTP 429 kèm `x-vercel-mitigated: deny`** khi một địa chỉ tải dồn dập (các lượt chạy `39965034035`, `39971979885`, `39976245691`; ba lượt trước đó cùng kịch bản không gặp). Đầu dò hộp đen `scripts/qa/ratelimit-probe.mjs` (workflow `vbfa-ratelimit-probe`, run `39979496773`, SHA `bec2c49`, chỉ gửi GET tới Preview của chính dự án, dừng ở lần 429 đầu tiên) cho kết quả:
+
+| Đường dẫn | Cho phép | Từ chối | Khoá kéo dài |
+|---|---|---|---|
+| `/api/join/` (GET → 405) | 120 yêu cầu trong 35 s | yêu cầu thứ **121**: 429, `x-vercel-mitigated: deny` | tự hết sau 31 s |
+| `/tin-tuc/` (trang tĩnh) | 120 trong 24 s | thứ **121**: 429 `deny` | 41 s |
+| `/admin/login/` | 120 trong 35 s | thứ **121**: 429 `deny` | 26 s |
+
+Kết luận: **đang có một quy tắc giới hạn tốc độ hoạt động ở tầng Firewall (120 yêu cầu/cửa sổ/địa chỉ), áp cho `/api/*`, `/admin/*` — và cả trang tĩnh và tài nguyên.** Việc này đóng phần lớn SEC-C4 (kiểm chứng hộp đen thay cho đọc cấu hình; chưa rõ ai/khi nào tạo, Owner xác nhận). Hai hệ quả cần Owner quyết:
+
+1. **Phạm vi quá rộng cho người dùng thật (P1 trước Release):** một lần mở trang chủ ≈ 50 yêu cầu (HTML + tài nguyên), nên 3 người mở trang cùng lúc sau một địa chỉ IP chung (văn phòng, mạng di động CGNAT, nhà trường) sẽ chạm 120 và nhận 429 trong ~30–40 s. Khuyến nghị: giữ quy tắc 120/phút cho `/api/*` và `/admin/*` (và `/api/portal`), **loại trừ trang tĩnh và `/_astro/*`** hoặc nâng ngưỡng cho chúng (ví dụ 600/phút). Chỉ Owner sửa được trong Vercel → Firewall.
+2. **Kiểm thử trên Preview phải giữ dưới 120 yêu cầu/phút/địa chỉ:** kiểm toán responsive nay có ngân sách yêu cầu (`QA_REQ_BUDGET=110`, 5 độ rộng), Lighthouse cách nhau 35 s (`LH_PACE_S`). Bản Production không bị ảnh hưởng.
+
+Ghi nhận SEC-C4: **đã có giới hạn tốc độ (đo được)**; còn mở: xác nhận phạm vi/ngưỡng mong muốn (mục 1) và áp tương tự cho project `vbfa-admin` khi được tạo.
+
