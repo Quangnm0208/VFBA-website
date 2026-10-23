@@ -101,6 +101,8 @@ Bảo vệ: khoá Turnstile thử luôn trả "pass" ⇒ **không bao giờ** đ
 
 ## 6. Việc cần Owner (OWNER_ACTION_REQUIRED) — ngắn gọn, theo thứ tự
 
+> Hướng dẫn bấm-từng-bước, kèm bảng biến môi trường và mẫu văn bản xác nhận phạm vi Beta: **`docs/OWNER_SETUP_GUIDE.vi.md`**.
+
 1. **Deploy Hook cho nhánh activation** (kết nối Vercel không có công cụ tạo): Vercel → project `vfba-website` → Settings → Git → Deploy Hooks → tên `sanity-preview`, nhánh `feat/vbfa-services-activation-20261022` → sao chép URL (bí mật).
 2. **Webhook Sanity** (kỹ sư không có token quản trị, sandbox chặn `*.sanity.io`): manage.sanity.io → project `iqyx5ttc` → API → Webhooks → Create: dataset `production`; URL = Deploy Hook ở bước 1; trigger Create/Update/Delete; **tắt** "Include drafts"; Filter `_type in ["article","page","homePage","newsPage","siteSettings","popup"]`; POST. Sau đó báo kỹ sư để chạy nghiệm thu (`docs/OPERATIONS.md` mục E): Publish bài mới → Edit → Unpublish → Delete; ở mỗi bước kỹ sư đối chiếu deployment mới do deploy hook tạo (không kèm commit mới) và nội dung trang trên Preview; lượt gọi webhook xem ở manage.sanity.io → API → Webhooks → Attempts.
 3. **Biến Preview cho E2E** (Vercel → Settings → Environment Variables → chỉ môi trường Preview, nhánh `feat/vbfa-services-activation-20261022`): `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (Sensitive), `IP_HASH_SALT`, `PUBLIC_TURNSTILE_SITE_KEY=1x00000000000000000000AA`, `TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA`, `LEADS_ENABLED=true`. Đồng thời xác nhận `PUBLIC_SANITY_PROJECT_ID`, `PUBLIC_SANITY_DATASET`, `PUBLIC_SANITY_API_VERSION`, `PUBLIC_SITE_INDEXING=off` đã đặt. (Hoặc cấp cho kết nối Vercel quyền đọc/ghi biến môi trường để kỹ sư tự xác minh.)
