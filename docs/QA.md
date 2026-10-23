@@ -75,6 +75,30 @@ Other suites on this head: unit tests 71, compiled Function 57 checks (database 
 responsive audit without layout or focus failures (the only reports are `ERR_TUNNEL_CONNECTION_FAILED`, caused by the
 sandbox blocking the Turnstile script; the CI runner has no such block).
 
+### Desktop Lighthouse and re-measure (2026-10-23, head with the `ArticleHead` image-size fix)
+
+Same lab profile (HTTP/2 + Brotli, Arial shim, cold cache, median of 3, production-like build without the Turnstile key). Desktop uses Lighthouse's `desktop` preset
+(1350x940, no CPU/network throttling beyond the preset).
+
+| Page | Form factor | Performance | Accessibility | Best practices | SEO | FCP | LCP median (max) | CLS | TBT |
+|---|---|---|---|---|---|---|---|---|---|
+| `/` | desktop | 100 | 100 | 100 | 69* | 0.39 s | 0.53 s (0.53) | 0.0001 | 0 ms |
+| `/tin-tuc/` | desktop | 100 | 100 | 100 | 69* | 0.31 s | 0.49 s (0.50) | 0.0001 | 0 ms |
+| `/tin-tuc/dong-luc-tuong-lai/` | desktop | 100 | 100 | 100 | 69* | 0.32 s | 0.52 s (0.55) | 0.0001 | 0 ms |
+| `/` | mobile | 97 | 100 | 100 | 69* | 1.68 s | 2.43 s (2.45) | 0 | 0 ms |
+| `/tin-tuc/` | mobile | 98 | 100 | 100 | 69* | 1.24 s | 2.22 s (2.23) | 0 | 0 ms |
+| `/tin-tuc/dong-luc-tuong-lai/` | mobile | 98 | 100 | 100 | 69* | 1.38 s | 2.28 s (2.28) | 0.0003 | 0 ms |
+
+\* indexing is off on purpose (`is-crawlable` is the only SEO audit that fails).
+
+BUG-006 found by the desktop run (Low, fixed): on desktop article pages Lighthouse's `image-size-responsive` audit (best practices 96) flagged the decorative leaf in
+the article header. CSS sizes that graphic by height (`height:104%`, 20 % opacity), so it renders about 538 px wide while `sizes` said 230 px and the browser chose the
+320 px file. `sizes` now says `(min-width: 721px) 540px`, so desktop loads the 603 px file (+6.8 KB, eager but `fetchpriority=low`); best practices is 100 and the mobile
+numbers above are unchanged (mobile keeps the 140 px size).
+
+Same head: browser e2e 111/111, responsive audit 9 widths x 4 pages + overlays with no layout, overflow, image or focus failure (the only failures are `ERR_TUNNEL_CONNECTION_FAILED`,
+the sandbox proxy blocking the Cloudflare Turnstile script when a dialog opens; the CI runner has no such block).
+
 ## CLS investigation (earlier report: 0.149 on an article page)
 
 Reproduced and explained. The number depends on whether the visitor's device has an Arial-compatible font:

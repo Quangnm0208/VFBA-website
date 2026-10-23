@@ -105,6 +105,7 @@ perspective, no API CDN).
 | BUG-003 | Medium | A Production build without `PUBLIC_SANITY_PROJECT_ID` would silently publish the six sample articles as real news | read of `src/lib/content/index.ts` | Fixed (this commit) + 4 unit tests + real-build proof above |
 | BUG-004 | Info | `canonical`, `og:url`, `og:image` and JSON-LD on a Preview point to `vfba-website-alpha.vercel.app` | any Preview page | By design (site origin = `PUBLIC_SITE_URL` or the project's production URL); harmless while `noindex`. Set `PUBLIC_SITE_URL` for Production when the custom domain is attached |
 | BUG-005 | Info | `/tin-tuc/` with one article shows the featured card and "1 bài viết" with an empty area under the toolbar | `/tin-tuc/` on the Preview | Open, cosmetic, resolves itself with more articles; not changed (no redesign) |
+| BUG-006 | Low | Desktop article pages: Lighthouse `image-size-responsive` (best practices 96): the decorative leaf renders ~538 px wide but was served the 320 px file (`sizes` said 230 px) | desktop Lighthouse of `/tin-tuc/dong-luc-tuong-lai/` on the local production-like build | Fixed (`sizes` = 540 px); best practices 100, mobile unchanged; see `docs/QA.md` |
 | CONTENT-001 | Medium (content, not code) | The published `newsPage` document and the article hold placeholder text (`Test`, `Test-123`) | Preview `/tin-tuc/` | Owner/editor must replace before any public release |
 
 ## 7. Reproduce

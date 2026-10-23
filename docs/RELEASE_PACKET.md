@@ -93,7 +93,7 @@ Bảo vệ: khoá Turnstile thử luôn trả "pass" ⇒ **không bao giờ** đ
 | Trình duyệt e2e (API giả) | 111/111 (bản dựng không pop-up; bản có pop-up thêm ca) | MÔ PHỎNG API |
 | Responsive 320…1920 | không lỗi bố cục/focus (báo `ERR_TUNNEL` do sandbox chặn script Turnstile) | lab |
 | Lighthouse di động (trung vị, HTTP/2 + Brotli) | `/` 97 · `/tin-tuc/` 99 · bài 98; Accessibility 100; Best practices 100; LCP 2.42/2.21/2.28 s; CLS ≤ 0.0003 | lab, bản dựng cục bộ cùng mã |
-| Lighthouse máy tính để bàn | **CHƯA đo riêng** (bản đo gần nhất là di động) | — |
+| Lighthouse máy tính để bàn (trung vị 3, preset desktop, HTTP/2 + Brotli) | `/`, `/tin-tuc/`, bài viết: Performance 100 · Accessibility 100 · Best practices 100 · LCP 0.49–0.53 s · CLS 0.0001 · TBT 0 ms (tìm ra và sửa BUG-006 ảnh trang trí; xem `docs/QA.md`) | lab, bản dựng cục bộ cùng mã |
 | Preview thật: HTTP | `/`, `/tin-tuc/`, `/tin-tuc/test/` 200 và hiển thị bài Sanity; 404 có CSP; `/robots.txt`, `/sitemap.xml` (3 URL), `/search-index.json` (1 bài); `GET /api/join/` 405 `Allow: POST` `no-store`; tệp băm `/_astro/*` có `immutable`, nén Brotli; `noindex` ở mọi phản hồi | **THẬT** |
 | Preview thật: trình duyệt (Lighthouse, trợ năng, responsive, e2e) | **CHƯA** — sandbox không tới được `*.vercel.app`; cần secret bypass để chạy từ GitHub Actions | CHƯA |
 | Thiết bị thật (iOS Safari, Android Chrome), trình đọc màn hình | **CHƯA** | — |
