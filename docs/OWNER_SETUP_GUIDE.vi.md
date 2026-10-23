@@ -64,13 +64,16 @@ Với **mỗi** biến dưới đây: *Environments* = **chỉ Preview** → ô 
       Phải là **Repository secret** (không phải Environment secret — job E2E không khai báo environment).
 - [ ] Nhắn `xong bước 4`. Agents sẽ tự redeploy nhánh để nhận biến mới (`PUBLIC_TURNSTILE_SITE_KEY` được đọc lúc build), chạy workflow `VBFA Preview real-service E2E`, đối chiếu **đúng 3 hàng** trong Supabase bằng SQL, xoá hàng thử, kiểm tra log không có dữ liệu cá nhân, rồi báo kết quả.
 
-## Bước 5 — Người dùng Beta (5 phút)  ·  mục 4
+## Bước 5 — Người dùng Beta và đăng nhập CRM (10 phút)  ·  mục 4
 
-Repo này **không có CRM**. Lead nằm trong bảng Supabase `website_leads`. Vì vậy 3 vai trò tương ứng như sau — **mời trực tiếp trong từng công cụ, không cần gửi email cho agents**:
+Theo `docs/BETA_FIRST_OWNER_AGENT_PLAYBOOK.md`, Beta cần một **Lead Inbox (CRM tối thiểu) có đăng nhập** do agents xây; hiện repo **chưa có** — `website_leads` mới chỉ là bảng dữ liệu, và Supabase Auth đang trống (0 người dùng). Vì vậy bước này chuẩn bị "cửa vào" an toàn. **Mời/tạo người trực tiếp trong từng công cụ; không gửi email cho agents.**
 
-- [ ] **Marketing** → Sanity manage → project `iqyx5ttc` → **Members → Invite** → vai trò **Editor** (viết và xuất bản, không quản trị).
-- [ ] **Người quản trị lead** (thay cho "CRM admin") → Supabase → Organization → **Team → Invite** → vai trò thấp nhất đủ xem bảng `website_leads` (không cấp Owner). Cách xem/xoá: `docs/privacy/DATA_SUBJECT_REQUESTS.vi.md`.
-- [ ] **Người thử phía khách** → Preview đang được bảo vệ bằng Vercel Authentication nên họ không mở trực tiếp được. Bạn tạo link xem thử tạm thời (Vercel → deployment → *Share*) hoặc nhắn agents tạo link có hạn. Họ **chỉ nhập dữ liệu giả** (ví dụ `ten.thu@example.invalid`).
+- [ ] **Marketing (Sanity)** → https://www.sanity.io/manage → project `iqyx5ttc` → **Members → Invite** → vai trò **Editor** (viết và xuất bản, không quản trị).
+- [ ] **Chỉ nhận người được mời trong Supabase Auth** → Supabase → project VBFA → **Authentication → Sign In / Providers → Email**: bật Email, **tắt "Allow new users to sign up"** (không cho đăng ký công khai). Nhắn lại đã tắt.
+- [ ] **Authentication → URL Configuration**: *Site URL* = `https://vfba-website-git-feat-vbfa-services-activation-20261022-quangnm.vercel.app`; *Redirect URLs* thêm `https://vfba-website-git-feat-vbfa-services-activation-20261022-quangnm.vercel.app/admin/**`.
+- [ ] **Tạo người dùng CRM** → **Authentication → Users → Add user → Create new user**: nhập email + mật khẩu tạm, **tích Auto Confirm User**. Làm cho: bạn (admin), từng nhân viên Marketing/CRM (staff), người thử phía khách nếu họ được xem lead. (Dịch vụ email mặc định của Supabase chỉ hợp thử nghiệm nhỏ, nên Beta dùng cách tạo trực tiếp; gửi mật khẩu tạm qua kênh an toàn của bạn, yêu cầu đổi sau khi đăng nhập lần đầu.)
+- [ ] **Ai được xem dữ liệu lead**: chỉ cần nhắn *số lượng* admin và staff. Sau khi agents giao migration + trang `/admin/leads/`, bạn chạy **một đoạn SQL** (agents cung cấp) trong Supabase SQL Editor để gán vai trò `admin`/`staff` theo email — email chỉ gõ trong SQL Editor, không qua chat.
+- [ ] **Người thử phía khách**: Preview đang được bảo vệ bằng Vercel Authentication nên họ không mở trực tiếp được. Tạo link xem thử tạm thời (Vercel → deployment → *Share*) hoặc nhắn agents tạo link có hạn. Họ **chỉ nhập dữ liệu giả** (ví dụ `ten.thu@example.invalid`).
 - [ ] Nhắn `xong bước 5` và ghi **tên + vai trò** (không cần email) vào bảng ở Bước 6.
 
 ## Bước 6 — Xác nhận phạm vi Beta và người duyệt (5 phút)  ·  mục 5 và 6
@@ -79,7 +82,8 @@ Repo này **không có CRM**. Lead nằm trong bảng Supabase `website_leads`. 
 
 > XÁC NHẬN PHẠM VI BETA — Owner: *[họ tên]*, *[ngày]*.
 > Tôi cho phép agents: (1) deploy Preview được bảo vệ của nhánh `feat/vbfa-services-activation-20261022`; (2) bật `LEADS_ENABLED=true` **chỉ** trên Preview đó, với khoá Turnstile thử và dữ liệu giả; (3) ghi và xoá các bản ghi thử `e2e-…@example.invalid` trong Supabase `bzrtllytykldnawbuszu`; (4) thêm migration bổ sung **không phá huỷ dữ liệu**, sau khi có báo cáo tác động và sao lưu.
-> Agents **không** được: merge vào `main`, đổi bất kỳ thứ gì ở Production, bật form thật, đổi domain hay chỉ mục, xoá dữ liệu thật.
+> (5) **Xây Lead Inbox tối thiểu** (Supabase Auth chỉ mời, trang `/admin/leads/` `noindex`, API `/api/admin/*` kiểm quyền phía máy chủ) và đồng ý các thay đổi DB sau, **chỉ cộng thêm**: tạo 3 bảng mới `crm_staff` (danh sách vai trò admin/staff), `lead_notes` (ghi chú nội bộ) và `crm_audit` (nhật ký thao tác, không chứa bí mật), bật RLS, **không cấp quyền nào cho `anon` và `authenticated`**; không sửa hay xoá bảng `website_leads`/`form_attempts` hiện có (trạng thái lead dùng cột `status` sẵn có).
+> Agents **không** được: merge vào `main`, đổi bất kỳ thứ gì ở Production, bật form thật, đổi domain hay chỉ mục, xoá dữ liệu thật; thêm sản phẩm/dự án trả phí mới.
 > Beta chỉ dùng dữ liệu giả lập cho tới khi Chính sách bảo mật, câu đồng ý và thời hạn lưu được duyệt bằng văn bản.
 
 **6b. Người duyệt (điền tên và vai trò):**
@@ -104,6 +108,10 @@ Chỉ làm khi cần; token nằm trong môi trường của agents nên hãy c�
 - [ ] Trong ứng dụng Claude Code: menu môi trường cloud (thanh tiêu đề của phiên) → **Edit** → mục **Network secrets** (hoặc biến môi trường nếu không có mục này) → thêm `VERCEL_TOKEN`. Báo tên biến cho agents (không báo giá trị).
 - [ ] Cùng màn hình, **Network access → Allowed domains**: thêm `api.vercel.com` và `*.vercel.app` (để agents chạy QA trình duyệt và gọi API Preview), tuỳ chọn thêm `bzrtllytykldnawbuszu.supabase.co` và `iqyx5ttc.api.sanity.io` để kiểm tra Data API và nội dung.
 - [ ] Mở phiên mới. Agents không bao giờ yêu cầu dán token vào chat.
+
+## Cloudflare (chỉ cần cho Release B)
+
+Beta dùng khoá Turnstile thử nên **không cần** Cloudflare. Khi chuyển sang khoá thật, kết nối **Cloudflare** của agents cần đăng nhập tại https://claude.ai/customize/connectors (hiện đang chờ đăng nhập), hoặc bạn tự tạo widget Turnstile và đặt khoá vào Vercel (Sensitive).
 
 ## Agents tự làm sau khi bạn nhắn `xong bước 4`
 

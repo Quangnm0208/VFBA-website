@@ -7,7 +7,7 @@
 
 | Dữ liệu | Thời hạn | Cơ chế | Bằng chứng |
 |---|---|---|---|
-| `ip_hash` trên hàng lead | 30 ngày (đặt NULL) | `public.purge_lead_metadata()` do pg_cron `vbfa-purge-lead-metadata`, 03:17 UTC hằng ngày | `docs/evidence/SUPABASE_REAL_2026-10-22.md` (job đã đăng ký; **chưa có lần chạy nào** tính đến lúc ghi: lần đầu 2026-10-23 03:17 UTC) |
+| `ip_hash` trên hàng lead | 30 ngày (đặt NULL) | `public.purge_lead_metadata()` do pg_cron `vbfa-purge-lead-metadata`, 03:17 UTC hằng ngày | `docs/evidence/SUPABASE_REAL_2026-10-22.md` (job đã đăng ký; lần chạy đầu `succeeded` lúc 2026-10-23 03:17:00 UTC, `runid 1`) |
 | Bộ đếm `form_attempts` | 2 ngày (xoá hàng) | cùng hàm | như trên |
 | Hàng lead (họ tên, email, tổ chức...) | **không bao giờ tự xoá** | — | khoảng trống cần quyết định |
 

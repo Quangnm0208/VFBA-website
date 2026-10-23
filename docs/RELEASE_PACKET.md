@@ -144,7 +144,8 @@ Các bước (kỹ sư thực hiện sau GO; mỗi bước ghi SHA/ID deployment
 | B-5 | WAF `/api/*` đã bật và đã thử | chưa |
 | B-6 | Khoá Turnstile thật (+ hostname domain chính thức) | chưa |
 | B-7 | Quy trình xoá dữ liệu theo yêu cầu được thử; thời hạn lưu được duyệt (và nếu có lịch xoá hàng lead thì migration `0007` đã được duyệt riêng) | chưa |
-| B-8 | Cron `vbfa-purge-lead-metadata` đã chạy ít nhất một lần thành công (`cron.job_run_details`) | chờ sau 2026-10-23 03:17 UTC |
+| B-8 | Cron `vbfa-purge-lead-metadata` đã chạy ít nhất một lần thành công (`cron.job_run_details`) | **ĐẠT**: `runid 1` succeeded 2026-10-23 03:17:00 UTC (THẬT) |
+| B-10 | Lead Inbox (CRM tối thiểu có đăng nhập) theo `docs/BETA_FIRST_OWNER_AGENT_PLAYBOOK.md` mục 3: hiện **chưa có** — `website_leads` mới chỉ là bảng dữ liệu. Cần Owner đồng ý các thay đổi DB (3 bảng mới có RLS, không cấp quyền cho `anon`/`authenticated`) rồi agents xây | chưa xây; chờ đồng ý ở Bước 6 của `OWNER_SETUP_GUIDE.vi.md` |
 | B-9 | Domain + SSL + smoke API trên domain chính thức; `PUBLIC_SITE_URL`, `FORM_ALLOWED_ORIGINS`, hostname Turnstile cập nhật | chưa |
 
 Trình tự bật: đặt biến Production bí mật → khoá Turnstile thật → `LEADS_ENABLED=true` **cuối cùng** → redeploy → Owner gửi một bản ghi thử có kiểm soát (E2E tự động từ chối host Production) → xoá theo `DATA_SUBJECT_REQUESTS.vi.md` → theo dõi log `lead.*` 24 giờ (tỉ lệ `lead.dropped` / `lead.stored`, `503`, `429`).

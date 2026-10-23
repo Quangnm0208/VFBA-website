@@ -46,7 +46,7 @@ Kết luận: **không có lỗ hổng mức Cao/Nghiêm trọng mở trong mã.
 | Ràng buộc | email ≤ 254 và có `@`; `consent = true`; `message ≤ 1000`; `kind` trong danh sách; họ tên bắt buộc với hội viên; duy nhất email bản tin | **THẬT** (hành vi, giao dịch hoàn tác) |
 | Security Advisor | 2 INFO `rls_enabled_no_policy` (chủ ý, do mô hình chỉ `service_role` ghi). Performance Advisor: 2 INFO (`website_leads_email_idx` chưa dùng vì bảng rỗng; cấu hình kết nối Auth) — không hành động | **THẬT** (chạy lại hôm nay) |
 | Dữ liệu hiện có | `website_leads` = 0 hàng, `form_attempts` = 0 hàng | **THẬT** |
-| Retention / purge | cron `vbfa-purge-lead-metadata` `17 3 * * *`, `active=true`; `cron.job_run_details` = 0 lần chạy lúc 00:02 UTC ngày 2026-10-23 (lần chạy đầu 03:17 UTC) | **THẬT** (lịch) · **CHƯA** (lần chạy đầu: đối chiếu sau 03:17 UTC) |
+| Retention / purge | cron `vbfa-purge-lead-metadata` `17 3 * * *`, `active=true`; **lần chạy đầu thành công**: `runid 1`, `status=succeeded`, 2026-10-23 03:17:00 UTC, "1 row" (đối chiếu lúc 05:55 UTC, `cron.job_run_details`); `website_leads` = 0, `form_attempts` = 0, `auth.users` = 0 | **THẬT** |
 | Data API qua HTTP với khoá anon | **CHƯA** — sandbox chặn `*.supabase.co`; lệnh `curl` kiểm tra có trong `docs/ACTIVATION_RUNBOOK.md` (Owner/CI chạy). Quyền ở trên đã đủ để suy ra `401/403` hoặc rỗng, nhưng đó là suy luận | CHƯA |
 
 Lưu ý thiết kế: chỉ có **một** dự án Supabase (không có staging). Preview bật `LEADS_ENABLED=true` để chạy E2E sẽ ghi vào chính cơ sở dữ liệu này;
