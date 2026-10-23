@@ -35,7 +35,7 @@ Trình duyệt ── https://vbfa-admin-….vercel.app ────────
 ```
 
 - **Không tạo dự án Sanity/Supabase mới, không dịch vụ trả phí mới.** Cùng Content Lake `iqyx5ttc/production`, cùng cơ sở dữ liệu `bzrtllytykldnawbuszu`, cùng logic CRM (`src/lib/server/crm`).
-- Mã Studio ở `studio/`; màn hình Lead/Nhân sự ở `studio/portal/*`; Function ở `studio/portal-api/portal.ts`; logic dùng chung ở `src/lib/server/crm/portal/*` (đã có 31 test đơn vị).
+- Mã Studio ở `studio/`; màn hình Lead/Nhân sự ở `studio/portal/*`; Function ở `studio/portal-api/portal.ts`; logic dùng chung ở `src/lib/server/crm/portal/*` (34 test đơn vị).
 - **Build** (`npm run build` trong `studio/`) = `sanity build` + `scripts/build-vercel-output.mjs`, tạo cây **Build Output API v3** (`.vercel/output`: `static/` + `functions/api/portal.func` + `config.json`). Lý do không dùng thư mục `api/`: Vercel nhận diện function trong mã nguồn **trước** khi chạy lệnh build, nên file sinh ra lúc build sẽ không được nhận. Định tuyến + header nằm **một chỗ** (`build-vercel-output.mjs`), `studio/vercel.json` chỉ chứa lệnh build.
 
 ## 3. Xác thực và phân quyền (điểm P0)
@@ -76,7 +76,7 @@ Xem **Bước 8** trong `docs/OWNER_SETUP_GUIDE.vi.md`. Tóm tắt thiết lập
 | Lớp | Bằng chứng | Thật hay mô phỏng |
 |---|---|---|
 | SQL của danh tính (migrations `0009`, `0010`) | 20 test trên PGlite (SQL thật) + cả hai migration đã áp dụng lên Supabase thật (dấu vân tay 112 hàng khớp repo) | SQL thật; Supabase thật cho phần áp dụng |
-| Bộ kiểm tra danh tính Sanity | 9 test. Đã **quan sát thật** (probe `39958212710`): token robot → 200, `provider: sanity-token`, không e-mail; token sai → 401; không token → 200 không có người dùng. **Chưa quan sát**: phản hồi cho phiên trình duyệt của người thật (cùng bộ khoá được tài liệu hoá; test dùng bản mô phỏng) | mô phỏng; chỉ phần từ chối được quan sát thật |
+| Bộ kiểm tra danh tính Sanity | 10 test. Đã **quan sát thật** (probe `39958212710`): token robot → 200, `provider: sanity-token`, không e-mail; token sai → 401; không token → 200 không có người dùng. **Chưa quan sát**: phản hồi cho phiên trình duyệt của người thật (cùng bộ khoá được tài liệu hoá; test dùng bản mô phỏng) | mô phỏng; chỉ phần từ chối được quan sát thật |
 | Bộ xử lý `/api/portal` | 24 test: phương thức, origin, content-type, giới hạn, thứ tự xác thực, RBAC, IDOR, log | mô phỏng Sanity, SQL thật |
 | Màn hình (Chromium) | `scripts/qa/portal-browser.mjs` **52/52**: bộ lọc, phân trang, chi tiết, đổi trạng thái, ghi chú, phạm vi, IDOR, Admin/Staff, axe-core 0 lỗi, 5 độ rộng, không cookie/storage, log sạch | màn hình + bundle Function + SQL thật; **Sanity mô phỏng, vỏ Studio không có** |
 | Build kiểu Vercel | cây output dựng được khi chỉ cài `studio/` (không có `node_modules` ở gốc), `check-vercel-output.mjs` 8/8 | thật (cục bộ) |

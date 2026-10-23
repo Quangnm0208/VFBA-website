@@ -155,7 +155,7 @@ Chi tiết: `docs/ADMIN_PORTAL.vi.md`, bằng chứng: `docs/evidence/ADMIN_PORT
 
 | Kiểm soát | Trạng thái |
 |---|---|
-| Danh tính do **máy chủ** xác minh với API Sanity ở mỗi request; token robot, thiếu e-mail, không phải thành viên dự án, phản hồi 200 không có người dùng đều bị từ chối; Sanity lỗi/quá hạn ⇒ 503 (không bao giờ mặc định cho qua) | test đơn vị (9) + token sai/robot kiểm tra thật qua `run-portal-live` khi có project |
+| Danh tính do **máy chủ** xác minh với API Sanity ở mỗi request; token robot, thiếu e-mail, không phải thành viên dự án, phản hồi 200 không có người dùng đều bị từ chối; Sanity lỗi/quá hạn ⇒ 503 (không bao giờ mặc định cho qua) | test đơn vị (10) + token sai/robot kiểm tra thật qua `run-portal-live` khi có project |
 | Quyền CRM từ `crm_staff` (vai trò + phạm vi loại lead); lần đầu gắn e-mail ⇄ `sanity_user_id`, sau đó phải khớp cả hai; mỗi hàm SQL kiểm tra lại actor và phạm vi; IDOR → 404 | PGlite (12) + màn hình (50) + handler (22) |
 | Chỉ `Authorization: Bearer` (không cookie ⇒ không có bề mặt CSRF); cùng origin bắt buộc; JSON ≤ 32 KB; chỉ POST | handler (22), `portal-live` kiểm thật |
 | Khoá service-role chỉ ở biến môi trường của Function; quét bundle trình duyệt (tên khoá, mã Supabase, tên hàm CRM) | `check-vercel-output.mjs` (CI) |

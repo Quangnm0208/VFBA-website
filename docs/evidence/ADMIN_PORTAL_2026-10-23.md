@@ -11,7 +11,7 @@ Phạm vi: một địa chỉ cho Nội dung (Sanity Studio) và Lead (CRM), dan
 | Migration `0009` trên Supabase `bzrtllytykldnawbuszu` | **THẬT** — áp dụng version `20261023131207`; dấu vân tay schema trực tiếp = bản dựng từ repo `9dcd0e261d4575384b90c2cf3c5ddf35` (110 hàng) |
 | API Sanity `users/me` | **THẬT cho token robot / sai / không có**; **CHƯA quan sát** cho phiên người thật |
 | Hàm SQL danh tính (`crm_portal_login/whoami/denied`, `0010`) | SQL thật trên PGlite (12 + 8 test) + đã áp dụng lên Supabase thật (`0009`, `0010`) |
-| Bộ xử lý `/api/portal`, bộ kiểm tra danh tính | Test đơn vị với Sanity mô phỏng (22 + 9 test) |
+| Bộ xử lý `/api/portal`, bộ kiểm tra danh tính | Test đơn vị với Sanity mô phỏng (24 + 10 test) |
 | Màn hình + bundle Function | Chromium thật, bundle thật, SQL thật, **Sanity mô phỏng**, không có vỏ Studio |
 | Hợp đồng chạy trên Vercel (Build Output API, Node listener) | **Chưa kiểm chứng trên Vercel**; chỉ kiểm tra cục bộ (cây output + listener). Sẽ kiểm bằng `run-portal-live` sau khi Owner tạo project |
 | Vercel Preview `vbfa-admin` | **Chưa có** (OWNER_ACTION_REQUIRED: Bước 8). Đã thử lúc 2026-10-23 ~13:55 UTC: `create_project` (đủ cấu hình: gốc `studio`, repo, ignore-step, 3 biến không bí mật) → `403 forbidden` (`POST /v11/projects`, requestId `iad1:sfo1::6zrv5-1792763741192-39777fda6457`); `create_git_project` → lỗi lược đồ phản hồi khi tra cứu project liên kết với repo (không phải 403, nhưng không tạo được). Không có CLI/thông tin đăng nhập Vercel trong môi trường của agents |
@@ -38,7 +38,7 @@ Hệ quả thiết kế: (1) token robot không có e-mail và có `provider: sa
 
 | Kiểm thử | Kết quả |
 |---|---|
-| `npx vitest run` toàn bộ | **238/238** (15 file; trong đó `crm.test.ts` 56, `identity.test.ts` 11, `handler.test.ts` 24) |
+| `npx vitest run` toàn bộ | **238/238** (15 file; trong đó `crm.test.ts` 56, `identity.test.ts` 10, `handler.test.ts` 24) |
 | `astro check` (Node 24) | 0 lỗi, 0 cảnh báo (99 file) |
 | `studio`: `tsc --noEmit`, `sanity schema validate` | sạch / 0 lỗi, 0 cảnh báo |
 | `scripts/qa/portal-browser.mjs` (Chromium, bundle Node listener thật, PGlite, Sanity mô phỏng) | **52/52** — gồm: người ngoài danh sách bị từ chối + ghi nhật ký một lần; token lạ; không token (client không gọi mạng); token robot; số liệu tổng quan khớp DB; phân trang 25/31, lọc, tìm kiếm; đổi trạng thái + từ chối khi cũ (409); ghi chú nhiều dòng, markup hiển thị dạng văn bản; phạm vi (chỉ bản tin) + IDOR 404; Admin/Staff; mời, tắt, đặt lại liên kết, không gỡ được admin cuối; token chỉ trong header `Authorization`; không cookie/storage; no-store/noindex; không cuộn ngang ở 320/375/768/1024/1440; axe-core 0 lỗi ở 6 màn hình; không lỗi console; log chỉ có thao tác/trạng thái/vai trò/thời gian |

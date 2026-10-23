@@ -19,7 +19,7 @@
 | Kho mã | `Quangnm0208/VFBA-website`, nhánh `feat/vbfa-services-activation-20261022` (PR #8, draft). **Không** merge vào `main`; PR #6 vẫn draft |
 | SHA bản Beta | *(điền khi chốt: SHA của commit cuối cùng đã qua CI và Preview READY)* |
 | Deployment Vercel | *(điền: `dpl_…` tương ứng SHA)* |
-| Cơ sở dữ liệu | Supabase `bzrtllytykldnawbuszu`, 8 migration, vân tay schema THẬT = bản dựng từ migration `d78e5f73b5d3577c0fd559a9f5856f61` (104 dòng) |
+| Cơ sở dữ liệu | Supabase `bzrtllytykldnawbuszu`, 10 migration (`0009`, `0010` cho Admin Portal), vân tay schema THẬT = bản dựng từ migration `d1a573dd92c2910200c66803ed8fc9a7` (112 dòng), đo lúc 2026-10-23 14:4x UTC |
 | Production | không đổi: `vfba-website-alpha.vercel.app` → `main@7e8f699` |
 
 ## 3. Tài khoản và vai trò Beta (không có mật khẩu trong tài liệu)
@@ -43,15 +43,18 @@
 | Cơ sở dữ liệu CRM (migration `0007`, `0008`) | vân tay trùng bản dựng; RLS bật, 0 policy; `anon`/`authenticated` không quyền; 11 hàm chỉ `service_role`; Advisor chỉ INFO | `docs/evidence/CRM_2026-10-23.md` |
 | Preview khi CRM tắt | `/admin/*` = 404 với đủ header (`DENY`, CSP, `no-store`, `noindex`) | như trên |
 | Trình duyệt thật trên Preview đã triển khai (run `39922432516`, mã `05cd6b5`/`a8d73b2`, chỉ khác `docs/`) | smoke 15/15 (1 bỏ qua có chủ đích); kiểm tra 9 độ rộng x 4 trang: 0 lỗi, 22 ghi chú kích thước vùng chạm; Lighthouse (runner CI, trung vị 3, ba lần chạy): desktop 100/100/92, mobile 90–95/100/92; **LCP mobile 2,75–3,33 s (vượt ngưỡng “tốt” 2,5 s trong phòng thí nghiệm này)**, CLS bài viết mobile 0,0455 / 0,0455 / 0,0000 | `docs/QA.md` (QA-OPEN-1 và 3 còn mở) |
+| **CRM thật: đăng nhập Supabase Auth, phân quyền Admin/Nhân viên, IDOR, đổi trạng thái, ghi chú, đăng xuất thu hồi phiên, token giả, chống đoán mật khẩu** | **48/48 PASS** hai lần trên Preview được bảo vệ: run `39957682879` (SHA `fd9331f`, `dpl_FYaKNuvx79dTAXdpLugV5g7wnYKu`) và run `39972052671` (SHA `17b7cfd`, `dpl_GwuHCfZSnPFL2YEx5uzAmt74truo`, **sau migration 0010**, job `120477003206`). Đọc lại SQL: đúng 3 hàng (1 hội viên, 2 bản tin), phiên bản đồng ý `join-v2` / `newsletter-v1`, `ip_hash` 32 ký tự; log chạy thật 111 bản ghi, 0 khớp địa chỉ thử / `@`; dữ liệu thử (9 khách, 2 ghi chú) đã xoá còn 0 | `docs/evidence/CRM_REAL_E2E_2026-10-23.md` |
 | Cron `vbfa-purge-lead-metadata` | lần chạy đầu thành công 2026-10-23 03:17 UTC | `docs/evidence/SUPABASE_REAL_2026-10-22.md` |
 
 ### MÔ PHỎNG (code thật + SQL thật, Auth/PostgREST giả lập cục bộ)
 
 | Bộ kiểm thử | Kết quả |
 |---|---|
-| `supabase/crm.test.ts` (PGlite) | 36/36 |
+| `supabase/crm.test.ts` (PGlite; gồm danh tính Portal `0009` và `0010`) | 56/56 |
 | `src/lib/server/crm/app.test.ts` (bộ xử lý trên SQL thật + Auth giả) | 53/53 |
 | `scripts/qa/crm-function.mjs` (hàm Vercel đã biên dịch qua HTTP thật) | 56/56 |
+| `src/lib/server/crm/portal/*.test.ts` (danh tính Sanity giả, SQL thật) | 34/34 (toàn bộ bộ test đơn vị: 238/238) |
+| `scripts/qa/portal-browser.mjs` (Chromium: màn hình Lead/Nhân sự của Admin Portal, bundle function thật, axe-core, 5 độ rộng) | 52/52 (cục bộ và trên CI) |
 | `scripts/qa/crm-browser.mjs` (Chromium: bàn phím, cookie, `Origin` thật, axe-core WCAG 2.2 AA, 8 độ rộng, zoom 400 %) | 37/37 |
 | Lighthouse cục bộ cho 4 màn hình CRM (mobile) | hiệu năng 100, trợ năng 100, thực hành tốt 100 (SEO 45: **chủ ý** `noindex`) — xem `docs/QA.md` |
 
