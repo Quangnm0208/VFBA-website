@@ -35,6 +35,8 @@ jobs:
         run: node scripts/qa/api-function.mjs
       - name: 'Compiled Vercel Function, CRM: sign-in, roles, IDOR, sessions, CSRF, audit, headers (real SQL in PGlite, emulated Auth)'
         run: node scripts/qa/crm-function.mjs
+      - name: 'Dry run of the live CRM E2E script against the local stack (not a real-service result)'
+        run: node scripts/qa/live-crm-selftest.mjs
       - run: npx playwright install --with-deps chromium
       - name: 'Browser QA (interactions, forms with mocked API, pop-up, motion, 404 + CSP) and responsive audit'
         run: |
@@ -43,12 +45,16 @@ jobs:
           node scripts/qa/e2e.mjs http://localhost:4322 --popup
           # 9 widths (320-1920) x home/news/article/404 plus drawer, search and join dialogs; screenshots uploaded below
           node scripts/qa/responsive.mjs http://localhost:4322
+      - name: 'CRM browser QA (Chromium): keyboard sign-in, inbox, workflow, notes, roles, cookies, CSP, axe-core, 8 widths'
+        run: node scripts/qa/crm-browser.mjs --shots
       - name: Upload responsive screenshots and report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: responsive-qa
-          path: qa-artifacts/responsive
+          path: |
+            qa-artifacts/responsive
+            qa-artifacts/crm
           if-no-files-found: warn
           retention-days: 14
 

@@ -22,7 +22,7 @@ export const SALT = 'salt-for-tests-only';
 export const PASSWORD = 'Correct-Horse-Battery-1!';
 export const BASE_ENV = { SUPABASE_SERVICE_ROLE_KEY: SERVICE_KEY, SUPABASE_PUBLISHABLE_KEY: PUBLISHABLE_KEY, IP_HASH_SALT: SALT, CRM_ENABLED: 'true', LEADS_ENABLED: 'true', TURNSTILE_SECRET_KEY: '1x0000000000000000000000000000000AA', VBFA_QA_STUB_TURNSTILE: '1', NODE_TLS_REJECT_UNAUTHORIZED: '0' };
 
-export async function startStack() {
+export async function startStack(options = {}) {
   /* ───────── database: the real migrations in PGlite ───────── */
   const db = new PGlite();
   await db.exec(`create role anon nologin; create role authenticated nologin; create role service_role nologin bypassrls;
@@ -37,14 +37,15 @@ export async function startStack() {
 
   /* ───────── users of the emulated Supabase Auth ───────── */
   const uid = (n) => `00000000-0000-4000-8000-0000000000${String(n).padStart(2, '0')}`;
-  const USERS = {
+  const USERS = options.users ?? {
     admin: { email: 'admin@vbfa.test', id: uid(1) },
     staff: { email: 'staff@vbfa.test', id: uid(2) },
     news: { email: 'news@vbfa.test', id: uid(3) },
     outsider: { email: 'outsider@vbfa.test', id: uid(4) }, // valid Auth user, NOT on the allowlist
     pending: { email: 'pending@vbfa.test', id: uid(5), confirmed: false },
   };
-  await db.exec(`insert into public.crm_staff (email, role, created_by) values ('admin@vbfa.test', 'admin', 'qa'), ('staff@vbfa.test', 'staff', 'qa');
+  const passwordOf = options.passwordOf ?? (() => PASSWORD);
+  await db.exec(options.staffSql ?? `insert into public.crm_staff (email, role, created_by) values ('admin@vbfa.test', 'admin', 'qa'), ('staff@vbfa.test', 'staff', 'qa');
     insert into public.crm_staff (email, role, kinds, created_by) values ('news@vbfa.test', 'staff', array['newsletter'], 'qa');`);
 
   /* ───────── emulated Supabase: GoTrue + PostgREST over HTTPS ───────── */
@@ -84,10 +85,11 @@ export async function startStack() {
         // Auth is called with the PUBLISHABLE key only; the service-role key must never be used for sign-in.
         if (req.headers.apikey !== PUBLISHABLE_KEY) { seen.authKeyMisuse++; return json(res, 401, { message: 'invalid api key' }); }
         const route = url.pathname.slice('/auth/v1'.length);
+      if (route === '/settings') return json(res, 200, { disable_signup: true, mailer_autoconfirm: false, external: { email: true } });
         if (route === '/token' && url.searchParams.get('grant_type') === 'password') {
           const { email, password } = JSON.parse(text || '{}');
           const user = Object.values(USERS).find((u) => u.email === email);
-          if (!user || password !== PASSWORD) return json(res, 400, { error_code: 'invalid_credentials', msg: 'Invalid login credentials' });
+          if (!user || password !== passwordOf(user)) return json(res, 400, { error_code: 'invalid_credentials', msg: 'Invalid login credentials' });
           return json(res, 200, issue(user));
         }
         if (route === '/token' && url.searchParams.get('grant_type') === 'refresh_token') {
@@ -192,7 +194,7 @@ export async function startStack() {
       };
       return { call, jar };
     };
-    return { client, logs, stop: () => child.kill() };
+    return { client, logs, port, stop: () => child.kill() };
   }
 
   const q = async (sql, params = []) => (await db.query(sql, params)).rows;

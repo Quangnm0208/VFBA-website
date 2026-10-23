@@ -7,6 +7,9 @@
  *   VERCEL_PROTECTION_BYPASS=<automation bypass secret, only if the preview is protected> \
  *   node scripts/qa/live-e2e.mjs
  *
+ * When the CRM is switched on for the Preview (CRM_ENABLED=true) it also checks, against the real Supabase Auth and database, that
+ * those rows appear in the Lead Inbox and can be worked by an authorised person and not by anybody else (live-crm-e2e.mjs).
+ *
  * It WRITES three test rows (one membership, two newsletter) with controlled identities of the form
  * e2e-<scenario>-<run>@example.invalid (".invalid" can never receive mail) and burns part of the per-address rate-limit
  * budget of the machine it runs from. Run it only against a Preview that uses a Turnstile TEST secret
@@ -121,6 +124,10 @@ if (limitedAt) {
   check('rate limit: the budget is per address, not per form (join is refused too)', blocked.status === 429, `${blocked.status}`);
 }
 
+/* 7. CRM (only when /admin/ is enabled on this Preview): the leads stored above must show up, be workable and stay private */
+const { runLiveCrm } = await import('./live-crm-e2e.mjs');
+const crmState = await runLiveCrm({ base, bypass, origin, run, email, check });
+
 const failed = results.filter((r) => !r.ok);
 console.log(`\n${results.length - failed.length}/${results.length} passed (HTTP only: confirm the database with the SQL below)`);
 console.log(`
@@ -130,8 +137,8 @@ from public.website_leads where email like 'e2e-%-${run}@example.invalid' order 
 -- expected e-mails: ${email('member')} (membership, join-v2), ${email('news')} and ${email('ratelimit')} (newsletter, newsletter-v1; the repeats of each are duplicates, not rows)
 -- NOT expected: honeypot, toofast, noconsent, newsnoconsent, newsbadversion, nocaptcha, afterlimit, and the invalid address
 
--- 2) Clean up the test rows (the throttle counters hold only salted hashes and expire after 2 days)
+-- 2) Clean up the test rows (the throttle counters hold only salted hashes and expire after 2 days). Notes of these leads go with them.
 delete from public.website_leads where email like 'e2e-%-${run}@example.invalid';
 -- To reset the rate limit of the machine that ran this script on a TEST project: delete from public.form_attempts where created_at > now() - interval '1 hour';
 `);
-process.exit(failed.length ? 1 : 0);
+process.exit(failed.length ? 1 : crmState === 'not-provisioned' ? 3 : 0);

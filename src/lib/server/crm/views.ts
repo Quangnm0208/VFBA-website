@@ -53,8 +53,8 @@ export function layout(title: string, body: Safe | string, staff?: StaffIdentity
 </head>
 <body>
 <a class="skip" href="#main">Bỏ qua đến nội dung</a>
-<header class="bar"><div class="bar__inner"><div class="brand"><strong>VBFA</strong><span>CRM · Beta</span></div>${nav}</div></header>
-<p class="beta" role="note">Bản thử nghiệm (Beta): chỉ dùng dữ liệu thử cho đến khi chính sách bảo mật và nội dung đồng ý được duyệt.</p>
+<header class="bar"><div class="bar__inner"><div class="brand"><strong>VBFA</strong><span>CRM · Beta</span></div>${nav}</div>
+<p class="beta">Bản thử nghiệm (Beta): chỉ dùng dữ liệu thử cho đến khi chính sách bảo mật và nội dung đồng ý được duyệt.</p></header>
 <main id="main" class="wrap">${body}</main>
 </body>
 </html>`;
