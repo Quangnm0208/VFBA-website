@@ -99,6 +99,27 @@ numbers above are unchanged (mobile keeps the 140 px size).
 Same head: browser e2e 111/111, responsive audit 9 widths x 4 pages + overlays with no layout, overflow, image or focus failure (the only failures are `ERR_TUNNEL_CONNECTION_FAILED`,
 the sandbox proxy blocking the Cloudflare Turnstile script when a dialog opens; the CI runner has no such block).
 
+### CRM screens (2026-10-23, `@ 8fa5abf`, MÔ PHỎNG: compiled Function on a local stack with demo data)
+
+Same Lighthouse 13.5 profiles, run against the compiled Vercel Function (`scripts/qa/crm-stack.mjs`, persistent local server, signed-in session for the three inner screens), median of the successful runs (n = 3 unless noted).
+This measures the markup, CSS and headers of the CRM, **not** Vercel or Supabase latency; the real-Preview numbers come from the `run-preview-qa` workflow (below, once run).
+
+| Screen | Form factor | Performance | Accessibility | Best practices | SEO | FCP | LCP | CLS | TBT |
+|---|---|---|---|---|---|---|---|---|---|
+| login | mobile | 100 | 100 | 100 | 45* | 0.75 s | 0.90 s | 0 | 0 ms |
+| inbox | mobile | 100 | 100 | 100 | 45* | 0.91 s | 1.05 s | 0 | 0 ms |
+| lead detail | mobile | 100 | 100 | 100 | 45* | 0.75 s | 0.90 s | 0 | 0 ms |
+| staff (admin) | mobile | 100 | 100 | 100 | 45* | 0.76 s | 0.91 s | 0 | 0 ms |
+| login | desktop | 100 | 100 | 100 | 45* | 0.21 s | 0.24 s | 0 | 0 ms |
+| inbox | desktop | 100 | 100 | 100 | 45* | 0.24 s | 0.28 s | 0 | 0 ms |
+| lead detail | desktop | 100 | 100 | 100 | 45* | 0.20 s | 0.24 s | 0 | 0 ms |
+| staff (admin) | desktop | 100 | 100 | 100 | 45* | 0.20 s | 0.24 s | 0 | 0 ms |
+
+\* `is-crawlable` fails **on purpose** (`noindex` + `X-Robots-Tag` + `robots.txt` disallow): the CRM must never be indexed.
+Two desktop runs (login n = 2, lead detail n = 2) ended with Lighthouse's `NO_NAVSTART` trace error under load and were not retried into the median; the remaining runs agree to the digit.
+The CRM browser suite (`scripts/qa/crm-browser.mjs`, 37 checks) adds axe-core WCAG 2.2 A/AA on every screen (0 violations), keyboard-only sign-in and workflow, 8 widths from 320 px to 1920 px with no document overflow, and 400 % zoom.
+Not covered by any of this: screen readers, real phones, assistive-technology users (see "Known limits").
+
 ## CLS investigation (earlier report: 0.149 on an article page)
 
 Reproduced and explained. The number depends on whether the visitor's device has an Arial-compatible font:
