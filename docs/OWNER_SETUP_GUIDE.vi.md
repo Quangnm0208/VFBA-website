@@ -149,7 +149,7 @@ CRM đã xây, đã chạy cơ sở dữ liệu thật (migration `0007`, schema
 - [ ] **7a. Vercel → project `vfba-website` → Settings → Environment Variables** → thêm 2 biến, *Environment* = **Preview**, *Git Branch* = `feat/vbfa-services-activation-20261022` (đúng như các biến khác):
   - `SUPABASE_PUBLISHABLE_KEY` = `sb_publishable__yum5tUJdlQAjBw08FJDpQ_Lef4GGoZ` (khoá **công khai** theo thiết kế của Supabase, gửi chat được; để **không** Sensitive)
   - `CRM_ENABLED` = `true`
-  Sau đó **Deployments → bản mới nhất của nhánh → ⋯ → Redeploy → chọn Preview** (đừng chọn Production).
+  Sau đó **đừng bấm Redeploy**: nhắn `xong bước 7a`, agents đẩy một commit lên nhánh để Vercel tự build một bản **Preview** mới có biến mới. Lý do: nút *Redeploy* làm lại đúng môi trường của bản bạn bấm; nếu đó là một bản có nhãn *Production* (có những bản như vậy cho cùng nhánh) thì build chạy ở **Production**, bị từ chối vì Production chưa có `PUBLIC_SANITY_PROJECT_ID` (đã xảy ra lúc 06:43 và 11:25 UTC; Production không bị ảnh hưởng, xem `docs/RELEASE_PACKET.md`). Nếu vẫn muốn tự bấm: chỉ chọn một bản **không** có nhãn Production (Preview, trạng thái *Ready*) và kiểm tra dòng *Environment* của hộp thoại là Preview.
 - [ ] **7b. Supabase → Authentication → Sign In / Providers → Email** → **tắt "Allow new users to sign up"** → Save. (Kiểm thử tự động sẽ báo ĐỎ nếu còn bật.)
 - [ ] **7c. Tạo tài khoản quản trị thật của bạn**: *Authentication → Users → Add user → Create new user* (email + mật khẩu mạnh, tích **Auto Confirm User**). Rồi *SQL Editor* chạy (thay email của bạn):
   ```sql
