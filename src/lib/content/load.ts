@@ -15,6 +15,7 @@ import {
   type SiteSettings,
 } from './schema';
 import { sanityClient, toMedia, type SanityImageValue } from './sanity';
+import { DEFAULT_COVER } from './media';
 import { ARTICLES_QUERY, HOME_QUERY, NEWS_PAGE_QUERY, PAGES_QUERY, POPUPS_QUERY, SITE_QUERY } from './queries';
 import { homeSeed } from './seed/home';
 import { newsPageSeed } from './seed/news-page';
@@ -79,7 +80,11 @@ const wordCount = (body: PortableBody) =>
 
 function mapArticle(raw: Json): Article {
   const body = mapBody(raw.body);
-  const cover = toMedia(raw.cover as SanityImageValue, 1600);
+  let cover = toMedia(raw.cover as SanityImageValue, 1600);
+  if (!cover) {
+    console.warn(`[content] article "${String(raw.slug)}" has no cover image in Sanity: using the default brand image. Upload a cover in the Studio.`);
+    cover = DEFAULT_COVER;
+  }
   const draft = {
     ...stripNulls(raw),
     cover,
@@ -106,6 +111,13 @@ export async function loadFromSanity() {
     client.fetch<Json[]>(POPUPS_QUERY),
   ]);
 
+  // An empty dataset (project connected, seed not imported yet) would otherwise fail much later with a confusing
+  // "Invalid homePage" message. Say what to do instead.
+  if (!articlesRaw.length) {
+    throw new Error(
+      'Sanity returned no published articles. Import the seed first (docs/OPERATIONS.md section A.5: `npm run seed:export`, then `sanity dataset import seed/seed.ndjson production --missing`) or Publish content, then build again. To build from the local sample content instead, leave PUBLIC_SANITY_PROJECT_ID empty.',
+    );
+  }
   const articles = articlesRaw.map(mapArticle);
   const pages = pagesRaw.map(mapPage);
 

@@ -28,6 +28,19 @@ const SELF = fileURLToPath(import.meta.url);
 
 /* ───────── host mode: expose the compiled function over plain HTTP ───────── */
 if (process.argv[2] === '--host') {
+  // Only this QA harness intercepts Turnstile. The deployed Function still calls the real Siteverify API.
+  if (process.env.VBFA_QA_STUB_TURNSTILE === '1') {
+    const fetchReal = globalThis.fetch;
+    globalThis.fetch = async (input, init) => {
+      if (String(input).startsWith('https://challenges.cloudflare.com/turnstile/v0/siteverify')) {
+        const params = new URLSearchParams(init?.body);
+        const ok = params.get('secret') === '1x0000000000000000000000000000000AA' &&
+          params.get('response') === 'XXXX.DUMMY.TOKEN.XXXX';
+        return new Response(JSON.stringify({ success: ok }), { status: 200, headers: { 'content-type': 'application/json' } });
+      }
+      return fetchReal(input, init);
+    };
+  }
   const entry = (await import(pathToFileURL(ENTRY).href)).default;
   const server = http.createServer(async (req, res) => {
     const chunks = [];
@@ -37,7 +50,11 @@ if (process.argv[2] === '--host') {
     headers.set('x-forwarded-for', String(req.headers['x-test-ip'] ?? '198.51.100.7'));
     const request = new Request(ORIGIN + req.url, { method: req.method, headers, body: ['GET', 'HEAD'].includes(req.method) ? undefined : Buffer.concat(chunks) });
     const response = await entry.fetch(request);
-    res.writeHead(response.status, Object.fromEntries(response.headers));
+    // Keep several Set-Cookie headers apart (a plain Object.fromEntries would merge them into one comma-joined value).
+    const out = Object.fromEntries([...response.headers].filter(([name]) => name !== 'set-cookie'));
+    const cookies = response.headers.getSetCookie();
+    if (cookies.length) out['set-cookie'] = cookies;
+    res.writeHead(response.status, out);
     res.end(Buffer.from(await response.arrayBuffer()));
   });
   server.listen(0, '127.0.0.1', () => console.log(`HOST_READY ${server.address().port}`));
@@ -82,11 +99,11 @@ async function main() {
       let parsed; try { parsed = JSON.parse(text); } catch { parsed = undefined; }
       return { status: response.status, headers: response.headers, text, json: parsed };
     };
-    return { call, logs, stop: () => child.kill() };
+    return { call, logs, port, stop: () => child.kill() };
   }
 
-  const member = (over = {}) => ({ kind: 'membership', name: 'Nguyễn Văn Test', company: 'Công ty Kiểm thử', email: 'Test.User@Example.INVALID', phone: '+84 90 000 0000', interest: 'Quan tâm hội viên', message: 'Xin thông tin.', consent: true, consentVersion: 'join-v2', sourcePath: '/', openedAt: Date.now() - 30_000, website: '', utm: { utm_source: 'smoke', utm_medium: 'qa', secret_field: 'must-not-be-stored' }, ...over });
-  const news = (over = {}) => ({ kind: 'newsletter', email: 'reader@example.invalid', sourcePath: '/tin-tuc/', openedAt: Date.now() - 30_000, website: '', ...over });
+  const member = (over = {}) => ({ kind: 'membership', name: 'Nguyễn Văn Test', company: 'Công ty Kiểm thử', email: 'Test.User@Example.INVALID', phone: '+84 90 000 0000', interest: 'Quan tâm hội viên', message: 'Xin thông tin.', consent: true, consentVersion: 'join-v2', turnstileToken: 'XXXX.DUMMY.TOKEN.XXXX', sourcePath: '/', openedAt: Date.now() - 30_000, website: '', utm: { utm_source: 'smoke', utm_medium: 'qa', secret_field: 'must-not-be-stored' }, ...over });
+  const news = (over = {}) => ({ kind: 'newsletter', consent: true, consentVersion: 'newsletter-v1', turnstileToken: 'XXXX.DUMMY.TOKEN.XXXX', email: 'reader@example.invalid', sourcePath: '/tin-tuc/', openedAt: Date.now() - 30_000, website: '', ...over });
 
   /* ───────── scenario 1: no credentials -> fail closed ───────── */
   {
@@ -152,7 +169,7 @@ async function main() {
   }
   const SERVICE_KEY = 'service-role-key-for-tests-only';
   const SALT = 'salt-for-tests-only';
-  const configured = (emulator, extra = {}) => ({ SUPABASE_URL: emulator.url, SUPABASE_SERVICE_ROLE_KEY: SERVICE_KEY, IP_HASH_SALT: SALT, LEADS_ENABLED: 'true', TURNSTILE_SECRET_KEY: '', NODE_TLS_REJECT_UNAUTHORIZED: '0', ...extra });
+  const configured = (emulator, extra = {}) => ({ SUPABASE_URL: emulator.url, SUPABASE_SERVICE_ROLE_KEY: SERVICE_KEY, IP_HASH_SALT: SALT, LEADS_ENABLED: 'true', TURNSTILE_SECRET_KEY: '1x0000000000000000000000000000000AA', VBFA_QA_STUB_TURNSTILE: '1', NODE_TLS_REJECT_UNAUTHORIZED: '0', ...extra });
 
   /* ───────── scenario 2: the go-live switch and the salt are both required ───────── */
   {
@@ -182,13 +199,19 @@ async function main() {
     check('every database call authenticates with the service-role key and only that key (server side)', seen.requests.length > 0 && seen.requests.every((q) => q.apikey === SERVICE_KEY && q.auth === `Bearer ${SERVICE_KEY}`));
     check('a successful submission costs exactly two database calls (attempt check + insert)', seen.requests.length === 2, `${seen.requests.length}: ${seen.requests.map((q) => q.method + ' ' + new URL(q.url, 'https://x').pathname.split('/').pop()).join(', ')}`);
 
+    const noConsent = await host.call('/api/newsletter/', { body: news({ consent: false }) });
+    check('newsletter: no explicit consent -> 400, no newsletter row', noConsent.status === 400 && rows.filter((r) => r.kind === 'newsletter').length === 0);
+    const wrongVersion = await host.call('/api/newsletter/', { body: news({ consentVersion: 'unreviewed-v99' }) });
+    check('newsletter: unapproved consent version -> 400', wrongVersion.status === 400);
+
     const before = rows.length;
     const callsBefore = seen.requests.length;
     check('join: invalid submission -> 400 and NO row and NO database call', (await host.call('/api/join/', { body: member({ email: 'nope' }) })).status === 400 && rows.length === before && seen.requests.length === callsBefore);
     check('join: missing consent -> 400 and NO row', (await host.call('/api/join/', { body: member({ consent: false }) })).status === 400 && rows.length === before);
     const silent = await host.call('/api/join/', { body: member({ website: 'bot' }) });
     const instant = await host.call('/api/join/', { body: member({ openedAt: Date.now() - 200 }) });
-    check('bots: honeypot and instant submissions get 200, NOTHING is stored and the database is not touched', silent.status === 200 && instant.status === 200 && rows.length === before && seen.requests.length === callsBefore);
+    check('bots: a filled honeypot gets 200 ok, NOTHING is stored and the database is not touched', silent.status === 200 && rows.length === before && seen.requests.length === callsBefore);
+    check('people: an instant submission gets an honest 429 too_fast (never a false "saved"), NOTHING is stored and the database is not touched', instant.status === 429 && instant.json?.code === 'too_fast' && rows.length === before && seen.requests.length === callsBefore, `${instant.status} ${instant.text.slice(0, 80)}`);
 
     const withQuery = await host.call('/api/newsletter/', { body: news({ email: 'path@example.invalid', sourcePath: '/tin-tuc/?email=a@b.c&t=1#x' }), ip: '203.0.113.19' });
     check('source path is stored without its query string or fragment', withQuery.status === 200 && rows.find((r) => r.email === 'path@example.invalid')?.source_path === '/tin-tuc/');
@@ -232,6 +255,36 @@ async function main() {
     const pii = ['Nguyễn Văn Test', 'Công ty Kiểm thử', 'test.user@example.invalid', 'reader@example.invalid', 'same@example.invalid', '203.0.113.10', '203.0.113.20', '203.0.113.60', SERVICE_KEY, SALT, '+84 90'];
     const leaked = pii.filter((value) => log.includes(value.toLowerCase()));
     check('technical log contains no personal data, addresses or secrets', leaked.length === 0 && host.logs.length > 0, `leaked: ${leaked.join(', ')} (log lines: ${host.logs.length})`);
+    host.stop();
+  }
+
+  /* ───────── scenario 5: the live E2E script (scripts/qa/live-e2e.mjs) is itself exercised against the real compiled Function ───────── */
+  {
+    const emulator = await startEmulator();
+    const host = await startHost(configured(emulator));
+    // Must not block this process: the emulated database runs here and the Function under test calls it while the script runs.
+    const runLive = (env) =>
+      new Promise((done) => {
+        const child = spawn(process.execPath, ['scripts/qa/live-e2e.mjs'], { env, stdio: ['ignore', 'pipe', 'pipe'] });
+        let stdout = '';
+        let stderr = '';
+        child.stdout.on('data', (c) => (stdout += c));
+        child.stderr.on('data', (c) => (stderr += c));
+        child.on('close', (status) => done({ status, stdout, stderr }));
+      });
+    const liveEnv = { ...process.env, LIVE_E2E_BASE_URL: `http://127.0.0.1:${host.port}`, LIVE_E2E_ORIGIN: ORIGIN };
+    const refused = await runLive(liveEnv);
+    check('live-e2e: refuses to write without LIVE_E2E_CONFIRM', refused.status === 2 && emulator.rows.length === 0, `exit ${refused.status}`);
+    const prod = await runLive({ ...liveEnv, LIVE_E2E_BASE_URL: 'https://vfba-website-alpha.vercel.app', LIVE_E2E_CONFIRM: 'write-test-rows' });
+    check('live-e2e: refuses the production alias', prod.status === 2 && /production host/.test(prod.stderr), `exit ${prod.status}`);
+    const live = await runLive({ ...liveEnv, LIVE_E2E_CONFIRM: 'write-test-rows' });
+    const lastLines = live.stdout.split('\n').filter((l) => /^(FAIL|\d+\/\d+ passed)/.test(l)).join(' | ');
+    check('live-e2e: every scenario passes against the compiled Function', live.status === 0, `exit ${live.status}: ${lastLines || live.stderr.slice(0, 200)}`);
+    const stored = emulator.rows.map((r) => `${r.kind}:${r.email}`);
+    check('live-e2e: stores exactly three rows: one membership and two newsletter e2e identities (repeats are duplicates)', stored.length === 3 && stored.filter((e) => /^membership:e2e-member-[a-z0-9]+@example\.invalid$/.test(e)).length === 1 && stored.filter((e) => /^newsletter:e2e-(news|ratelimit)-[a-z0-9]+@example\.invalid$/.test(e)).length === 2, stored.join(', '));
+    check('live-e2e: nothing was stored for the bot, validation, consent, captcha or after-limit identities', !emulator.rows.some((r) => /honeypot|toofast|noconsent|newsnoconsent|newsbadversion|nocaptcha|afterlimit/.test(r.email)));
+    check('live-e2e: the printed SQL names the run and the expected rows', /e2e-%-[a-z0-9]+@example\.invalid/.test(live.stdout) && /delete from public\.website_leads/.test(live.stdout));
+    emulator.stop();
     host.stop();
   }
 

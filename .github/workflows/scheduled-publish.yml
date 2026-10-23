@@ -1,0 +1,48 @@
+name: VBFA scheduled publish check
+# The site is static: an article dated in the future is left out of the build and nothing rebuilds the site when that
+# date arrives. This job compares Sanity (articles due now) with the live site and calls the Vercel Deploy Hook only when
+# a due article is missing. See docs/OPERATIONS.md section E.7.
+#
+# GitHub runs `schedule` only for the default branch, so this stays dormant until the release is merged to main, and it is
+# opt-in even then: set the repository variable SCHEDULED_PUBLISH_ENABLED=true (Settings -> Secrets and variables -> Actions).
+on:
+  schedule:
+    - cron: "23 * * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "1 = report only, never call the Deploy Hook"
+        required: true
+        type: choice
+        default: "1"
+        options: ["1", "0"]
+permissions:
+  contents: read
+concurrency:
+  group: vbfa-scheduled-publish
+  cancel-in-progress: false
+jobs:
+  check:
+    if: ${{ github.event_name == 'workflow_dispatch' || vars.SCHEDULED_PUBLISH_ENABLED == 'true' }}
+    name: Compare Sanity with the live site
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: scripts/ops
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Check for articles that became due
+        env:
+          # Variable (not secret): https origin of the deployment that serves the site, for example https://www.example.vn
+          SITE_BASE_URL: ${{ vars.SCHEDULED_PUBLISH_SITE_URL }}
+          # Secrets: the Deploy Hook of the branch that serves SITE_BASE_URL, and (only for a protected Preview) the bypass token.
+          VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+          VERCEL_PROTECTION_BYPASS: ${{ secrets.VERCEL_PROTECTION_BYPASS }}
+          SANITY_PROJECT_ID: iqyx5ttc
+          SANITY_DATASET: production
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: node scripts/ops/scheduled-publish.mjs

@@ -37,6 +37,7 @@ export const MESSAGES = {
   rateLimited: 'Bạn thao tác quá nhanh. Vui lòng thử lại sau ít phút.',
   unavailable: 'Biểu mẫu tạm thời chưa nhận được thông tin. Vui lòng thử lại sau.',
   captcha: 'Chưa xác minh được yêu cầu. Vui lòng thử lại.',
+  tooFast: 'Bạn gửi quá nhanh. Vui lòng kiểm tra lại thông tin và gửi lại sau vài giây.',
 } as const;
 
 function originAllowed(request: Request, allowed: string[]): boolean {
@@ -52,8 +53,8 @@ function originAllowed(request: Request, allowed: string[]): boolean {
 
 /**
  * Shared flow for /api/join and /api/newsletter.
- * Order matters: cheap checks first (method/origin/size/shape), silent drops for bots (no signal to adapt to),
- * then validation, configuration, rate limit (counts every attempt, stored or not), captcha, storage.
+ * Order matters: cheap checks first (method/origin/size/shape), honeypot hits dropped silently (no signal to adapt to),
+ * an instant submit answered with an honest retry (never a false "saved"), then validation, configuration, rate limit (counts every attempt, stored or not), captcha, storage.
  */
 export async function handleLead(request: Request, kind: LeadKind, clientIp: string | undefined, deps: LeadDeps): Promise<Response> {
   const { log, store } = deps;
@@ -78,11 +79,15 @@ export async function handleLead(request: Request, kind: LeadKind, clientIp: str
     return done(fail(400, 'bad_json', MESSAGES.badJson), 'lead.bad_json');
   }
 
-  // Bots: honeypot filled, or submitted faster than a person can type. Answer "ok" and store nothing.
   const probe = (raw && typeof raw === 'object' ? raw : {}) as { website?: unknown; openedAt?: unknown };
-  const tooFast = typeof probe.openedAt === 'number' && now() - probe.openedAt < MIN_FILL_MS;
-  if ((typeof probe.website === 'string' && probe.website.trim() !== '') || tooFast) {
-    return done(reply(200, { ok: true }), 'lead.dropped', { reason: tooFast ? 'too_fast' : 'honeypot' });
+
+  // Honeypot: a field no person can see or reach. Answer "ok" and store nothing, so a bot gets no signal to adapt to.
+  if (typeof probe.website === 'string' && probe.website.trim() !== '') return done(reply(200, { ok: true }), 'lead.dropped', { reason: 'honeypot' });
+
+  // Instant submission. `openedAt` is sent by the browser, so this guards against hasty or autofilled submits; it is not a
+  // bot defence. A person must never be told "saved" when nothing was stored, so the answer is an honest "try again".
+  if (typeof probe.openedAt === 'number' && now() - probe.openedAt < MIN_FILL_MS) {
+    return done(reply(429, { ok: false, code: 'too_fast', message: MESSAGES.tooFast }, { 'Retry-After': '3' }), 'lead.too_fast');
   }
 
   const parsed = kind === 'membership' ? joinSchema.safeParse(raw) : newsletterSchema.safeParse(raw);
@@ -119,7 +124,7 @@ export async function handleLead(request: Request, kind: LeadKind, clientIp: str
       interest: join?.interest ?? null,
       message: join?.message || null,
       consent: true,
-      consent_text_version: join?.consentVersion ?? 'newsletter-action-v1',
+      consent_text_version: input.consentVersion,
       source_path: input.sourcePath,
       utm: input.utm,
       ip_hash: ipHash,

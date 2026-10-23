@@ -8,7 +8,7 @@ Preview/production URL before sign-off; the procedure is the same.
 | Suite | Command | Covers |
 |---|---|---|
 | Type check | `npm run check` | Astro/TypeScript, 83 files |
-| Unit tests | `npm test` | lead handler (origin, size, honeypot, validation, 503 fail-closed, Turnstile, rate limit), logging redaction, content schema/seed, **Sanity loader against a fake Content Lake client (valid load, invalid document and failed request throw, home picks repaired; a mock, not the real API)**, **Sanity webhook filter == Studio document types == types the site queries**, SEO, Supabase migration (PGlite), CSP route finaliser |
+| Unit tests | `npm test` (95) | lead handler (origin, size, honeypot, validation, 503 fail-closed, Turnstile, rate limit), logging redaction, content schema/seed, **Sanity loader against a fake Content Lake client (valid load, invalid document, failed request and empty dataset throw; home picks repaired; no-cover article; one or two articles; Production build without a CMS project is refused; a mock, not the real API)**, **Sanity webhook filter == Studio document types == types the site queries**, SEO, Supabase migration (PGlite), CSP route finaliser |
 | Static build checks | `npm run build && python3 scripts/check_site.py` | routes, links/anchors, SEO tags, JSON-LD, indexing mode, self-hosted fonts, **restricted fonts absent**, **page text inside the font subset**, **CSP route matching Vercel's exact-path semantics for every page and the 404**, size budgets |
 | Browser e2e | `node scripts/qa/serve.mjs 4322 &` then `node scripts/qa/e2e.mjs http://localhost:4322 [--popup]` | breakpoints, overlays and focus return, news filter/search/load-more/deep links, article tools, both forms (API mocked), pop-up, motion incl. reduced motion, **home filter hide + announcement, back-to-top out of the tab order, TOC focus, real 404 response with CSP, `/tin-tuc` redirect** |
 | Responsive audit | `node scripts/qa/responsive.mjs http://localhost:4322` | 320/375/390/430/768/834/1024/1440/1920 x home/news/article/404: overflow (and the culprit), broken/distorted images, logo proportions, clipped text, touch targets, focus visibility, font errors, console/CSP errors, headings, drawer/search/join fit; PNG screenshots |
@@ -56,6 +56,130 @@ focus on the first 14 tab stops, no console/CSP errors, drawer/search/join dialo
 reachable at 320 px. Informational: card-title links are 28-31 px tall at 834/1024 px (as specified by the design guide)
 and desktop nav links are 41 px (WCAG 2.5.8 AA asks for 24 px; 44 px is the AAA recommendation).
 
+### Re-measured on the reconciled head (activation branch, 2026-10-22, same profile as above)
+
+Production-like build (no demo pop-up, no Turnstile key), Lighthouse mobile, HTTP/2 + Brotli, Arial shim, cold cache.
+
+| Page | n | Performance | Accessibility | Best practices | SEO | FCP | LCP median (max) | CLS | TBT |
+|---|---|---|---|---|---|---|---|---|---|
+| `/` | 5 (quiet machine) | 97 | 100 | 100 | 69* | 1.67 s | **2.42 s** (2.46) | 0 | 0 ms |
+| `/tin-tuc/` | 3 | 99 | 100 | 100 | 69* | 1.23 s | **2.21 s** (2.21) | 0 | 0 ms |
+| `/tin-tuc/dong-luc-tuong-lai/` | 3 | 98 | 100 | 100 | 69* | 1.38 s | **2.28 s** (2.31) | 0.0003 | 0 ms |
+
+\* indexing is off on purpose. An earlier 3-run batch of `/` showed one LCP of 2.66 s while other work was running on the same
+machine (median 2.41 s); the quiet 5-run repeat above has a maximum of 2.46 s. Treat the home page as "at target with ~0.05 s
+margin", as before. The CDP profile (`scripts/qa/perf.mjs`, slow-4G, 4x CPU, 3 runs) gives cold LCP 1.1 s (home), 1.9 s (news),
+1.8 s (article) and CLS <= 0.0003.
+
+Other suites on this head: unit tests 71, compiled Function 57 checks (database emulated), browser e2e 117/117 (three runs in a row),
+responsive audit without layout or focus failures (the only reports are `ERR_TUNNEL_CONNECTION_FAILED`, caused by the
+sandbox blocking the Turnstile script; the CI runner has no such block).
+
+### Desktop Lighthouse and re-measure (2026-10-23, head with the `ArticleHead` image-size fix)
+
+Same lab profile (HTTP/2 + Brotli, Arial shim, cold cache, median of 3, production-like build without the Turnstile key). Desktop uses Lighthouse's `desktop` preset
+(1350x940, no CPU/network throttling beyond the preset).
+
+| Page | Form factor | Performance | Accessibility | Best practices | SEO | FCP | LCP median (max) | CLS | TBT |
+|---|---|---|---|---|---|---|---|---|---|
+| `/` | desktop | 100 | 100 | 100 | 69* | 0.39 s | 0.53 s (0.53) | 0.0001 | 0 ms |
+| `/tin-tuc/` | desktop | 100 | 100 | 100 | 69* | 0.31 s | 0.49 s (0.50) | 0.0001 | 0 ms |
+| `/tin-tuc/dong-luc-tuong-lai/` | desktop | 100 | 100 | 100 | 69* | 0.32 s | 0.52 s (0.55) | 0.0001 | 0 ms |
+| `/` | mobile | 97 | 100 | 100 | 69* | 1.68 s | 2.43 s (2.45) | 0 | 0 ms |
+| `/tin-tuc/` | mobile | 98 | 100 | 100 | 69* | 1.24 s | 2.22 s (2.23) | 0 | 0 ms |
+| `/tin-tuc/dong-luc-tuong-lai/` | mobile | 98 | 100 | 100 | 69* | 1.38 s | 2.28 s (2.28) | 0.0003 | 0 ms |
+
+\* indexing is off on purpose (`is-crawlable` is the only SEO audit that fails).
+
+BUG-006 found by the desktop run (Low, fixed): on desktop article pages Lighthouse's `image-size-responsive` audit (best practices 96) flagged the decorative leaf in
+the article header. CSS sizes that graphic by height (`height:104%`, 20 % opacity), so it renders about 538 px wide while `sizes` said 230 px and the browser chose the
+320 px file. `sizes` now says `(min-width: 721px) 540px`, so desktop loads the 603 px file (+6.8 KB, eager but `fetchpriority=low`); best practices is 100 and the mobile
+numbers above are unchanged (mobile keeps the 140 px size).
+
+Same head: browser e2e 111/111, responsive audit 9 widths x 4 pages + overlays with no layout, overflow, image or focus failure (the only failures are `ERR_TUNNEL_CONNECTION_FAILED`,
+the sandbox proxy blocking the Cloudflare Turnstile script when a dialog opens; the CI runner has no such block).
+
+### CRM screens (2026-10-23, `@ 8fa5abf`, MÔ PHỎNG: compiled Function on a local stack with demo data)
+
+Same Lighthouse 13.5 profiles, run against the compiled Vercel Function (`scripts/qa/crm-stack.mjs`, persistent local server, signed-in session for the three inner screens), median of the successful runs (n = 3 unless noted).
+This measures the markup, CSS and headers of the CRM, **not** Vercel or Supabase latency; the real-Preview numbers come from the `run-preview-qa` workflow (below, once run).
+
+| Screen | Form factor | Performance | Accessibility | Best practices | SEO | FCP | LCP | CLS | TBT |
+|---|---|---|---|---|---|---|---|---|---|
+| login | mobile | 100 | 100 | 100 | 45* | 0.75 s | 0.90 s | 0 | 0 ms |
+| inbox | mobile | 100 | 100 | 100 | 45* | 0.91 s | 1.05 s | 0 | 0 ms |
+| lead detail | mobile | 100 | 100 | 100 | 45* | 0.75 s | 0.90 s | 0 | 0 ms |
+| staff (admin) | mobile | 100 | 100 | 100 | 45* | 0.76 s | 0.91 s | 0 | 0 ms |
+| login | desktop | 100 | 100 | 100 | 45* | 0.21 s | 0.24 s | 0 | 0 ms |
+| inbox | desktop | 100 | 100 | 100 | 45* | 0.24 s | 0.28 s | 0 | 0 ms |
+| lead detail | desktop | 100 | 100 | 100 | 45* | 0.20 s | 0.24 s | 0 | 0 ms |
+| staff (admin) | desktop | 100 | 100 | 100 | 45* | 0.20 s | 0.24 s | 0 | 0 ms |
+
+\* `is-crawlable` fails **on purpose** (`noindex` + `X-Robots-Tag` + `robots.txt` disallow): the CRM must never be indexed.
+Two desktop runs (login n = 2, lead detail n = 2) ended with Lighthouse's `NO_NAVSTART` trace error under load and were not retried into the median; the remaining runs agree to the digit.
+The CRM browser suite (`scripts/qa/crm-browser.mjs`, 37 checks) adds axe-core WCAG 2.2 A/AA on every screen (0 violations), keyboard-only sign-in and workflow, 8 widths from 320 px to 1920 px with no document overflow, and 400 % zoom.
+Not covered by any of this: screen readers, real phones, assistive-technology users (see "Known limits").
+
+### The protected Preview as deployed (2026-10-23, THẬT: real Vercel, real CDN, real Sanity data)
+
+Workflow `VBFA Preview browser QA (real deployment)` (`.github/workflows/vbfa-preview-qa.yml`), run `39922432516`, job `120310610291`, 08:07–08:14 UTC, started by the Owner's account labelling PR #8 with `run-preview-qa`
+(the job removed the label). The run was started on code SHA `05cd6b5` (Vercel `dpl_Fuz8EsH2UMpSSyEKtEEgYHYMSYXX`); it tests the branch alias with the Automation Bypass secret (never printed). The next commit `a8d73b2` changes `docs/` only and was pushed while the run was in progress, so the alias moved to it at about 08:09 UTC (the page's `vbfa-build` marker read `a8d73b2` at 08:16): the smoke test ran on `05cd6b5`, the responsive audit started on it and finished on whichever build was current, and Lighthouse ran on `a8d73b2`. The two builds have identical code.
+Artifacts (screenshots, `report.json`, Lighthouse JSON) are attached to the run (`preview-qa`, 14 days).
+
+| Check | Result |
+|---|---|
+| Black-box smoke (`smoke.mjs`: headers, redirects, CSP on 404, API methods/types/origin/size, fail-closed) | **15 passed, 0 failed, 1 skipped** (the skipped one is a valid submission: it would write; the write test is the separate real-service E2E) |
+| Responsive audit, 9 widths (320 / 375 / 390 / 430 / 768 / 834 / 1024 / 1440 / 1920) x home / news / article (`/tin-tuc/test/`) / 404 + overlays | **0 FAIL**, 22 INFO |
+| Lighthouse 13.5, runner `ubuntu-latest`, median of 3, bypass header | see table |
+
+| Page | Form factor | Perf | A11y | Best practices | SEO | FCP | LCP | CLS | TBT |
+|---|---|---|---|---|---|---|---|---|---|
+| `/` | mobile | 95 | 100 | 92 | 0† | 1696 ms | 2746 ms | 0.0000 | 0 ms |
+| `/tin-tuc/` | mobile | 93 | 100 | 92 | 0† | 1070 ms | 3240 ms | 0.0001 | 0 ms |
+| `/tin-tuc/test/` | mobile | 95 | 100 | 92 | 0† | 931 ms | 2881 ms | 0.0455 | 0 ms |
+| `/` | desktop | 100 | 100 | 92 | 0† | 387 ms | 607 ms | 0.0012 | 0 ms |
+| `/tin-tuc/` | desktop | 100 | 100 | 92 | 0† | 302 ms | 662 ms | 0.0017 | 0 ms |
+| `/tin-tuc/test/` | desktop | 100 | 100 | 92 | 0† | 339 ms | 665 ms | 0.0029 | 0 ms |
+
+What these numbers are and are not:
+
+- The 22 INFO lines are touch-target notes, not failures: one is the placeholder link `[BETA TEST] Test-123` (31–36 px high on phones; it disappears when real content replaces it), the others are the six desktop menu links at 41 px (mouse pointer, not touch).
+- **Differences from the local lab above are real, not noise.** Local numbers are HTTP/2 on one machine with the Arial shim; this is a shared CI runner reaching a CDN with Vercel's Preview layer on top. Mobile LCP is 2.75 s (`/`), 3.24 s (`/tin-tuc/`) and 2.88 s (article) here against 2.2–2.4 s locally, so **all three are above the 2.5 s "good" threshold in this lab** (the "needs improvement" band is 2.5–4.0 s). Desktop LCP is 0.6–0.7 s. Treat this as lab data from one shared runner under Lighthouse's simulated mobile throttling, re-measure on the final Production host, and do not read it as field data. The earlier "mobile 97/98/98" claim in this document was measured locally and does not carry over to the deployed Preview.
+- CLS 0.0455 on the mobile article page is below 0.1 (good) but it is the largest value measured anywhere; local measurement of the same page was 0.0003. The cause is not yet established (candidates: the CDN-served cover image arriving before its dimensions are applied, or the Preview's own injected overlay). Recorded as QA-OPEN-1 below.
+- † SEO shows 0 on the Preview while the same page measured 69 locally with `is-crawlable` as the only failing audit. The Preview is `noindex` by design (header, meta and `robots.txt`), so the category is not a gate. One cause is now **known**: reading the deployed page shows that `canonical`, `og:url`, `og:image` and the JSON-LD URLs carry the Production host `https://vfba-website-alpha.vercel.app` (`astro.config.ts` takes `PUBLIC_SITE_URL`, else `VERCEL_PROJECT_PRODUCTION_URL`, never the Preview host), which Lighthouse's `canonical` audit flags as "points to another domain". That is correct for Production and harmless while the Preview is `noindex`, but it means the SEO category cannot be read on a Preview. Whether that, and not an audit error, explains a score of 0 rather than about 69 is **not established**: the run did not record the failing audits. The script now prints the failing audits of the best-practices and SEO categories (`failing audits: …`), so the next run answers it. It did: see the third run below (`robots-txt` errored, which leaves the category without a score).
+- Best practices 92 (local 100) was unexplained after this first run; a candidate was something Vercel injects into Preview pages. **Confirmed by the third run below** (a blocked `vercel.live` script).
+
+Open items after the first run: **QA-OPEN-1** CLS 0.0455 on the mobile article, **QA-OPEN-2** best practices 92 and SEO 0 on the Preview, **QA-OPEN-3** `/tin-tuc/` mobile LCP 3.24 s on the runner. Their status after the second and third run is below.
+
+#### Second run on `ba8954b` (same workflow, run `39923813570`, 08:19–08:27 UTC; `ba8954b` differs from `a8d73b2` in docs and the QA script only)
+
+Smoke and the responsive audit passed again (the Lighthouse step now names the failing audits). Lighthouse medians of 3: mobile `/` 94, `/tin-tuc/` 93, `/tin-tuc/test/` 93 (accessibility 100, best practices 92 everywhere); desktop 100/100/92 on all three; mobile LCP 2.89 / 3.26 / 3.18 s; **CLS 0.0455 on the mobile article again, to four decimals** (so it is deterministic on that page, not noise). Every page and form factor reported the same four failing audits: `best-practices: errors-in-console`, `best-practices: inspector-issues`, `seo: is-crawlable`, `seo: robots-txt`.
+
+What that settles and what it does not (updated after the third run below):
+
+- **SEO 0**: the failing audits are `is-crawlable` (intended, `noindex`) and `robots-txt`; the third run shows `robots-txt` **errored** inside Lighthouse, which leaves the whole SEO category without a score (the old script printed that as 0; it now prints `n/a`). The deployed `robots.txt` itself is valid (`User-agent: *` / `Disallow: /`, HTTP 200, read independently). Why Lighthouse's own fetch of it errored is **not established** (a candidate is that this fetch does not carry the bypass header and meets the Vercel Authentication page). It is a tooling artifact on a protected `noindex` Preview, not a site defect, and not a gate.
+- **Best practices 92**: see the third run: the cause is a Vercel script, not the site.
+- QA-OPEN-1 and QA-OPEN-3: see below.
+
+#### Third run on `4287efc` (run `39925279605`, job `120320016410`, 08:31–08:39 UTC) with the diagnostics
+
+Smoke and the responsive audit passed again (0 FAIL, 22 INFO, identical to the first two runs). Lighthouse, median of 3 (each row failed the same four audits):
+
+| Page | Form factor | Perf | A11y | Best practices | SEO | FCP | LCP | CLS |
+|---|---|---|---|---|---|---|---|---|
+| `/` | mobile | 92 | 100 | 92 | n/a | 1685 ms | 2885 ms | 0.0000 |
+| `/tin-tuc/` | mobile | 90 | 100 | 92 | n/a | 1263 ms | 3288 ms | 0.0000 |
+| `/tin-tuc/test/` | mobile | 92 | 100 | 92 | n/a | 1257 ms | 3328 ms | **0.0000** |
+| `/` | desktop | 100 | 100 | 92 | n/a | 312 ms | 543 ms | 0.0012 |
+| `/tin-tuc/` | desktop | 100 | 100 | 92 | n/a | 301 ms | 661 ms | 0.0012 |
+| `/tin-tuc/test/` | desktop | 100 | 100 | 92 | n/a | 265 ms | 625 ms | 0.0029 |
+
+- **Best practices 92 is explained.** On every page and form factor the page logged one console error and one inspector issue: `Loading the script 'https://vercel.live/_next-live/feedback/feedback.js' violates the following Content Security Policy directive: "script-src 'self' https://challenges.cloudflare.com …"`. Vercel injects its Live feedback script into Preview deployments; the site's CSP correctly refuses a third-party script it never allowed. The diagnosis pass with the Cloudflare widget blocked scored the same 92 and logged the same message, so the **Turnstile hypothesis of the previous paragraph is refuted**. This message is expected to be absent on Production (Vercel's feedback layer is a Preview feature); that last point is an expectation until a Production-like deployment is measured. No change to the CSP is proposed: allowing `vercel.live` would weaken it to quiet a Preview-only warning.
+- **Runner fonts**: `fc-match Arial` gives `Liberation Sans` and `fc-match sans-serif` gives `DejaVu Sans` (90 font files). That is the fontconfig view; it does not show whether Chromium resolves `local("Arial")` on this runner (the local lab found it does not on a bare Linux box), so the font explanation for CLS is still **unverified**.
+- **QA-OPEN-1, CLS on the mobile article, is not reproducible**: 0.0455 in the first two runs (identical to four decimals, medians of 3), 0.0000 in this one, with the same page and the same code. It was below 0.1 ("good") every time. Without the layout-shift attribution (the JSON is in the artifact, which the sandbox cannot download) the cause stays unknown; the documented "no usable Arial" mechanism (below) is a candidate, not a finding. Status: watch item, no change made.
+- **QA-OPEN-3, mobile LCP 2.9–3.3 s, stays open** on this runner (the median of 3 was above 2.5 s in all three runs for every page) while the same code measured 2.2–2.4 s locally. Lighthouse's simulated mobile throttling on a shared runner reaching a CDN adds latency the local lab does not have, and the listing page is the slowest; the LCP element has not been identified (needs the JSON). Do not read this as field data.
+- **QA-OPEN-2 is closed**: best practices 92 = Vercel Preview script blocked by the CSP; SEO n/a = Lighthouse's `robots-txt` audit errored. Neither is a defect of the site.
+
 ## CLS investigation (earlier report: 0.149 on an article page)
 
 Reproduced and explained. The number depends on whether the visitor's device has an Arial-compatible font:
@@ -93,3 +217,34 @@ the first costs brand fidelity on slow first visits and the second adds a visibl
   changes LCP (re-measure after content is loaded).
 - The sandbox cannot reach `*.vercel.app`; deployed-URL checks were made with the Vercel tooling and, in CI, with
   `smoke.mjs`.
+
+## Security hardening verification (22/10/2026)
+- Explicit newsletter opt-in checkbox is mandatory and displayed next to the email field; a submit with `consent:false` or an unapproved version is rejected with HTTP 400 before storage.
+- Both Turnstile keys (`PUBLIC_TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`) and `IP_HASH_SALT` are required for `LEADS_ENABLED=true` to create the Supabase store. Any missing credential makes both form endpoints return 503.
+- Only GitHub CI uses the fixed Cloudflare dummy credentials with a stubbed Siteverify fetch, never production credentials. Server-side real verification is still required in end-to-end UAT.
+- Migration 0001 explicitly grants `INSERT` to `service_role`, independent of Supabase project default privileges; exposed anonymous/authenticated roles have no access.
+- **No live Sanity project, Supabase database or client PII has been created or modified during this hardening phase.**
+
+### Real-Preview Lighthouse run 4 (2026-10-23, SHA `69b4a7f`, run `39983086734`): the LCP and CLS elements are now named
+
+First run with the platform rate limit respected (120 requests per window and address, `docs/SECURITY_REPORT.md` 8.2; responsive audit **0 FAIL** at 320/375/768/1024/1440 x 4 pages + overlays; Lighthouse spaced by 35 s). Median of 3, CI runner, same configuration as runs 1-3:
+
+| Form factor | Page | Perf | A11y | BP | SEO | FCP | LCP | CLS | TBT |
+|---|---|---|---|---|---|---|---|---|---|
+| mobile | `/tin-tuc/` | 94 | 100 | 92 | n/a | 1084 ms | **3109 ms** | 0.0001 | 0 |
+| mobile | `/tin-tuc/test/` | 95 | 100 | 92 | n/a | 928 ms | **2887 ms** | **0.0455** | 0 |
+| desktop | `/` | 100 | 100 | 92 | n/a | 387 ms | 601 ms | 0.0012 | 0 |
+| desktop | `/tin-tuc/` | 100 | 100 | 92 | n/a | 308 ms | 668 ms | 0.0012 | 0 |
+| desktop | `/tin-tuc/test/` | 100 | 100 | 92 | n/a | 305 ms | 659 ms | 0.0029 | 0 |
+| mobile, Cloudflare widget blocked (1 run) | `/` | 95 | 100 | 92 | n/a | 1688 ms | 2813 ms | 0.0000 | 0 |
+
+**QA-OPEN-3 (mobile LCP 2.8-3.1 s): the element is identified.**
+- `/tin-tuc/` and `/tin-tuc/test/` (mobile): the LCP element is the **fallback cover** `<img src="/og-default.png" width="1200" height="630" fetchpriority="high" loading="eager">` (the test article has no cover image, so `DEFAULT_COVER` is used). It is discoverable in the initial HTML, high priority and not lazy: the discovery insight is clean. The file was a **168 KB PNG**.
+- Home (mobile): the LCP element is the logo (`header.site-header a.logo img`, WebP, high priority, not lazy). Nothing to fix in its markup.
+- The observed (unthrottled) LCP breakdown on the runner is tiny: time to first byte 14-23 ms, load delay 57-88 ms, load duration 17-35 ms, render delay 48-212 ms (about 0.2-0.3 s in total). The 2.8-3.1 s is Lighthouse's **simulated mobile** (4x CPU, 1.6 Mbit/s, 150 ms round trip) value, which is dominated by serial round trips and bytes. Bytes are the only cheap lever.
+- Change made: the on-page fallback cover is now `public/og-default.webp` (**27.8 KB, -83 %**, visually checked); the PNG stays the social preview (`DEFAULT_OG`). Home is not changed: its simulated LCP follows FCP (1.7 s with the widget blocked), i.e. render-blocking CSS/fonts under a 150 ms round trip; inlining critical CSS would be a larger change that the Beta does not justify. Re-measure after this change: see the next run below (same runner configuration).
+
+**QA-OPEN-1 (CLS 0.0455 on the mobile article page): reproducible (0.0455 again), below the 0.1 "good" limit, so no code change.** Lighthouse names the shifted element: `main#main > article > div.container > div.cover` (the cover moves by 4.5 % of the viewport); the "unsized image" it lists as the cause is its heuristic for the decorative `img.gfx-leaf` (which has width/height attributes and is positioned absolutely, so it cannot move the cover). The most likely cause is the web-font swap changing the height of the title above the cover on a runner whose fallback font metrics differ; not proven (needs a trace with font timing). Desktop CLS is 0.001-0.003.
+
+**Unchanged and explained:** best practices 92 = the Vercel feedback script (`vercel.live`) that exists only on Preview deployments is blocked by our CSP (`errors-in-console`, `inspector-issues`); SEO "n/a" = `robots-txt` audit errored and `is-crawlable` is intentionally off (noindex Preview).
+

@@ -1,9 +1,9 @@
 name: CI
 on:
   push:
-    branches: [main, 'claude/**']
+    branches: [main, 'claude/**', 'security/**', 'feat/**']
+  # Any base: stacked pull requests (activation -> release candidate) are checked too, not only those aimed at main.
   pull_request:
-    branches: [main]
 permissions:
   contents: read
 concurrency:
@@ -33,6 +33,10 @@ jobs:
       - run: python3 scripts/check_site.py
       - name: 'Compiled Vercel Function (real routes, emulated database): methods, bodies, limits, fail-closed, no PII in logs'
         run: node scripts/qa/api-function.mjs
+      - name: 'Compiled Vercel Function, CRM: sign-in, roles, IDOR, sessions, CSRF, audit, headers (real SQL in PGlite, emulated Auth)'
+        run: node scripts/qa/crm-function.mjs
+      - name: 'Dry run of the live CRM E2E script against the local stack (not a real-service result)'
+        run: node scripts/qa/live-crm-selftest.mjs
       - run: npx playwright install --with-deps chromium
       - name: 'Browser QA (interactions, forms with mocked API, pop-up, motion, 404 + CSP) and responsive audit'
         run: |
@@ -41,12 +45,21 @@ jobs:
           node scripts/qa/e2e.mjs http://localhost:4322 --popup
           # 9 widths (320-1920) x home/news/article/404 plus drawer, search and join dialogs; screenshots uploaded below
           node scripts/qa/responsive.mjs http://localhost:4322
+      - name: 'CRM browser QA (Chromium): keyboard sign-in, inbox, workflow, notes, roles, cookies, CSP, axe-core, 8 widths'
+        run: node scripts/qa/crm-browser.mjs --shots
+      # The portal's Function is bundled with esbuild from the Studio project, so its dependencies are needed (studio/package.json).
+      - name: 'Install the Studio dependencies (esbuild + the portal screens) for the Admin Portal QA'
+        run: npm ci --prefix studio
+      - name: 'Admin Portal browser QA (Chromium): bundled Node function, real SQL in PGlite, emulated Sanity identity; leads, staff, RBAC, IDOR, axe-core, 5 widths'
+        run: node scripts/qa/portal-browser.mjs
       - name: Upload responsive screenshots and report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: responsive-qa
-          path: qa-artifacts/responsive
+          path: |
+            qa-artifacts/responsive
+            qa-artifacts/crm
           if-no-files-found: warn
           retention-days: 14
 
@@ -60,6 +73,7 @@ jobs:
       # CI-only placeholder: the schema is validated and bundled offline; nothing is deployed from CI.
       SANITY_STUDIO_PROJECT_ID: abcdefgh
       SANITY_STUDIO_DATASET: production
+      STUDIO_AUTO_UPDATES: 'false'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -77,4 +91,8 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm run validate
-      - run: npx sanity build --yes --no-auto-updates
+      # Same command as the Vercel project `vbfa-admin`: sanity build + the Build Output API tree (static Studio + the portal function).
+      - name: Build (Studio + Build Output API tree)
+        run: npm run build
+      - name: 'Check the output tree: headers, routing order, function config and exports, nothing server-side shipped to browsers'
+        run: node scripts/check-vercel-output.mjs

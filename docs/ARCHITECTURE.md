@@ -40,7 +40,7 @@ flowchart LR
 | Sanity Studio | Ưu tiên hosting riêng tại Sanity | `studio/` là package độc lập, triển khai bằng `sanity deploy` lên `*.sanity.studio`. **Không** nhúng vào Vercel, không build cùng website. |
 | Sanity Content Lake | Nguồn dữ liệu nội dung chính | Website đọc **lúc build** (`src/lib/content/load.ts`, GROQ ở `queries.ts`). Mọi tài liệu đi qua schema `zod`: tài liệu sai định dạng **làm hỏng build** nên bản đang chạy vẫn giữ nguyên. Không có Sanity thì dùng nội dung seed cục bộ (dev/preview). |
 | Sanity Assets CDN | Phục vụ media trực tiếp cho trình duyệt | Trình duyệt tải ảnh thẳng từ `cdn.sanity.io` (`toMedia()` tạo `srcset` 400–1600px, `auto=format`, giữ crop/hotspot). CSP `img-src` chỉ cho phép `'self'` và `cdn.sanity.io`. Vercel không proxy ảnh. |
-| Vercel API Routes | Form, bảo mật, tích hợp backend | `/api/join`, `/api/newsletter` → `src/lib/server/leads.ts`: kiểm tra Origin, kiểu nội dung, kích thước; honeypot + bẫy thời gian; zod; giới hạn tốc độ theo hash địa chỉ **tính mọi lượt thử** (kể cả không lưu); Turnstile cho cả hai form (nếu cấu hình); timeout 3 giây cho mỗi lệnh gọi Supabase/Turnstile; **fail-closed 503** khi thiếu cấu hình, thiếu `IP_HASH_SALT` hoặc chưa bật `LEADS_ENABLED`. |
+| Vercel API Routes | Form, bảo mật, tích hợp backend | `/api/join`, `/api/newsletter` → `src/lib/server/leads.ts`: kiểm tra Origin, kiểu nội dung, kích thước; honeypot (bot nhận `200` giả) + bẫy gửi-quá-nhanh (người nhận `429 too_fast` thật, không bao giờ `200` giả); zod; giới hạn tốc độ theo hash địa chỉ **tính mọi lượt thử** (kể cả không lưu); Turnstile cho cả hai form (nếu cấu hình); timeout 3 giây cho mỗi lệnh gọi Supabase/Turnstile; **fail-closed 503** khi thiếu cấu hình, thiếu `IP_HASH_SALT` hoặc chưa bật `LEADS_ENABLED`. |
 | Supabase PostgreSQL | Chỉ dữ liệu nghiệp vụ và lead | Bảng `website_leads` (`0001_website_leads.sql`) và bộ đếm giới hạn `form_attempts` + hàm `register_attempt` (`0002_form_throttle.sql`; chỉ chứa hash địa chỉ, loại form, thời gian). RLS bật, **không có policy**, thu hồi quyền `anon/authenticated`: trình duyệt không đọc/ghi/gọi được. Ghi bằng service-role key chỉ ở Function. `purge_lead_metadata()` xoá hash địa chỉ trên lead sau 30 ngày và bộ đếm sau 2 ngày (lịch `pg_cron` hằng ngày nếu extension bật). |
 | User Logs | Tách monitoring kỹ thuật khỏi dữ liệu khách | Xem mục 2. |
 | SEO / Pop-up | Bổ sung vào mô hình CMS và frontend | Xem mục 4 và 5. |
@@ -64,9 +64,19 @@ Chưa có "user event log" kiểu theo dõi hành vi. Nếu sau này cần (đo 
 
 **Gửi biểu mẫu**:
 1. Trình duyệt `POST application/json` tới `/api/join/` hoặc `/api/newsletter/` (cùng origin).
-2. Function: phương thức → Origin → content-type → kích thước (≤ 8 KB) → honeypot/bẫy thời gian (bot nhận `200` giả, không lưu) → zod → cấu hình (thiếu Supabase, `IP_HASH_SALT` hoặc `LEADS_ENABLED` = `503`) → giới hạn tốc độ qua RPC `register_attempt` (một vòng gọi DB; mỗi 10 phút/địa chỉ tối đa 15 lượt thử và 5 lead đã lưu; địa chỉ không xác định dùng chung một ngân sách; kể cả lượt trùng/captcha sai) → Turnstile (cả hai form, nếu có khoá) → ghi DB (chỉ trả `200` sau khi ghi xong).
+2. Function: phương thức → Origin → content-type → kích thước (≤ 8 KB) → honeypot (bot nhận `200` giả, không lưu) → gửi trong vòng 2 giây kể từ lúc mở form (`429 too_fast` + `Retry-After: 3`, không lưu, không gọi DB: một người dùng autofill không bao giờ bị báo "đã lưu" khi chưa lưu) → zod → cấu hình (thiếu Supabase, `IP_HASH_SALT` hoặc `LEADS_ENABLED` = `503`) → giới hạn tốc độ qua RPC `register_attempt` (một vòng gọi DB; mỗi 10 phút/địa chỉ tối đa 15 lượt thử và 5 lead đã lưu; địa chỉ không xác định dùng chung một ngân sách; kể cả lượt trùng/captcha sai) → Turnstile (cả hai form, nếu có khoá) → ghi DB (chỉ trả `200` sau khi ghi xong).
 3. Đăng ký bản tin trùng email trả về giống hệt lần đầu (không lộ ai đã đăng ký).
 4. Trình duyệt hiện toast thành công hoặc thông báo lỗi trong hộp thoại, giữ nguyên dữ liệu đã nhập.
+
+### 3b. CRM Lead Inbox (Beta)
+
+`/admin/*` là các route **không prerender** trong cùng Vercel Function với `/api/*` (`src/pages/admin/[...path].ts` → `src/lib/server/crm/`). HTML dựng phía máy chủ, **không có JavaScript phía trình duyệt**.
+Danh tính: Supabase Auth (kiểm tra phiên ở mỗi request); quyền: bảng `crm_staff` do quản trị quản lý; dữ liệu: 11 hàm SQL `SECURITY DEFINER` (migration `0007`) gọi bằng service-role key ở máy chủ.
+Tắt mặc định (`CRM_ENABLED`). Chi tiết, bảo mật và hướng dẫn: `docs/CRM.vi.md`.
+
+### 3c. Admin Portal (Nội dung + Lead một địa chỉ)
+
+Project Vercel riêng `vbfa-admin` (Root Directory `studio`): Sanity Studio tự lưu trữ + công cụ Lead/Nhân sự (`studio/portal/*`) + một Vercel Function `POST /api/portal` (`studio/portal-api/portal.ts`, logic `src/lib/server/crm/portal/*`). Danh tính = phiên Sanity của người dùng, được máy chủ xác minh với API Sanity ở mỗi request; quyền CRM vẫn do `crm_staff` quyết (migration `0009` thêm `sanity_user_id` và 3 hàm). Phát hành theo Build Output API (`.vercel/output`) vì function sinh lúc build trong `api/` không được Vercel nhận. Chi tiết, rủi ro và trạng thái nghiệm thu: `docs/ADMIN_PORTAL.vi.md`.
 
 ## 4. Mô hình nội dung (Sanity ↔ `src/lib/content/schema.ts`)
 
@@ -118,17 +128,19 @@ Chưa tạo `resource`, `event`, `partner`: guide thiết kế ghi các trang Th
 astro.config.ts        Astro + Vercel adapter, Fonts API, CSP, schema biến môi trường
 vercel.json            framework, vùng Function, header
 src/
-  pages/               index, tin-tuc/, [slug] (trang tĩnh), 404, api/ (Functions), sitemap, robots, search-index
+  pages/               index, tin-tuc/, [slug] (trang tĩnh), 404, api/ và admin/ (Functions; admin = CRM), sitemap, robots, search-index
   layouts/BaseLayout   khung chung: head/SEO, header, footer, hộp thoại, script
   components/          ui/ layout/ home/ news/ article/ seo/
   lib/content/         schema (zod), seed, queries GROQ, loader Sanity, entry getContent()
   lib/server/          handler form, validation, store Supabase, turnstile, log, hash
+  lib/server/crm/      CRM: phiên, client Supabase Auth, store (RPC), router/handler, giao diện HTML, test
   scripts/             TypeScript phía trình duyệt, theo tính năng
   styles/              CSS tách khối, giữ nguyên thứ tự cascade của bản thiết kế
   assets/              font, ảnh thương hiệu, ảnh seed (được fingerprint)
-studio/                Sanity Studio (host riêng)
-supabase/migrations/   SQL + test migration (PGlite)
-scripts/               check_site.py, export-seed.mjs, build-fonts.mjs, qa/ (e2e, serve)
+studio/                Sanity Studio + Admin Portal (portal/ màn hình Lead/Nhân sự, portal-api/ function, scripts/ build Build Output API)
+supabase/migrations/   SQL + test migration (PGlite): 0001-0006 form/throttle/retention, 0007-0008 CRM, 0009 danh tính Admin Portal
+public/admin/crm.css   CSS của CRM (tệp tĩnh, không nội tuyến)
+scripts/               check_site.py, export-seed.mjs, build-fonts.mjs, qa/ (e2e, serve, api-function, crm-*, live-*)
 docs/                  tài liệu này + design/ (handoff gốc)
 ```
 

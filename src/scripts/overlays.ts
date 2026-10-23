@@ -29,7 +29,11 @@ export function openOverlay(name: string, popupId?: string): void {
   setExpanded(name === 'menu');
   document.dispatchEvent(new CustomEvent('vbfa:overlay-open', { detail: { name, id: popupId } }));
   const target = $('[data-autofocus]', next) ?? focusables(next)[0];
-  window.setTimeout(() => target?.focus(), 60);
+  // Move focus into the dialog once it is visible, but never pull it back to the first field when the visitor (or autofill,
+  // or an assistive technology) has already put it somewhere inside the dialog.
+  window.setTimeout(() => {
+    if (!next.hidden && !next.contains(document.activeElement)) target?.focus();
+  }, 60);
 }
 
 export function closeOverlay(): void {

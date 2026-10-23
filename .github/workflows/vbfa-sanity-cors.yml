@@ -1,0 +1,38 @@
+name: VBFA Sanity CORS origin for the Admin Portal
+# Adds the exact Admin Portal origin (https://vbfa-admin-git-<beta branch>-quangnm.vercel.app) to the Sanity project's CORS list, with
+# credentials, as the Studio sign-in requires. Never a wildcard. Starts only when the owner's account adds the label `run-sanity-cors`.
+on:
+  pull_request:
+    types: [labeled]
+permissions:
+  contents: read
+  pull-requests: write # only to remove the trigger label
+concurrency:
+  group: vbfa-sanity-cors
+  cancel-in-progress: false
+jobs:
+  cors:
+    if: >-
+      github.event.label.name == 'run-sanity-cors' &&
+      github.event.sender.login == github.repository_owner &&
+      github.event.pull_request.head.ref == 'feat/vbfa-services-activation-20261022'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/vbfa-services-activation-20261022
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Add the exact origin
+        shell: bash
+        env:
+          SANITY_DEPLOY_TOKEN: ${{ secrets.SANITY_DEPLOY_TOKEN }}
+        run: node scripts/ops/sanity-cors.mjs https://vbfa-admin-git-feat-vbfa-services-activation-20261022-quangnm.vercel.app
+      - name: Remove the trigger label
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X DELETE "repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/labels/run-sanity-cors" || true

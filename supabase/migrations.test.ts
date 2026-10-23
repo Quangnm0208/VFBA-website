@@ -1,4 +1,4 @@
-import { readFile } from 'node:fs/promises';
+import { readdir, readFile } from 'node:fs/promises';
 import { PGlite } from '@electric-sql/pglite';
 import { beforeAll, describe, expect, it } from 'vitest';
 
@@ -7,7 +7,15 @@ import { beforeAll, describe, expect, it } from 'vitest';
  * constraints, row level security and the retention function are verified without touching a live project.
  */
 let db: PGlite;
-const migrations = await Promise.all(['0001_website_leads.sql', '0002_form_throttle.sql'].map((f) => readFile(new URL(`./migrations/${f}`, import.meta.url), 'utf8')));
+
+/**
+ * File names are `<remote version>_<ordinal>_<name>.sql` so the Supabase CLI sees the same versions as the live project's
+ * migration history. Every file runs here except the one that needs the pg_cron extension (PGlite has none): that job is
+ * verified on the real project instead (docs/SERVICE_ACTIVATION_20261022.md).
+ */
+const files = (await readdir(new URL('./migrations/', import.meta.url))).filter((f) => f.endsWith('.sql')).sort();
+const sources = await Promise.all(files.map(async (f) => [f, await readFile(new URL(`./migrations/${f}`, import.meta.url), 'utf8')] as const));
+const migrations = sources.filter(([, sql]) => !/create extension if not exists pg_cron/i.test(sql)).map(([, sql]) => sql);
 
 const lead = (over: Record<string, unknown> = {}) => {
   const row = { kind: 'membership', name: 'Nguyễn Văn A', company: 'ABC', email: 'a@abc.vn', consent: true, consent_text_version: 'join-v2', ...over };
@@ -21,11 +29,40 @@ beforeAll(async () => {
   db = new PGlite();
   // Supabase ships these roles; PGlite does not.
   await db.exec(`create role anon nologin; create role authenticated nologin; create role service_role nologin bypassrls;`);
+  // Supabase projects ship this event-trigger helper (it enables RLS on new tables); migration 0003 restricts who may call it.
+  await db.exec(`create function public.rls_auto_enable() returns void language plpgsql security definer set search_path = pg_catalog as $$ begin end $$;
+    grant execute on function public.rls_auto_enable() to anon, authenticated, service_role;`);
   for (const sql of migrations) await db.exec(sql);
-  await db.exec(`grant usage on schema public to anon, authenticated, service_role; grant all on public.website_leads to service_role;`);
+  await db.exec(`grant usage on schema public to anon, authenticated, service_role; grant select on public.website_leads to service_role;`);
+});
+
+describe('migration files', () => {
+  it('are named <14-digit version>_<ordinal>_<name>.sql with strictly increasing versions', () => {
+    expect(files.length).toBeGreaterThanOrEqual(6);
+    for (const f of files) expect(f).toMatch(/^\d{14}_\d{4}_[a-z0-9_]+\.sql$/);
+    const versions = files.map((f) => f.slice(0, 14));
+    expect([...versions].sort()).toEqual(versions);
+    expect(new Set(versions).size).toBe(versions.length);
+    expect(files.map((f) => f.slice(15, 19))).toEqual(files.map((_, i) => String(i + 1).padStart(4, '0')));
+  });
+
+  it('0003 + 0004: trigger helpers cannot be called by the browser roles and resolve objects only in pg_catalog', async () => {
+    for (const role of ['anon', 'authenticated']) {
+      await db.exec(`set role ${role}`);
+      expect(await code(db.query('select public.rls_auto_enable()'))).toBe('42501');
+      expect(await code(db.query('select public.touch_updated_at()'))).toBe('42501');
+      await db.exec('reset role');
+    }
+    const { rows } = await db.query<{ proconfig: string[] | null }>("select proconfig from pg_proc where proname = 'touch_updated_at' and pronamespace = 'public'::regnamespace");
+    expect(rows[0]!.proconfig).toEqual(['search_path=pg_catalog']);
+  });
 });
 
 describe('website_leads migration', () => {
+  it('0006 grants INSERT explicitly to the Vercel service role (the fixture only grants SELECT)', async () => {
+    const q = await db.query<{ allowed: boolean }>("select has_table_privilege('service_role','public.website_leads','INSERT') as allowed");
+    expect(q.rows[0]?.allowed).toBe(true);
+  });
   it('stores a membership lead with defaults', async () => {
     await insert();
     const { rows } = await db.query<{ status: string; utm: unknown; source_path: string; consent_at: string }>('select status, utm, source_path, consent_at from public.website_leads');

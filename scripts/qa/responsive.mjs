@@ -17,13 +17,39 @@ const base = (process.argv[2] || 'http://localhost:4321').replace(/\/$/, '');
 const outDir = process.env.QA_OUT || 'qa-artifacts/responsive';
 const WIDTHS = (process.env.QA_WIDTHS ? process.env.QA_WIDTHS.split(',').map(Number) : [320, 375, 390, 430, 768, 834, 1024, 1440, 1920]);
 const SHOTS = new Set([320, 390, 768, 834, 1024, 1440, 1920]);
+// QA_ARTICLE: article path to audit (default: a seed article; on a Preview built from the real CMS use the published one, e.g. /tin-tuc/test/).
 const ROUTES = [
   ['home', '/'],
   ['news', '/tin-tuc/'],
-  ['article', '/tin-tuc/dong-luc-tuong-lai/'],
+  ['article', process.env.QA_ARTICLE || '/tin-tuc/dong-luc-tuong-lai/'],
   ['notfound', '/trang-khong-ton-tai/'],
 ];
+// Vercel "Protection Bypass for Automation" for a protected Preview: added to requests to the audited origin ONLY (never to third parties).
+const bypass = process.env.VERCEL_PROTECTION_BYPASS;
+// QA_PACE_MS: pause after each page load (a gentler pace for a protected Preview behind a rate-limiting platform).
+const PACE_MS = Number(process.env.QA_PACE_MS || 0);
 const heightFor = (w) => (w <= 430 ? 800 : w <= 834 ? 1100 : 900);
+
+// QA_REQ_BUDGET: requests per 60 s window this audit may send to the audited origin. The protected Preview sits behind a platform rate limit
+// (measured by scripts/qa/ratelimit-probe.mjs: the 121st request of a window is denied with HTTP 429, whatever the path). A page load is ~50 requests,
+// so before each load the audit waits until the last window plus the size of the previous load fits the budget. 0 = no limit (local servers).
+const REQ_BUDGET = Number(process.env.QA_REQ_BUDGET || 0);
+// QA_REQ_PRESEED: requests the same job already sent in the current window (the smoke test runs just before this audit).
+const stamps = Array.from({ length: Number(process.env.QA_REQ_PRESEED || 0) }, () => Date.now());
+let lastLoadSize = 60;
+let stampsAtLastThrottle = stamps.length;
+async function throttle() {
+  if (!REQ_BUDGET) return;
+  const sent = stamps.length - stampsAtLastThrottle;
+  if (sent > 5) lastLoadSize = Math.min(REQ_BUDGET - 10, sent);
+  for (;;) {
+    const now = Date.now();
+    while (stamps.length && now - stamps[0] > 61_000) stamps.shift();
+    if (stamps.length + lastLoadSize <= REQ_BUDGET) break;
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+  }
+  stampsAtLastThrottle = stamps.length;
+}
 
 await mkdir(outDir, { recursive: true });
 const findings = [];
@@ -35,20 +61,41 @@ const add = (level, ctx, message, detail) => {
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
 
 async function open(width, path) {
+  await throttle();
   const context = await browser.newContext({
     viewport: { width, height: heightFor(width) },
     isMobile: width <= 834,
     hasTouch: width <= 1040,
     reducedMotion: 'no-preference',
   });
+  if (bypass) {
+    const origin = new URL(base).origin;
+    await context.route((url) => url.origin === origin, (route) => { stamps.push(Date.now()); return route.continue({ headers: { ...route.request().headers(), 'x-vercel-protection-bypass': bypass } }); });
+  }
   await context.addInitScript(() => {
     try { localStorage.setItem('vbfa:popup:demo-welcome', JSON.stringify({ rev: 'demo-1', at: Date.now() })); } catch {}
   });
   const page = await context.newPage();
+  const limited = [];
   page.errors = [];
   page.on('pageerror', (e) => page.errors.push(`pageerror: ${e.message}`));
   page.on('console', (m) => { if (m.type() === 'error') page.errors.push(`console: ${m.text()}`); });
-  const response = await page.goto(base + path, { waitUntil: 'networkidle' });
+  // The platform in front of the site may answer 429 when one address loads many pages in a short time (seen on the protected Preview from a CI
+  // runner). That is not a defect of the page, but it must never be hidden: print what the answer says, wait as told, retry, and say so.
+  page.on('response', (r) => {
+    if (r.status() !== 429 || limited.length >= 3) return;
+    const h = r.headers();
+    limited.push({ path: new URL(r.url()).pathname, retryAfter: h['retry-after'], mitigated: h['x-vercel-mitigated'], server: h.server, id: h['x-vercel-id'] });
+  });
+  let response = await page.goto(base + path, { waitUntil: 'networkidle' });
+  for (let attempt = 1; response?.status() === 429 && attempt <= 3; attempt++) {
+    const wait = Math.min(60, Number(response.headers()['retry-after']) || 20 * attempt);
+    add('INFO', `${path}@${width}`, `HTTP 429 from the platform, waiting ${wait}s (attempt ${attempt}/3)`, { retryAfter: response.headers()['retry-after'], mitigated: response.headers()['x-vercel-mitigated'], server: response.headers().server, id: response.headers()['x-vercel-id'] });
+    await page.waitForTimeout(wait * 1000);
+    response = await page.goto(base + path, { waitUntil: 'networkidle' });
+  }
+  if (limited.length) add('INFO', `${path}@${width}`, `${limited.length}+ sub-resource(s) answered 429`, limited);
+  if (PACE_MS) await new Promise((resolve) => setTimeout(resolve, PACE_MS));
   return { context, page, response };
 }
 

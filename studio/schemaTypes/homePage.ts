@@ -100,9 +100,9 @@ export const homePage = defineType({
         cta('allLink', 'Liên kết "Xem tất cả"'),
         defineField({
           name: 'picks',
-          title: '3 bài nổi bật (bài đầu là thẻ lớn)',
+          title: 'Bài nổi bật (1–3 bài, bài đầu là thẻ lớn)',
           type: 'array',
-          validation: (r) => r.required().length(3),
+          validation: (r) => r.required().min(1).max(3),
           of: [
             defineArrayMember({
               type: 'object',

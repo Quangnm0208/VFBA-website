@@ -3,6 +3,7 @@ import { PUBLIC_TURNSTILE_SITE_KEY } from 'astro:env/client';
 import { Image } from 'astro:assets';
 import dropGold from '~/assets/brand/drop-gold.webp';
 import Icon from '../ui/Icon.astro';
+import { pagePath } from '~/lib/url';
 import type { SiteSettings } from '~/lib/content';
 
 interface Props { site: SiteSettings }
@@ -12,8 +13,9 @@ const { newsletter, forms } = Astro.props.site;
   <Image class="gfx gfx-img gfx-gold" data-gfx="gold" src={dropGold} alt="" widths={[360, 503]} sizes="(min-width: 721px) 440px, 300px" format="webp" quality={70} loading="lazy" decoding="async" aria-hidden="true" />
   <div class="container newsletter__in">
     <div class="newsletter__t" data-rv data-d="0"><h2 id="nl-title">{newsletter.title}</h2><p>{newsletter.description}</p></div>
-    <form data-rv data-d="1" data-endpoint="/api/newsletter/" data-kind="newsletter" data-success={forms.newsletterSuccess} data-error={forms.genericError}>
+    <form data-rv data-d="1" data-endpoint="/api/newsletter/" data-kind="newsletter" data-consent-version={forms.newsletterConsentVersion} data-success={forms.newsletterSuccess} data-error={forms.genericError}>
       <input class="input" type="email" name="email" required aria-label="Địa chỉ email" placeholder={newsletter.placeholder} autocomplete="email" />
+      <label class="consent consent--newsletter"><input type="checkbox" name="consent" required /><span>{forms.newsletterConsentText}{forms.privacyPageSlug && <> <a href={pagePath(forms.privacyPageSlug)} target="_blank" rel="noopener noreferrer">Chính sách bảo mật</a></>}</span></label>
       <div class="hp" aria-hidden="true"><label>Để trống <input type="text" name="website" tabindex="-1" autocomplete="off" /></label></div>
       {PUBLIC_TURNSTILE_SITE_KEY && <div class="turnstile turnstile--inline" data-turnstile data-sitekey={PUBLIC_TURNSTILE_SITE_KEY} data-appearance="interaction-only"></div>}
       <button class="btn btn--forest" type="submit"><span class="btn__txt">{newsletter.button}</span> <Icon name="arrow" class="ar" size={18} /></button>

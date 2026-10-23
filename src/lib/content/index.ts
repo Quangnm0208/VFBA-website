@@ -11,24 +11,35 @@ export * from './schema';
 
 let cached: Promise<SiteContent> | undefined;
 
+async function load(): Promise<SiteContent> {
+  if (sanityConfigured()) return loadFromSanity();
+  // Sample text must never be published as if it were real news: a Production build without a CMS project fails loudly
+  // (VERCEL_ENV is set by Vercel itself, so no extra variable to configure). Previews and local builds keep the sample set.
+  if (process.env.VERCEL_ENV === 'production') {
+    throw new Error(
+      'Production build refused: PUBLIC_SANITY_PROJECT_ID is not set, so the site would publish the built-in SAMPLE articles. Set PUBLIC_SANITY_PROJECT_ID / PUBLIC_SANITY_DATASET for the Production environment (docs/ACTIVATION_RUNBOOK.md).',
+    );
+  }
+  console.warn('[content] PUBLIC_SANITY_PROJECT_ID is not set: building with the built-in SAMPLE content (development and Preview only).');
+  return {
+    source: 'seed' as const,
+    site: siteSchema.parse(siteSeed),
+    home: homeSchema.parse(homeSeed),
+    newsPage: newsPageSchema.parse(newsPageSeed),
+    articles: articlesSeed.map((a) => articleSchema.parse(a)),
+    pages: [],
+    popups: popupSeed,
+  };
+}
+
 /**
  * Single content entry point for every page.
  *  - Sanity configured  -> Content Lake only. A failed request or invalid document FAILS THE BUILD, so the
  *    last good deployment stays live instead of shipping sample text.
- *  - Sanity not configured -> the local seed (dev, previews, very first deploy).
+ *  - Sanity not configured -> the local seed (development and Preview). Refused for a Production build.
  */
 export function getContent(): Promise<SiteContent> {
-  return (cached ??= sanityConfigured()
-    ? loadFromSanity()
-    : Promise.resolve({
-        source: 'seed' as const,
-        site: siteSchema.parse(siteSeed),
-        home: homeSchema.parse(homeSeed),
-        newsPage: newsPageSchema.parse(newsPageSeed),
-        articles: articlesSeed.map((a) => articleSchema.parse(a)),
-        pages: [],
-        popups: popupSeed,
-      }));
+  return (cached ??= load());
 }
 
 /** Newer neighbour = "Bài trước", older neighbour = "Bài sau" (list is newest first). */

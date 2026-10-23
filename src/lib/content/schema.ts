@@ -102,7 +102,9 @@ export const siteSchema = z.object({
     joinTitle: z.string(),
     joinIntro: z.string(),
     consentText: z.string(),
-    consentVersion: z.string(),
+    consentVersion: z.string().regex(/^join-v[1-9]\d?$/, 'Phiên bản câu đồng ý hội viên phải có dạng join-v<số>.'),
+    newsletterConsentText: z.string(),
+    newsletterConsentVersion: z.string().regex(/^newsletter-v[1-9]\d?$/, 'Phiên bản câu đồng ý bản tin phải có dạng newsletter-v<số>.'),
     joinSuccess: z.string(),
     newsletterSuccess: z.string(),
     genericError: z.string(),
@@ -153,8 +155,8 @@ export const homeSchema = z.object({
     title: z.string(),
     description: z.string(),
     allLink: linkSchema,
-    /** Exactly three highlighted articles: one featured card and two row cards. */
-    picks: z.array(z.object({ slug: z.string(), link: linkSchema })).length(3),
+    /** Up to three highlighted articles: supports a new CMS with only one published article. */
+    picks: z.array(z.object({ slug: z.string(), link: linkSchema })).min(1).max(3),
   }),
   membership: z.object({
     eyebrow: z.string(),

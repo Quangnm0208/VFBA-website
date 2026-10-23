@@ -1,15 +1,21 @@
-# VBFA Sanity Studio
+# VBFA Sanity Studio và Admin Portal
 
-Studio biên tập nội dung cho website. **Do Sanity lưu trữ** (`sanity deploy` → `https://<host>.sanity.studio`), không chạy trên Vercel.
+Studio biên tập nội dung cho website **và** Cổng quản trị (công cụ *Quản lý Lead* / *Quản trị nhân sự* của CRM trong cùng một địa chỉ). Hai nơi chạy:
+
+- **Cổng quản trị** — project Vercel `vbfa-admin` (Root Directory `studio`): Studio + Lead + Nhân sự, một lần đăng nhập Sanity. Kiến trúc, triển khai, rủi ro: `../docs/ADMIN_PORTAL.vi.md`; các bước tạo project (Owner): `../docs/OWNER_SETUP_GUIDE.vi.md` Bước 8.
+- **Bản dự phòng chỉ-nội-dung** — `sanity deploy` → `https://<host>.sanity.studio` (công cụ Lead ở đó báo "chỉ có ở Cổng quản trị").
 
 ```bash
-# Một lần, ở thư mục gốc repo: npm install   (Studio dùng chung tsconfig.json gốc)
 cp .env.example .env          # điền SANITY_STUDIO_PROJECT_ID
-npm install
-npm run dev                   # http://localhost:3333
+npm ci
+npm run dev                   # http://localhost:3333 (công cụ Lead cần /api/portal: chỉ có khi triển khai)
 npm run validate && npm run typecheck
-npm run deploy                # đưa Studio lên *.sanity.studio
+npm run build                 # sanity build + .vercel/output (Build Output API: Studio tĩnh + function /api/portal)
+node scripts/check-vercel-output.mjs   # kiểm tra cây output, header, định tuyến, không lộ tên phía máy chủ
+npm run deploy                # bản dự phòng lên *.sanity.studio
 ```
+
+Cấu trúc: `portal/` màn hình Lead/Nhân sự (React, @sanity/ui), `portal-api/portal.ts` function, `scripts/` đóng gói + Build Output API. Mã dùng chung của function nằm ở `../src/lib/server/crm/portal` (cần "Include source files outside of the Root Directory" trên Vercel). Kiểm thử trình duyệt: `node scripts/qa/portal-browser.mjs` từ thư mục gốc.
 
 ## Nội dung
 

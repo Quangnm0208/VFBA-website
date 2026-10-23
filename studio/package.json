@@ -3,19 +3,23 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "VBFA content studio. Hosted by Sanity (sanity deploy), not by Vercel.",
+  "description": "VBFA Admin Portal: Sanity Studio (content) + Leads/Staff tools (CRM) on one Vercel project. Not hosted by sanity.studio any more; vbfa-site.sanity.studio stays as the content-only fallback.",
   "engines": {
     "node": ">=22.12"
   },
   "scripts": {
     "dev": "sanity dev",
-    "build": "sanity build",
+    "build": "sanity build && node scripts/build-vercel-output.mjs",
+    "build:studio": "sanity build",
     "deploy": "sanity deploy",
     "typecheck": "tsc --noEmit",
     "validate": "sanity schema validate"
   },
   "dependencies": {
+    "@sanity/icons": "5.2.3",
+    "@sanity/ui": "4.4.10",
     "@sanity/vision": "^6.20.0",
+    "@supabase/supabase-js": "2.118.0",
     "react": "^19.2.2",
     "react-dom": "^19.2.2",
     "sanity": "^6.20.0",
@@ -24,6 +28,8 @@
   "devDependencies": {
     "@types/node": "^24.19.2",
     "@types/react": "^19.0.0",
+    "@types/react-dom": "19.3.0",
+    "esbuild": "0.28.2",
     "typescript": "^5.8.0"
   }
 }

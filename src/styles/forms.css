@@ -11,6 +11,8 @@
 .btn[aria-busy="true"]::after{content:'';width:16px;height:16px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:spin .7s linear infinite}
 .join__side .script{text-wrap:balance}
 .consent a:focus-visible,.form-status a:focus-visible{outline:var(--outline-focus);outline-offset:3px}
+/* base.css removes the outline from every input (text fields draw their own focus border); a checkbox has no such border */
+.consent input[type=checkbox]:focus-visible{outline:var(--outline-focus);outline-offset:3px}
 
 /* 404 */
 .notfound .page-head__in{padding-bottom:clamp(64px,8vw,112px)}
@@ -18,3 +20,8 @@
 
 /* Generic CMS page: single reading column (no table of contents) */
 .article-grid--single{grid-template-columns:minmax(0,720px)}
+
+/* Newsletter consent must be visible, keyboard-accessible and clearly associated with opt-in. */
+.newsletter .consent--newsletter{flex:1 1 100%;max-width:580px;margin:1px 0 3px;font-size:12.5px;line-height:1.65;color:var(--vbfa-text-body)}
+.newsletter .consent--newsletter span{flex:1;min-width:0}
+.newsletter .consent--newsletter input{width:18px;height:18px;flex:none;margin:2px 0 0}

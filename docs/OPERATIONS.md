@@ -2,6 +2,10 @@
 
 Mọi thứ dưới đây cần quyền của chủ dự án (tài khoản Sanity, Supabase, Vercel, Cloudflare). Repo **không** chứa khoá bí mật.
 
+> **Kích hoạt thật cho dự án VBFA** (Sanity `iqyx5ttc`, Supabase `bzrtllytykldnawbuszu`): làm theo `docs/ACTIVATION_RUNBOOK.md`.
+> Bằng chứng đã có trên DB thật: `docs/evidence/SUPABASE_REAL_2026-10-22.md`. Kịch bản E2E thật cho hai form: `scripts/qa/live-e2e.mjs`.
+> Báo cáo GO/NO-GO và danh sách P0/P1: `docs/RELEASE_PACKET.md`. Sơ đồ dữ liệu cá nhân cho pháp lý: `docs/privacy/DATA_MAP.md`.
+
 ## 1. Thứ tự thiết lập
 
 ### A. Sanity (nội dung)
@@ -19,20 +23,21 @@ Mọi thứ dưới đây cần quyền của chủ dự án (tài khoản Sanit
 
 ### B. Supabase (lead)
 1. Tạo project **riêng cho VBFA**, vùng gần Việt Nam (ví dụ Singapore `ap-southeast-1`, khớp vùng Function `sin1` trong `vercel.json`).
-2. Chạy lần lượt `supabase/migrations/0001_website_leads.sql` và `0002_form_throttle.sql` (SQL Editor hoặc `supabase db push`). Kiểm tra: Table Editor → `website_leads` và `form_attempts` đều có nhãn **RLS enabled**, không có policy; Database → Functions có `register_attempt` và `purge_lead_metadata`.
+2. Áp các migration trong `supabase/migrations/` theo thứ tự tên file (SQL Editor hoặc `supabase db push`). Tên file có dạng `<version 14 số>_<số thứ tự>_<tên>.sql`; `<version>` **trùng với version trong lịch sử migration của dự án** để Supabase CLI thấy một lịch sử duy nhất. **Dự án VBFA thật (`bzrtllytykldnawbuszu`) đã có 0001-0006**: *không chạy lại*; trước khi dùng `db push` hãy chạy `supabase migration list` và đối chiếu từng version. Với một dự án mới, đặt version là thời điểm áp dụng thực tế rồi đổi tên file cho khớp. Kiểm tra: Table Editor → `website_leads` và `form_attempts` đều có nhãn **RLS enabled**, không có policy; Database → Functions có `register_attempt` và `purge_lead_metadata`; chạy `supabase/fingerprint.sql` và so với `node scripts/qa/db-fingerprint.mjs` (hai mã băm phải trùng, xem `docs/evidence/SUPABASE_REAL_2026-10-22.md`).
 3. Lấy `Project URL` và khoá **service_role** (Settings → API). Khoá này bỏ qua RLS: chỉ đặt trong biến môi trường Vercel, không bao giờ dán vào chat/commit/client.
 4. Dọn dẹp dữ liệu giới hạn tốc độ mỗi ngày: bật extension **pg_cron** (Database → Extensions) **trước** khi chạy `0002` thì migration tự lên lịch `vbfa-purge-lead-metadata` lúc 03:17 UTC. Nếu bật sau, chạy lại đoạn `do $cron$ … $cron$` cuối `0002`, hoặc lên lịch `select public.purge_lead_metadata();` bằng Supabase Scheduled Function. Hàm xoá hash địa chỉ trên lead sau 30 ngày và bộ đếm sau 2 ngày. Kiểm tra: `select * from cron.job where jobname = 'vbfa-purge-lead-metadata';`
 5. Xác minh quyền: bằng khoá **anon** (Settings → API) gọi `GET /rest/v1/website_leads` và `/rest/v1/form_attempts` phải trả `401/403` hoặc mảng rỗng không có dữ liệu, và `POST /rest/v1/rpc/register_attempt` phải bị từ chối.
 6. Yêu cầu truy cập/xoá dữ liệu của khách: tìm theo email (`select * from public.website_leads where lower(email) = lower('…')`), xoá bằng `delete from public.website_leads where lower(email) = lower('…')`. Bộ đếm `form_attempts` không chứa dữ liệu cá nhân. Thời hạn lưu giữ lead do chủ dự án và bộ phận pháp lý quyết định (chưa có trong code).
 
-### C. Cloudflare Turnstile (khuyến nghị)
-Tạo widget (Managed) cho domain website → lấy **Site key** và **Secret key**. Cả form hội viên và form bản tin sẽ hiện widget khi có `PUBLIC_TURNSTILE_SITE_KEY` (bản tin ở chế độ vô hình, nạp khi người dùng bắt đầu nhập) và server bắt buộc token cho cả hai khi có `TURNSTILE_SECRET_KEY`. Thêm mọi hostname sẽ dùng (domain chính thức, `*.vercel.app` của bản Preview cần test) vào danh sách **Hostname** của widget; khi gắn tên miền riêng, cập nhật danh sách này trước khi chuyển DNS.
+### C. Cloudflare Turnstile (bắt buộc khi bật form)
+Tạo widget (Managed) cho domain website → lấy **Site key** và **Secret key**. **Cả hai khoá là bắt buộc khi `LEADS_ENABLED=true`**: thiếu một trong hai, hai form trả 503 (fail-closed, không có chế độ "không captcha"). Cả form hội viên và form bản tin hiện widget (bản tin ở chế độ vô hình, nạp khi người dùng bắt đầu nhập) và server bắt buộc token cho cả hai. `PUBLIC_TURNSTILE_SITE_KEY` được đọc lúc build: đổi xong phải redeploy. Cho Preview dùng khoá thử nghiệm công khai của Cloudflare (site `1x00000000000000000000AA`, secret `1x0000000000000000000000000000000AA`); **không** dùng chúng trên Production. Thêm mọi hostname sẽ dùng (domain chính thức, `*.vercel.app` của bản Preview cần test) vào danh sách **Hostname** của widget; khi gắn tên miền riêng, cập nhật danh sách này trước khi chuyển DNS.
 
 ### D. Vercel
 1. Project `vfba-website` (Settings → Environment Variables), theo bảng mục 2.
 2. Settings → Git → **Deploy Hooks** → tạo hook cho nhánh `main` (tên `sanity-publish`), sao chép URL.
 3. Sanity: manage → API → **Webhooks** → Create: URL = Deploy Hook ở trên; Dataset `production`; Trigger on *Create, Update, Delete*; **tắt** "Include drafts"; Filter: `_type in ["article","page","homePage","newsPage","siteSettings","popup"]`; Method `POST`. Từ giờ mỗi lần *Publish* sẽ tự build lại.
 4. (Tuỳ chọn) Vercel → Observability / Log Drains để chuyển log kỹ thuật sang công cụ giám sát.
+5. **Cổng quản trị** (Nội dung + Lead một địa chỉ): project riêng `vbfa-admin`, Root Directory `studio`, biến `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (Sensitive), `SANITY_STUDIO_PROJECT_ID`, `SANITY_STUDIO_DATASET`; Sanity CORS đúng một origin; secret GitHub `VBFA_ADMIN_PROTECTION_BYPASS`. Từng bước: `docs/OWNER_SETUP_GUIDE.vi.md` Bước 8; kiến trúc và rollback: `docs/ADMIN_PORTAL.vi.md`. Khi có người nhân sự mới: thêm họ trong mục *Quản trị nhân sự*; họ cũng phải được mời vào dự án Sanity (quyền sửa nội dung là quyền riêng).
 
 ### E. Kiểm thử Sanity sau khi kích hoạt (làm trên Preview trước, ghi kết quả vào biên bản)
 
@@ -44,7 +49,7 @@ Tạo widget (Managed) cho domain website → lấy **Site key** và **Secret ke
 4. **Unpublish / xoá.** *Unpublish* một bài → webhook ở mục Attempts có lượt **Delete** → deployment mới không còn trang bài đó (URL trả 404 có CSP) và bài biến khỏi `/tin-tuc/`, trang chủ, `search-index.json`. Nếu webhook không bắn khi Delete, kiểm tra bộ lọc GROQ và tắt/bật "Include drafts" (phải tắt).
 5. **Nội dung sai phải không lên được.** Studio chặn phần lớn lỗi ngay khi nhập; lớp bảo vệ thứ hai là kiểm tra `zod` lúc build (`src/lib/content/schema.ts`), dành cho nội dung đi vòng qua Studio (import, API). Trong dataset thử, tạo bằng `sanity dataset import`/`sanity documents create` một bài có `slug` viết hoa (hoặc `title` ngắn hơn 8 ký tự) → build **thất bại** với thông báo `Invalid article "…"`, deployment đang chạy không đổi (Vercel không chuyển bản lỗi sang production). Sửa nội dung → build lại → thành công. Lưu ý: bài **không có** `slug` bị truy vấn bỏ qua im lặng (không gây lỗi build).
 6. **Bộ lọc webhook luôn khớp schema.** `scripts/webhook-filter.test.mjs` (chạy trong `npm test`) so danh sách loại tài liệu trong Studio với bộ lọc ở mục D.3 và với mọi truy vấn của website; thêm loại tài liệu mới mà quên cập nhật bộ lọc sẽ làm CI đỏ.
-7. **Đặt lịch xuất bản.** Website là tĩnh: bài có "Ngày hiển thị" ở tương lai **chưa** hiện cho tới lần build kế tiếp sau thời điểm đó (không có lần build nào tự chạy). Hoặc đặt ngày hiện tại, hoặc nhờ người quản trị gọi Deploy Hook đúng giờ; nếu cần tự động, tạo một lịch (ví dụ GitHub Actions `schedule` gọi Deploy Hook lưu như secret) — chưa bật vì thêm hạ tầng, cần chủ dự án quyết định.
+7. **Đặt lịch xuất bản.** Website là tĩnh: bài có "Ngày hiển thị" ở tương lai **chưa** hiện cho tới lần build kế tiếp sau thời điểm đó (webhook chỉ bắn khi Publish, không bắn khi đến ngày). Ba cách, theo thứ tự khuyến nghị: (a) đặt "Ngày hiển thị" là hiện tại và Publish đúng lúc cần đăng; (b) dùng Scheduled Publishing/Content Releases của Sanity nếu gói hiện tại có (kiểm tra gói trước, có thể phát sinh chi phí: cần chủ dự án duyệt) — webhook bắn đúng lúc bài thực sự được publish; (c) bật bộ kiểm tra miễn phí `.github/workflows/scheduled-publish.yml` + `scripts/ops/scheduled-publish.mjs`: mỗi giờ so sánh bài đã đến hạn trong Sanity (`publishedAt <= now()`, dataset công khai, không cần token) với `search-index.json` của website đang chạy, và **chỉ khi thiếu bài** mới gọi Deploy Hook một lần. Bộ kiểm tra tắt mặc định: GitHub chỉ chạy `schedule` trên nhánh mặc định (`main`) nên nó nằm im cho tới khi release được merge; khi đó đặt biến repo `SCHEDULED_PUBLISH_ENABLED=true`, `SCHEDULED_PUBLISH_SITE_URL=https://<host đang chạy>` và secret `VERCEL_DEPLOY_HOOK_URL` (Deploy Hook của nhánh phục vụ host đó; thêm `VERCEL_PROTECTION_BYPASS` chỉ khi host đó có bảo vệ). Thử không gây build: Actions → *VBFA scheduled publish check* → Run workflow với `dry_run=1`. Logic quyết định được kiểm thử bằng `fetch` giả (`npm test`, 12 ca); **chưa chạy với dịch vụ thật** vì sandbox không tới được Sanity/Vercel và workflow chưa nằm trên `main`. Nếu một bài lỗi khiến build hỏng, bộ kiểm tra sẽ gọi lại Deploy Hook mỗi giờ cho tới khi bài được sửa: coi đó là tín hiệu cần xử lý, không phải lỗi của bộ kiểm tra.
 8. **Quyền đọc.** Trình duyệt không bao giờ gọi Sanity (CSP `connect-src 'self'`): không cần cấu hình CORS cho website. Ảnh đến từ `cdn.sanity.io` (đã nằm trong `img-src`). Dataset công khai không cần `SANITY_API_READ_TOKEN`; nếu đặt dataset ở chế độ private thì đặt token đọc (Viewer) làm secret.
 
 ## 2. Biến môi trường
@@ -60,11 +65,21 @@ Tạo widget (Managed) cho domain website → lấy **Site key** và **Secret ke
 | `SUPABASE_SERVICE_ROLE_KEY` | Production (Preview tuỳ chọn) | **có** | Ghi lead (chỉ Function đọc) |
 | `IP_HASH_SALT` | Production | **có** | Muối băm IP cho giới hạn tốc độ (`openssl rand -hex 32`). **Bắt buộc**: thiếu thì form trả 503 (không còn dùng service-role key thay thế) |
 | `LEADS_ENABLED` | Production | **có** | Công tắc ra mắt thu thập dữ liệu cá nhân: chỉ đặt `true` **sau khi** chính sách bảo mật và câu đồng ý được duyệt. Khác `true` thì form trả 503 dù đã có khoá Supabase |
+| `CRM_ENABLED` | Preview Beta (Production chỉ sau khi được duyệt) | không | Công tắc `/admin/` (CRM). Khác `true` ⇒ mọi `/admin/` trả 404 (`docs/CRM.vi.md`) |
+| `SUPABASE_PUBLISHABLE_KEY` | Preview Beta (Production khi bật CRM) | không (khoá công khai) | Chỉ để đăng nhập Supabase Auth của CRM; dùng cùng `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `IP_HASH_SALT` |
 | `PUBLIC_TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY` | Production | secret: có | Chống spam (cả hai form) |
 | `FORM_ALLOWED_ORIGINS` | Production | không | Origin bổ sung được phép POST (vd. domain mới khi chuyển đổi) |
 | `ENABLE_VERCEL_ANALYTICS` | Production | không | `true` bật Web Analytics không cookie |
 
 Preview **không** nên có `SUPABASE_SERVICE_ROLE_KEY`: form ở preview sẽ trả `503` thay vì ghi vào dữ liệu thật. Đây là hành vi mong muốn.
+
+### CRM: tài khoản kiểm thử tổng hợp và kiểm thử thật
+
+- Kiểm thử thật của CRM chạy trong workflow *VBFA Preview real-service E2E* (sau phần biểu mẫu): `scripts/qa/live-crm-e2e.mjs`. Nó dùng 4 tài khoản tổng hợp
+  (`crm-e2e-admin|staff|news|outsider@vbfa-beta.invalid`, địa chỉ `.invalid` không nhận được thư). Mật khẩu **dẫn xuất** từ secret `VERCEL_PROTECTION_BYPASS`
+  (`"Pw-" + 40 ký tự hex đầu của HMAC-SHA256(secret, "vbfa-crm-e2e-v1:<vai trò>")`), không lưu ở đâu. Nếu tài khoản chưa có, script in SQL tạo (chỉ **mã băm** bcrypt) và thoát mã 3.
+- Cuối Beta: vô hiệu hoá (`update public.crm_staff set active = false where email like 'crm-e2e-%'`) và ban/xoá 4 tài khoản trong Supabase Auth. Xoá cần xác nhận của Owner.
+- Chạy cục bộ không cần dịch vụ thật: `npm run build && node scripts/qa/crm-function.mjs && node scripts/qa/crm-browser.mjs && node scripts/qa/live-crm-selftest.mjs`.
 
 ## 3. Danh sách kiểm tra trước khi ra mắt
 
@@ -75,7 +90,7 @@ Preview **không** nên có `SUPABASE_SERVICE_ROLE_KEY`: form ở preview sẽ t
 - [ ] Chính sách bảo mật và câu đồng ý đã được duyệt bằng văn bản; chỉ sau đó đặt `LEADS_ENABLED=true` trên Production.
 - [ ] **Kiểm thử E2E với danh tính thử** (email dạng `qa+<ngày>@<domain của VBFA>`), trên Preview có Supabase thử hoặc Production sau khi bật công tắc:
   - gửi form hội viên → có đúng 1 hàng `kind='membership'` trong `website_leads`, `ip_hash` là chuỗi hex 32 ký tự, `utm` chỉ có khoá `utm_*`, `source_path` không có `?`;
-  - gửi bản tin → đúng 1 hàng `kind='newsletter'`; gửi lại cùng email (khác hoa/thường) → phản hồi giống hệt nhưng **không** thêm hàng;
+  - gửi bản tin (đã tick ô đồng ý riêng) → đúng 1 hàng `kind='newsletter'`, `consent_text_version='newsletter-v1'`; không tick ô đồng ý → 400 và không có hàng; gửi lại cùng email (khác hoa/thường) → phản hồi giống hệt nhưng **không** thêm hàng;
   - email sai hoặc bỏ tick đồng ý → không có hàng mới;
   - gửi liên tiếp → lead thứ 6 trong 10 phút nhận 429; gửi lặp 16 lần cùng một email bản tin cũng nhận 429 (đếm cả lượt không lưu);
   - tạm đổi `SUPABASE_URL` sai trên Preview → form báo lỗi và không hàng nào được tạo;
