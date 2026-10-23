@@ -24,7 +24,11 @@ check('config.json is Build Output API v3 and equals what the build script defin
 const filesystem = config.routes.findIndex((r) => r.handle === 'filesystem');
 const fallback = config.routes.findIndex((r) => r.dest === '/index.html');
 const api404 = config.routes.findIndex((r) => r.src === '/api/(.*)' && r.status === 404);
-check('static files and functions are looked up before the SPA fallback; unknown /api paths are 404 before it', filesystem >= 0 && api404 > filesystem && fallback > api404);
+const static404 = config.routes.findIndex((r) => r.src === '/static/(.*)' && r.status === 404);
+check('static files and functions are looked up before the SPA fallback; unknown /api paths and missing bundles are 404 before it', filesystem >= 0 && api404 > filesystem && static404 > filesystem && fallback > api404 && fallback > static404);
+const hit = config.routes.findIndex((r) => r.handle === 'hit');
+const immutable = config.routes.findIndex((r) => /immutable/.test(r.headers?.['Cache-Control'] ?? ''));
+check('the one-year immutable lifetime is only attached after a real hit, and only to /static/ bundles', hit > fallback && immutable > hit && config.routes[immutable].src === '/static/(.*)' && config.routes.filter((r) => /immutable/.test(JSON.stringify(r.headers ?? {}))).length === 1);
 const first = config.routes[0];
 check('every path gets the security headers (framing denied, nosniff, HSTS, noindex, CSP report-only)', first?.src === '/(.*)' && first.continue === true && Object.keys(SECURITY_HEADERS).every((h) => first.headers?.[h]) && /DENY/.test(first.headers['X-Frame-Options']) && /noindex/.test(first.headers['X-Robots-Tag']));
 check('no route allows cross-origin access (no Access-Control-* header anywhere)', !JSON.stringify(config.routes).toLowerCase().includes('access-control-'));

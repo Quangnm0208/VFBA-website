@@ -50,6 +50,8 @@ export function errorText(code: string, status = 0): string {
       return 'Khách này đã huỷ nhận tin hoặc đã bị xoá nên không đổi trạng thái được.';
     case 'last_admin':
       return 'Không thể gỡ quản trị viên cuối cùng.';
+    case 'self_reset':
+      return 'Bạn không thể tự đặt lại liên kết của mình: hãy nhờ một quản trị viên khác.';
     case 'note_invalid':
       return 'Ghi chú cần từ 1 đến 2000 ký tự.';
     case 'bad_input':

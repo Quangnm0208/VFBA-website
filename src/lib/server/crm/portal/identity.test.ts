@@ -62,7 +62,7 @@ describe('Sanity identity verifier', () => {
   });
 
   it('requires a usable e-mail', async () => {
-    for (const email of [undefined, '', '   ', 'no-at-sign', 'a@b', 5, `${'a'.repeat(250)}@b.co`]) expect(await verifier(reply(200, session({ email }))).verify(TOKEN), String(email)).toEqual({ ok: false, reason: 'no_email' });
+    for (const email of [undefined, '', '   ', 'no-at-sign', 'a@b', 5, `${'a'.repeat(250)}@b.co`, '\u212Aevin@vbfa.vn', 'nguyễn@vbfa.vn', 'a@vbfa\u2024vn', 'a@@b.co']) expect(await verifier(reply(200, session({ email }))).verify(TOKEN), String(email)).toEqual({ ok: false, reason: 'no_email' });
   });
 
   it('fails closed and says "unavailable" when Sanity cannot answer: 5xx, 429, a timeout, a network error', async () => {
@@ -70,6 +70,13 @@ describe('Sanity identity verifier', () => {
     expect(await verifier(() => Promise.reject(new TypeError('fetch failed'))).verify(TOKEN)).toEqual({ ok: false, reason: 'unavailable' });
     expect(await verifier(() => Promise.reject(new DOMException('timed out', 'TimeoutError'))).verify(TOKEN)).toEqual({ ok: false, reason: 'unavailable' });
     expect(await verifier(reply(404, {})).verify(TOKEN)).toEqual({ ok: false, reason: 'invalid' });
+  });
+
+  it('treats a body that Sanity is too slow to send as unavailable (503), not as a wrong token', async () => {
+    const slow = () => Promise.resolve({ status: 200, json: () => Promise.reject(new DOMException('timed out', 'TimeoutError')) } as unknown as Response);
+    expect(await verifier(slow).verify(TOKEN)).toEqual({ ok: false, reason: 'unavailable' });
+    const aborted = () => Promise.resolve({ status: 200, json: () => Promise.reject(new DOMException('aborted', 'AbortError')) } as unknown as Response);
+    expect(await verifier(aborted).verify(TOKEN)).toEqual({ ok: false, reason: 'unavailable' });
   });
 
   it('does not call Sanity at all for a token that cannot be one', async () => {

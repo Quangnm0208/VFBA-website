@@ -157,9 +157,10 @@ export function StaffApp({ api, me }: { api: Api; me: Me }) {
                         text="Đặt lại liên kết đăng nhập"
                         mode="ghost"
                         fontSize={1}
-                        disabled={busy || !row.bound}
+                        // Your own binding is reset by another administrator (it would end your own session in the middle of the action).
+                        disabled={busy || !row.bound || row.email === me.email}
                         aria-label={`Đặt lại liên kết đăng nhập của ${row.email}`}
-                        onClick={() => void run('staff.upsert', { email: row.email, role: row.role, kinds: row.kinds, reset: true }, 'Đã đặt lại. Người dùng (hoặc tài khoản Sanity mới) sẽ liên kết lại ở lần đăng nhập tiếp theo.')}
+                        onClick={() => void run('staff.reset', { email: row.email }, 'Đã đặt lại. Người dùng (hoặc tài khoản Sanity mới) sẽ liên kết lại ở lần đăng nhập tiếp theo.')}
                       />
                     </Flex>
                   </td>

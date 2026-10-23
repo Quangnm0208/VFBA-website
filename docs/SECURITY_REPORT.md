@@ -171,3 +171,9 @@ Rủi ro còn lại:
 | SEC-P3 | Trung bình | Chưa có rate-limit riêng cho `/api/portal` (cùng nguyên nhân SEC-C4) | Owner (Firewall) |
 | SEC-P4 | — | Đường đăng nhập dương bằng phiên người thật chưa được chứng minh; phản hồi `users/me` của phiên người thật chưa quan sát | Owner (Bước 8f) |
 
+### 8.1 Rà soát độc lập của Admin Portal và cách xử lý (2026-10-23)
+
+Một tác nhân khác đọc mã (chỉ đọc) và báo 2 lỗi P2 + 5 P3 + 3 mục nhỏ; tất cả đều đã tái hiện bằng test rồi sửa bằng migration `0010` (đã áp dụng lên Supabase thật) và mã đi kèm, hoặc ghi nhận có điều kiện: bảng đầy đủ ở `docs/evidence/ADMIN_PORTAL_2026-10-23.md` mục 4b. Tóm tắt: nhật ký kiểm toán không còn bị làm đầy (một hàng mỗi e-mail + lý do + giờ); rollback về `/admin/` hoạt động cho người đăng nhập đầu qua Portal; không thể đặt lại liên kết của quản trị viên cuối cùng hay của chính mình từ Portal; e-mail phải là ASCII (kiểm trước khi gấp chữ); thao tác `staff.reset` chỉ xoá liên kết nên không ghi đè vai trò/phạm vi; bundle `/static/*` thiếu trả 404 thay vì HTML bị lưu một năm.
+
+Bộ tư vấn bảo mật Supabase sau `0010`: 6 INFO "RLS bật, không policy" (chủ ý) và **1 WARN `auth_leaked_password_protection`** (kiểm tra mật khẩu bị lộ của Supabase Auth đang tắt; đây là cài đặt Auth, một số gói yêu cầu bản trả phí, **không bật khi chưa được Owner phê duyệt chi phí**; tài khoản CRM do Owner tạo với mật khẩu mạnh). Ghi nhận là SEC-C6 (thấp).
+

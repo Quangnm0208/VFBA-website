@@ -32,7 +32,11 @@ export interface IdentityVerifier {
 
 /** Sanity session tokens are long opaque strings; anything else is refused before a network call is made. */
 const TOKEN_SHAPE = /^[A-Za-z0-9._~+/=-]{16,2048}$/;
-const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+/**
+ * Printable ASCII only (no '@' inside a part): Unicode-aware lower-casing could make two different strings equal, for example the
+ * Kelvin sign and "k", so an address that is not plain ASCII is never matched against the allowlist.
+ */
+const EMAIL_SHAPE = /^[\x21-\x3f\x41-\x7e]+@[\x21-\x3f\x41-\x7e]+\.[\x21-\x3f\x41-\x7e]+$/;
 export const SANITY_VERIFY_TIMEOUT_MS = 4000;
 
 export function createSanityVerifier(options: { projectId: string; apiVersion?: string; fetchImpl?: typeof fetch; timeoutMs?: number }): IdentityVerifier {
@@ -60,8 +64,10 @@ export function createSanityVerifier(options: { projectId: string; apiVersion?: 
       let body: unknown;
       try {
         body = await response.json();
-      } catch {
-        return { ok: false, reason: 'invalid' };
+      } catch (error) {
+        // The 4 s limit also covers reading the body: a Sanity that answers slowly is "unavailable", not a wrong token.
+        const timedOut = error instanceof DOMException && (error.name === 'TimeoutError' || error.name === 'AbortError');
+        return { ok: false, reason: timedOut ? 'unavailable' : 'invalid' };
       }
       if (!body || typeof body !== 'object' || Array.isArray(body)) return { ok: false, reason: 'invalid' };
       const user = body as Record<string, unknown>;
@@ -76,8 +82,10 @@ export function createSanityVerifier(options: { projectId: string; apiVersion?: 
         : [];
       if (roles.length === 0) return { ok: false, reason: 'not_member' };
 
-      const email = typeof user.email === 'string' ? user.email.trim().toLowerCase() : '';
-      if (email.length === 0 || email.length > 254 || !EMAIL_SHAPE.test(email)) return { ok: false, reason: 'no_email' };
+      // Checked as received, THEN folded: folding first would turn the Kelvin sign into an ASCII "k" before the check.
+      const received = typeof user.email === 'string' ? user.email.trim() : '';
+      if (received.length === 0 || received.length > 254 || !EMAIL_SHAPE.test(received)) return { ok: false, reason: 'no_email' };
+      const email = received.toLowerCase();
 
       return { ok: true, identity: { sanityUserId, email, provider, roles } };
     },

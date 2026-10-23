@@ -35,14 +35,18 @@ export const SECURITY_HEADERS = {
 
 export const ROUTES = [
   { src: '/(.*)', headers: SECURITY_HEADERS, continue: true },
-  // Sanity names its bundles by content hash.
-  { src: '/static/(.*)', headers: { 'Cache-Control': 'public, max-age=31536000, immutable' }, continue: true },
   // index.html (also served for every deep link) must always revalidate so a new deployment is picked up.
   { src: '/(?!static/|api/)(.*)', headers: { 'Cache-Control': 'no-cache' }, continue: true },
   { handle: 'filesystem' },
-  // An unknown API path is a 404, never the Studio page.
+  // An unknown API path is a 404, never the Studio page; so is a bundle that does not exist (a request during a deployment, or for a
+  // hash that was never built): the SPA fallback below must not answer it with index.html under a JavaScript URL.
   { src: '/api/(.*)', status: 404, headers: { 'Cache-Control': 'private, no-store, max-age=0' } },
+  { src: '/static/(.*)', status: 404, headers: { 'Cache-Control': 'no-store' } },
   { src: '/(.*)', dest: '/index.html' },
+  // Only after a file was really found: Sanity names its bundles by content hash, so these never change. Placed in the "hit"
+  // phase so that the long cache lifetime can never be attached to a miss.
+  { handle: 'hit' },
+  { src: '/static/(.*)', headers: { 'Cache-Control': 'public, max-age=31536000, immutable' }, continue: true },
 ];
 
 export const FUNCTION_CONFIG = {

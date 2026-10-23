@@ -50,7 +50,8 @@ Trình duyệt ── https://vbfa-admin-….vercel.app ────────
 4. Danh sách nhân sự `crm_staff` là **nguồn quyền duy nhất** của CRM: vai trò (`admin`/`staff`), phạm vi loại lead (hội viên / bản tin / liên hệ), đang hoạt động. Lần đăng nhập đầu **gắn** (e-mail ⇄ `sanity_user_id`); các lần sau yêu cầu **cả hai** khớp, nên đổi e-mail ở Sanity không chiếm được dòng của người khác. Admin có thể *đặt lại liên kết*.
 5. Mỗi thao tác Lead/Nhân sự được kiểm tra lại **trong cơ sở dữ liệu** (hàm `SECURITY DEFINER`, chỉ `service_role` gọi được, `search_path` rỗng): IDOR / ngoài phạm vi trả 404, ghi chú và đổi trạng thái có tác giả lấy từ DB, đổi trạng thái dùng khoá lạc quan (trạng thái cũ phải khớp).
 6. **Đăng xuất Sanity ⇒ mất quyền ngay ở lần gọi kế tiếp** (không có phiên thứ hai để thu hồi). Tắt một nhân viên trong *Quản trị nhân sự* có hiệu lực ngay.
-7. Khoá service-role **chỉ** nằm trong biến môi trường của Function; bước kiểm tra build (`scripts/check-vercel-output.mjs`) quét `static/` để chắc chắn tên khoá, mã dự án Supabase và tên hàm CRM không lọt ra trình duyệt. Log chỉ có: thao tác, mã trạng thái, vai trò, thời gian — không e-mail, token hay dữ liệu lead.
+7. **Nhật ký kiểm toán không bị làm đầy**: đăng nhập lặp lại trong 15 phút không ghi gì; một thành viên Sanity ngoài danh sách chỉ để lại một hàng cho mỗi e-mail + lý do + giờ (migration `0010`). E-mail phải là ASCII in được và được kiểm trước khi gấp chữ.
+8. Khoá service-role **chỉ** nằm trong biến môi trường của Function; bước kiểm tra build (`scripts/check-vercel-output.mjs`) quét `static/` để chắc chắn tên khoá, mã dự án Supabase và tên hàm CRM không lọt ra trình duyệt. Log chỉ có: thao tác, mã trạng thái, vai trò, thời gian — không e-mail, token hay dữ liệu lead.
 
 Hai lớp quyền **độc lập**: quyền sửa nội dung = vai trò trong dự án Sanity; quyền xem lead = dòng `crm_staff`. Thành viên Sanity không có dòng `crm_staff` sửa được nội dung nhưng thấy "không có quyền" ở Lead; người có dòng `crm_staff` mà không phải thành viên Sanity không mở được Studio.
 
@@ -74,10 +75,10 @@ Xem **Bước 8** trong `docs/OWNER_SETUP_GUIDE.vi.md`. Tóm tắt thiết lập
 
 | Lớp | Bằng chứng | Thật hay mô phỏng |
 |---|---|---|
-| SQL của danh tính (migration `0009`) | 12 test trên PGlite (SQL thật) + migration đã áp dụng lên Supabase thật (dấu vân tay 110 hàng khớp repo) | SQL thật; Supabase thật cho phần áp dụng |
+| SQL của danh tính (migrations `0009`, `0010`) | 20 test trên PGlite (SQL thật) + cả hai migration đã áp dụng lên Supabase thật (dấu vân tay 112 hàng khớp repo) | SQL thật; Supabase thật cho phần áp dụng |
 | Bộ kiểm tra danh tính Sanity | 9 test. Đã **quan sát thật** (probe `39958212710`): token robot → 200, `provider: sanity-token`, không e-mail; token sai → 401; không token → 200 không có người dùng. **Chưa quan sát**: phản hồi cho phiên trình duyệt của người thật (cùng bộ khoá được tài liệu hoá; test dùng bản mô phỏng) | mô phỏng; chỉ phần từ chối được quan sát thật |
-| Bộ xử lý `/api/portal` | 22 test: phương thức, origin, content-type, giới hạn, thứ tự xác thực, RBAC, IDOR, log | mô phỏng Sanity, SQL thật |
-| Màn hình (Chromium) | `scripts/qa/portal-browser.mjs` **50/50**: bộ lọc, phân trang, chi tiết, đổi trạng thái, ghi chú, phạm vi, IDOR, Admin/Staff, axe-core 0 lỗi, 5 độ rộng, không cookie/storage, log sạch | màn hình + bundle Function + SQL thật; **Sanity mô phỏng, vỏ Studio không có** |
+| Bộ xử lý `/api/portal` | 24 test: phương thức, origin, content-type, giới hạn, thứ tự xác thực, RBAC, IDOR, log | mô phỏng Sanity, SQL thật |
+| Màn hình (Chromium) | `scripts/qa/portal-browser.mjs` **52/52**: bộ lọc, phân trang, chi tiết, đổi trạng thái, ghi chú, phạm vi, IDOR, Admin/Staff, axe-core 0 lỗi, 5 độ rộng, không cookie/storage, log sạch | màn hình + bundle Function + SQL thật; **Sanity mô phỏng, vỏ Studio không có** |
 | Build kiểu Vercel | cây output dựng được khi chỉ cài `studio/` (không có `node_modules` ở gốc), `check-vercel-output.mjs` 8/8 | thật (cục bộ) |
 | Triển khai thật | `scripts/qa/portal-live.mjs` (workflow `run-portal-live`): bảo vệ, header, định tuyến, 405/401/403/413, token lạ và token robot **hỏi API Sanity thật** | chạy được sau khi Owner tạo project (§4) |
 
@@ -89,7 +90,9 @@ Xem **Bước 8** trong `docs/OWNER_SETUP_GUIDE.vi.md`. Tóm tắt thiết lập
 | P-2 | P2 | `npm audit` của `studio/` báo 16 (7 trung bình, 9 cao), **đều là công cụ build/CLI của `sanity`** (braces, micromatch, js-yaml, smol-toml, uuid…); **không** nằm trong bundle của Function (chỉ `@supabase/*`, `tslib`). Bản sửa là hạ `sanity` xuống 5.14.1 (thay đổi phá vỡ). | Chấp nhận; xem lại ở mỗi bản `sanity` mới. |
 | P-3 | P2 | `Content-Security-Policy-Report-Only` có `script-src 'unsafe-inline'` vì phần khởi động của Studio dùng script nội tuyến. | Cân nhắc băm (hash) hoặc nonce khi chuyển sang chế độ chặn. |
 | P-4 | P2 | Chưa có giới hạn tốc độ riêng cho `/api/portal` (Vercel Firewall rule: kết nối của agents không có quyền, mục WAF của Gate 3). | Mọi lời gọi đều xác minh với Sanity (4 giây tối đa) và bị chặn bởi allowlist; Owner tạo rule rate-limit theo `docs/SECURITY_REPORT.md`. |
-| P-5 | P3 | Hai đường vào CRM cùng tồn tại: Portal (danh tính Sanity) và `/admin/` của website (Supabase Auth). | Giữ `/admin/` cho tới khi Owner nghiệm thu Portal (không xoá mô hình đã kiểm thử); sau đó Owner quyết định gỡ. |
+| P-5 | P3 | Hai đường vào CRM cùng tồn tại: Portal (danh tính Sanity) và `/admin/` của website (Supabase Auth). | Giữ `/admin/` cho tới khi Owner nghiệm thu Portal (không xoá mô hình đã kiểm thử); sau đó Owner quyết định gỡ. Rollback đã được kiểm: người có lần đăng nhập đầu qua Portal vẫn vào được `/admin/` (mã giữ chỗ được thay bằng mã Auth thật; một tài khoản Supabase Auth cùng e-mail do Owner tạo có thể thay mã giữ chỗ — cùng mức tin cậy với một hàng chưa gắn, nên giữ tắt đăng ký công khai, SEC-C1). |
+| P-7 | P3 | Lần đăng nhập đầu tin vào e-mail mà Sanity báo; chưa ràng buộc nhà cung cấp, chưa quan sát phiên người thật. | Vào được phải là thành viên dự án (Owner đã mời đúng e-mail, Sanity đã xác minh khi nhận lời mời). Kiểm ở Bước 8f. |
+| P-8 | P3 | Token phiên Sanity không gắn với origin: mọi token hợp lệ của thành viên dự án đều gọi được `/api/portal`. | Cùng mức rủi ro với việc token đó gọi được API Sanity; dữ liệu lead nằm ở Supabase và cần dòng `crm_staff` hợp lệ; xem P-1. |
 | P-6 | — | `vbfa-site.sanity.studio` vẫn chạy cùng cấu hình: công cụ Lead ở đó trả "chỉ có ở Cổng quản trị" (không có API). | Dùng làm phương án dự phòng chỉ cho nội dung. |
 
 ## 7. Trạng thái "một lần đăng nhập" — chưa tuyên bố đạt
@@ -101,6 +104,7 @@ Xem **Bước 8** trong `docs/OWNER_SETUP_GUIDE.vi.md`. Tóm tắt thiết lập
 
 ## 8. Quay lui
 
+0. **Khi phát hành (sau Owner GO)**: `studio/vercel.json` đang chỉ build nhánh Beta (`ignoreCommand`) và `ssoProtection` bật. Khi chuyển Cổng quản trị sang nhánh/miền chính thức, phải đổi `ignoreCommand`, Production Branch, biến môi trường Production và origin CORS của Sanity — nếu không project ngừng build sau khi hợp nhất vào `main`.
 1. Gỡ/tạm dừng project `vbfa-admin` (không ảnh hưởng website, CMS hay CRM `/admin/`).
 2. Nội dung vẫn sửa được ở `https://vbfa-site.sanity.studio`; Lead vẫn xử lý ở `<website>/admin/`.
 3. Migration `0009` chỉ **thêm** (cột `sanity_user_id`, 3 hàm); không cần hoàn tác để quay lui.

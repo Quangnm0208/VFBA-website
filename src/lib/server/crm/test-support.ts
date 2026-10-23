@@ -77,6 +77,7 @@ export function pgliteStore(db: PGlite): CrmStore {
     staffList: (actor) => q('select * from public.crm_staff_list($1)', [actor]) as ReturnType<CrmStore['staffList']>,
     staffUpsert: (actor, email, role, kinds, reset) => scalar('select public.crm_staff_upsert($1, $2, $3, $4::text[], $5) as r', [actor, email, role, kinds, reset]),
     staffSetActive: (actor, email, active) => scalar('select public.crm_staff_set_active($1, $2, $3) as r', [actor, email, active]),
+    staffResetBinding: (actor, email) => scalar('select public.crm_staff_reset_binding($1, $2) as r', [actor, email]),
   };
 }
 

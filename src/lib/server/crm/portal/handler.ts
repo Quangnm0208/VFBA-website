@@ -60,7 +60,8 @@ const validDate = (value: unknown): string | undefined => {
   const date = new Date(`${value}T00:00:00Z`);
   return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value ? value : undefined;
 };
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+/** Printable ASCII, exactly one '@': the address is checked as typed and only then lower-cased (Unicode folding could equate two strings). */
+const EMAIL = /^[\x21-\x3f\x41-\x7e]+@[\x21-\x3f\x41-\x7e]+\.[\x21-\x3f\x41-\x7e]+$/;
 
 function sameOrigin(request: Request): boolean {
   const own = new URL(request.url).origin;
@@ -186,21 +187,33 @@ async function dispatch(op: string, input: Record<string, unknown>, staff: Porta
 
     case 'staff.upsert': {
       if (staff.role !== 'admin') return fail(403, 'forbidden');
-      const target = asString(input.email, 254)?.toLowerCase() ?? '';
+      const typed = asString(input.email, 254) ?? '';
+      const target = typed.toLowerCase();
       const roleValue = input.role;
       const kinds = LEAD_KINDS.filter((k) => Array.isArray(input.kinds) && input.kinds.includes(k));
-      if (!EMAIL.test(target) || (roleValue !== 'admin' && roleValue !== 'staff') || kinds.length === 0) return fail(400, 'bad_input');
-      const result = await store.staffUpsert(staff.actor, target, roleValue, kinds, input.reset === true);
+      if (!EMAIL.test(typed) || (roleValue !== 'admin' && roleValue !== 'staff') || kinds.length === 0) return fail(400, 'bad_input');
+      // Resetting a binding has its own operation (staff.reset): this one never sends a stale role or scope along with it.
+      const result = await store.staffUpsert(staff.actor, target, roleValue, kinds, false);
       return result === 'last_admin' ? fail(409, 'last_admin') : json(200, { ok: true, result });
     }
 
     case 'staff.setActive': {
       if (staff.role !== 'admin') return fail(403, 'forbidden');
-      const target = asString(input.email, 254)?.toLowerCase() ?? '';
-      if (!EMAIL.test(target) || typeof input.active !== 'boolean') return fail(400, 'bad_input');
+      const typed = asString(input.email, 254) ?? '';
+      const target = typed.toLowerCase();
+      if (!EMAIL.test(typed) || typeof input.active !== 'boolean') return fail(400, 'bad_input');
       const result = await store.staffSetActive(staff.actor, target, input.active);
       if (result === 'not_found') return fail(404, 'not_found');
       return result === 'last_admin' ? fail(409, 'last_admin') : json(200, { ok: true, result });
+    }
+
+    case 'staff.reset': {
+      if (staff.role !== 'admin') return fail(403, 'forbidden');
+      const typed = asString(input.email, 254) ?? '';
+      if (!EMAIL.test(typed)) return fail(400, 'bad_input');
+      const result = await store.staffResetBinding(staff.actor, typed.toLowerCase());
+      if (result === 'not_found') return fail(404, 'not_found');
+      return result === 'self' ? fail(409, 'self_reset') : json(200, { ok: true, result });
     }
 
     default:

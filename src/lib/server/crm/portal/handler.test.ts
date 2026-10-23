@@ -175,11 +175,11 @@ describe('who is calling (identity and allowlist)', () => {
     expect((await call('leads.list', {}, 'token-impostor-0123456789abcdef')).status).toBe(403);
     expect((await audit('login_denied')).at(-1)?.detail).toMatchObject({ reason: 'binding_mismatch', provider: 'sanity' });
     expect(await open(T.admin)).toBe(200);
-    expect((await call('staff.upsert', { email: STAFF.email, role: 'staff', kinds: ['membership', 'newsletter', 'contact'], reset: true }, T.admin)).body).toEqual({ ok: true, result: 'updated' });
+    expect((await call('staff.reset', { email: STAFF.email }, T.admin)).body).toEqual({ ok: true, result: 'ok' });
     expect((await call('leads.list', {}, T.staff)).status).toBe(403); // the old person is out until they sign in again...
     expect((await call('session', {}, 'token-impostor-0123456789abcdef')).status).toBe(200); // ...and the new binding is accepted
     // restore the fixture for the next tests
-    await call('staff.upsert', { email: STAFF.email, role: 'staff', kinds: ['membership', 'newsletter', 'contact'], reset: true }, T.admin);
+    await call('staff.reset', { email: STAFF.email }, T.admin);
     expect(await open(T.staff)).toBe(200);
   });
 
@@ -298,7 +298,7 @@ describe('staff management (administrators only)', () => {
   });
 
   it('refuses staff.* for a plain staff member, at the handler and in the database', async () => {
-    for (const [op, params] of [['staff.list', {}], ['staff.upsert', { email: 'new@x.vn', role: 'admin', kinds: ['membership'] }], ['staff.setActive', { email: ADMIN.email, active: false }]] as const) {
+    for (const [op, params] of [['staff.list', {}], ['staff.upsert', { email: 'new@x.vn', role: 'admin', kinds: ['membership'] }], ['staff.setActive', { email: ADMIN.email, active: false }], ['staff.reset', { email: ADMIN.email }]] as const) {
       const r = await call(op, params, T.staff);
       expect(r.status, op).toBe(403);
       expect(r.body.code, op).toBe('forbidden');
@@ -320,6 +320,39 @@ describe('staff management (administrators only)', () => {
     expect((await call('staff.setActive', { email: 'ghost@vbfa.test', active: false }, T.admin)).status).toBe(404);
     expect((await call('staff.setActive', { email: 'new.person@vbfa.test', active: 'no' }, T.admin)).status).toBe(400);
     expect((await audit('staff_upsert')).length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('staff.reset forgets ONLY the binding (role and scope untouched), never resets oneself, and staff.upsert no longer carries a reset flag', async () => {
+    await call('staff.upsert', { email: 'resettable@vbfa.test', role: 'staff', kinds: ['newsletter'] }, T.admin);
+    const token = issue('token-resettable-0123456789abcdef', identity('resettable', 'resettable@vbfa.test'));
+    expect(await open(token)).toBe(200);
+    const bound = async () => (await db.query<{ s: string | null; u: string | null; r: string; k: string[] }>("select sanity_user_id as s, user_id::text as u, role as r, kinds as k from public.crm_staff where email = 'resettable@vbfa.test'")).rows[0]!;
+    // the old way of resetting through staff.upsert is ignored: a stale screen cannot write a role or scope together with a reset
+    await call('staff.upsert', { email: 'resettable@vbfa.test', role: 'staff', kinds: ['newsletter'], reset: true }, T.admin);
+    expect((await bound()).s).toBe('s-resettable');
+
+    const reset = await call('staff.reset', { email: ' Resettable@VBFA.test ' }, T.admin);
+    expect(reset.status).toBe(200);
+    expect(reset.body).toEqual({ ok: true, result: 'ok' });
+    expect(await bound()).toEqual({ s: null, u: null, r: 'staff', k: ['newsletter'] });
+    expect((await audit('staff_reset')).at(-1)).toMatchObject({ actor_email: ADMIN.email, detail: { target: 'resettable@vbfa.test' } });
+    const after = await call('leads.list', {}, token);
+    expect(after.status).toBe(403); // bound no more: the old Sanity session is not enough until it signs in again
+    expect(after.body.code).toBe('not_staff');
+    expect(await open(token)).toBe(200); // ...and signing in binds again
+
+    const self = await call('staff.reset', { email: ADMIN.email }, T.admin);
+    expect(self.status).toBe(409);
+    expect(self.body.code).toBe('self_reset');
+    expect((await call('staff.reset', { email: 'ghost@vbfa.test' }, T.admin)).status).toBe(404);
+    for (const bad of [{}, { email: 'no-at' }, { email: 7 }, { email: '\u212Aevin@vbfa.test' }]) expect((await call('staff.reset', bad, T.admin)).status, JSON.stringify(bad)).toBe(400);
+  });
+
+  it('refuses an invited address that is not plain ASCII (a Unicode letter can fold into an ASCII one)', async () => {
+    for (const email of ['\u212Aevin@vbfa.test', 'nguyễn@vbfa.test', 'a@vbfa\u2024test']) {
+      expect((await call('staff.upsert', { email, role: 'staff', kinds: ['membership'] }, T.admin)).status, email).toBe(400);
+      expect((await call('staff.setActive', { email, active: false }, T.admin)).status, email).toBe(400);
+    }
   });
 
   it('never removes the last bound administrator, by deactivation or by demotion (409)', async () => {

@@ -111,6 +111,8 @@ export interface CrmStore {
   staffList(actor: string): Promise<StaffRow[]>;
   staffUpsert(actor: string, email: string, role: Role, kinds: LeadKind[], resetBinding: boolean): Promise<'created' | 'updated' | 'last_admin'>;
   staffSetActive(actor: string, email: string, active: boolean): Promise<'ok' | 'not_found' | 'last_admin'>;
+  /** Forgets ONLY the sign-in binding of one person (no role / scope is sent, so nothing stale can be written back). 'self' = refused. */
+  staffResetBinding(actor: string, email: string): Promise<'ok' | 'not_found' | 'self'>;
 }
 
 /** Every database call is cut off after this long, so the person gets our error page instead of Vercel's 504. */
@@ -205,6 +207,11 @@ export function createSupabaseCrmStore(url: string, serviceRoleKey: string): Crm
     async staffSetActive(actor, email, active) {
       const result = await rpc<string>('crm_staff_set_active', { p_actor: actor, p_email: email, p_active: active });
       if (result !== 'ok' && result !== 'not_found' && result !== 'last_admin') throw new Error('crm.crm_staff_set_active:unexpected');
+      return result;
+    },
+    async staffResetBinding(actor, email) {
+      const result = await rpc<string>('crm_staff_reset_binding', { p_actor: actor, p_email: email });
+      if (result !== 'ok' && result !== 'not_found' && result !== 'self') throw new Error('crm.crm_staff_reset_binding:unexpected');
       return result;
     },
   };

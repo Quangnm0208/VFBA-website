@@ -302,6 +302,8 @@ try {
     await reset.click();
     await page.getByText('Đã đặt lại.').waitFor();
     check('the reset clears both bindings', (await q("select user_id, sanity_user_id from public.crm_staff where email = 'staff@vbfa.test'"))[0].sanity_user_id === null);
+    check('the reset keeps the role and the scope as they were (a stale screen cannot write them back)', JSON.stringify((await q("select role, kinds from public.crm_staff where email = 'staff@vbfa.test'"))[0]) === JSON.stringify({ role: 'staff', kinds: ['membership', 'newsletter', 'contact'] }));
+    check('an administrator cannot reset their own sign-in link from the screen', await page.getByRole('button', { name: 'Đặt lại liên kết đăng nhập của admin@vbfa.test' }).isDisabled());
 
     await page.getByRole('button', { name: 'Vô hiệu hoá admin@vbfa.test' }).click();
     await page.getByText('Không thể gỡ quản trị viên cuối cùng.').waitFor();

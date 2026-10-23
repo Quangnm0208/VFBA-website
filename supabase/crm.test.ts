@@ -53,6 +53,7 @@ const FUNCTIONS = [
   'crm_portal_login(text, text)',
   'crm_portal_whoami(text, text)',
   'crm_portal_denied(text, text, text)',
+  'crm_staff_reset_binding(uuid, text)',
 ];
 const TABLES = ['crm_staff', 'lead_notes', 'crm_audit_log', 'crm_login_attempts'];
 
@@ -449,7 +450,8 @@ describe('Admin Portal identity (0009)', () => {
     expect(first).toMatchObject([{ actor: await derived('s-po'), email: 'portal-only@vbfa.test', role: 'staff', kinds: ['membership', 'newsletter', 'contact'] }]);
     expect(await who('s-po', 'portal-only@vbfa.test')).toMatchObject([{ actor: await derived('s-po') }]);
     expect(await portal('s-po', 'portal-only@vbfa.test')).toMatchObject([{ actor: await derived('s-po') }]); // idempotent
-    expect((await audit('login')).filter((r) => r.actor_email === 'portal-only@vbfa.test').map((r) => r.detail)).toEqual([{ provider: 'sanity', bound: true }, { provider: 'sanity', bound: false }]);
+    // a repeated sign-in within 15 minutes changes and records nothing (0010): only the binding itself is on the trail
+    expect((await audit('login')).filter((r) => r.actor_email === 'portal-only@vbfa.test').map((r) => r.detail)).toEqual([{ provider: 'sanity', bound: true }]);
     // the actor works in every other function
     const id = await lead({ email: 'seen-by-portal@lead.test' });
     expect((await list(await derived('s-po'))).map((r) => r.id)).toContain(id);
@@ -481,8 +483,9 @@ describe('Admin Portal identity (0009)', () => {
     expect((await audit('login_denied')).at(-1)).toMatchObject({ actor_email: 'second-address@vbfa.test', detail: { reason: 'sanity_id_in_use' } });
   });
 
-  it('a person bound through the portal cannot be taken over through the website sign-in with another Auth user', async () => {
-    expect(await rows('select * from public.crm_login($1, $2)', ['11111111-1111-4111-8111-111111111111', 'portal-only@vbfa.test'])).toEqual([]);
+  it('a real Supabase Auth binding cannot be taken over by another Auth user, also after the portal bound the Sanity id', async () => {
+    expect(await rows('select * from public.crm_login($1, $2)', ['11111111-1111-4111-8111-111111111111', 'staff@vbfa.test'])).toEqual([]);
+    expect(await who('s-staff', 'staff@vbfa.test')).toMatchObject([{ actor: STAFF }]);
   });
 
   it('stops at once when an administrator deactivates the person', async () => {
@@ -519,5 +522,104 @@ describe('Admin Portal identity (0009)', () => {
   it('adds one nullable column and a partial unique index, and nothing else', async () => {
     expect(await one<{ is_nullable: string; data_type: string }>("select is_nullable, data_type from information_schema.columns where table_name = 'crm_staff' and column_name = 'sanity_user_id'")).toEqual({ is_nullable: 'YES', data_type: 'text' });
     expect((await one<{ indexdef: string }>("select indexdef from pg_indexes where indexname = 'crm_staff_sanity_user_id_key'")).indexdef).toContain('WHERE (sanity_user_id IS NOT NULL)');
+  });
+});
+
+describe('Admin Portal review fixes (0010)', () => {
+  const portal = (sanityId: string, email: string) => rows<{ actor: string; email: string; role: string; kinds: string[] }>('select * from public.crm_portal_login($1, $2)', [sanityId, email]);
+  const who = (sanityId: string, email: string) => rows<{ actor: string; email: string; role: string; kinds: string[] }>('select * from public.crm_portal_whoami($1, $2)', [sanityId, email]);
+  const derived = async (sanityId: string) => (await one<{ id: string }>("select md5('vbfa-portal:' || $1)::uuid::text as id", [sanityId])).id;
+  const add = (email: string, role = 'staff') => db.exec(`insert into public.crm_staff (email, role, created_by) values ('${email}', '${role}', 'test')`);
+  const count = async (action: string, email: string, reason?: string) =>
+    Number((await one<{ n: string }>('select count(*)::text as n from public.crm_audit_log where action = $1 and actor_email = $2 and ($3::text is null or detail ->> \'reason\' = $3)', [action, email, reason ?? null])).n);
+  const REAL = '22222222-2222-4222-8222-222222222222';
+
+  it('a tool that signs in again within 15 minutes writes no audit row; after 20 minutes it does', async () => {
+    await add('remount@vbfa.test');
+    await portal('s-rm', 'remount@vbfa.test');
+    for (let i = 0; i < 10; i++) await portal('s-rm', 'remount@vbfa.test');
+    expect(await count('login', 'remount@vbfa.test')).toBe(1);
+    await db.exec("update public.crm_staff set last_login_at = now() - interval '20 minutes' where email = 'remount@vbfa.test'");
+    expect(await portal('s-rm', 'remount@vbfa.test')).toMatchObject([{ actor: await derived('s-rm') }]);
+    expect(await count('login', 'remount@vbfa.test')).toBe(2);
+  });
+
+  it('300 refused calls of a project member who is not on the allowlist leave ONE trail entry per reason and hour', async () => {
+    for (let i = 0; i < 300; i++) await db.query("select public.crm_portal_denied('s-flood', 'Flood@Elsewhere.test', 'not_staff')");
+    expect(await count('denied', 'flood@elsewhere.test')).toBe(1);
+    await db.query("select public.crm_portal_denied('s-flood', 'flood@elsewhere.test', 'other_reason')");
+    expect(await count('denied', 'flood@elsewhere.test')).toBe(2);
+    await db.exec("update public.crm_audit_log set at = now() - interval '2 hours' where actor_email = 'flood@elsewhere.test'");
+    await db.query("select public.crm_portal_denied('s-flood', 'flood@elsewhere.test', 'not_staff')");
+    expect(await count('denied', 'flood@elsewhere.test', 'not_staff')).toBe(2); // an hour later it is evidence again
+  });
+
+  it('repeated binding mismatches and Sanity-id reuse are also recorded once per hour', async () => {
+    await portal('s-rm-intruder', 'remount@vbfa.test'); // mismatch
+    for (let i = 0; i < 20; i++) expect(await portal('s-rm-intruder', 'remount@vbfa.test')).toEqual([]);
+    expect(await count('login_denied', 'remount@vbfa.test', 'binding_mismatch')).toBe(1);
+    await add('reuse@vbfa.test');
+    for (let i = 0; i < 20; i++) expect(await portal('s-rm', 'reuse@vbfa.test')).toEqual([]); // s-rm is bound to remount@
+    expect(await count('login_denied', 'reuse@vbfa.test', 'sanity_id_in_use')).toBe(1);
+  });
+
+  it('rollback: a person whose first sign-in was through the portal can use the website sign-in, which replaces the placeholder id', async () => {
+    await add('rollback@vbfa.test', 'admin');
+    const first = (await portal('s-rb', 'rollback@vbfa.test'))[0]!;
+    expect(first.actor).toBe(await derived('s-rb'));
+    const door = await rows('select * from public.crm_login($1, $2)', [REAL, 'rollback@vbfa.test']);
+    expect(door).toMatchObject([{ email: 'rollback@vbfa.test', role: 'admin' }]);
+    expect((await audit('login')).filter((r) => r.actor_email === 'rollback@vbfa.test').at(-1)!.detail).toEqual({ bound: false, replaced_portal_id: true });
+    // both doors keep working, with the real id now
+    expect(await who('s-rb', 'rollback@vbfa.test')).toMatchObject([{ actor: REAL }]);
+    expect(await portal('s-rb', 'rollback@vbfa.test')).toMatchObject([{ actor: REAL }]);
+    expect(await rows('select * from public.crm_whoami($1)', [REAL])).toMatchObject([{ email: 'rollback@vbfa.test' }]);
+    // and from now on the real id is protected like any other binding
+    expect(await rows('select * from public.crm_login($1, $2)', ['33333333-3333-4333-8333-333333333333', 'rollback@vbfa.test'])).toEqual([]);
+  });
+
+  it('a real (non placeholder) id is never replaced by the website sign-in of somebody else', async () => {
+    expect(await rows('select * from public.crm_login($1, $2)', ['44444444-4444-4444-8444-444444444444', 'rollback@vbfa.test'])).toEqual([]);
+  });
+
+  it('resetting the binding of the only bound administrator is refused (last_admin); with another bound administrator it works', async () => {
+    const bound = async () => Number((await one<{ n: string }>("select count(*)::text as n from public.crm_staff where role = 'admin' and active and user_id is not null")).n);
+    const admins = await rows<{ email: string }>("select email from public.crm_staff where role = 'admin' and active and user_id is not null order by email");
+    expect(admins.length).toBeGreaterThanOrEqual(2);
+    const keep = admins[0]!.email;
+    // park everyone but one
+    await db.query("update public.crm_staff set active = false where role = 'admin' and email <> $1 and user_id is not null", [keep]);
+    expect(await bound()).toBe(1);
+    const only = (await one<{ user_id: string }>('select user_id::text as user_id from public.crm_staff where email = $1', [keep])).user_id;
+    expect((await one<{ r: string }>("select public.crm_staff_upsert($1, $2, 'admin', array['membership','newsletter','contact'], true) as r", [only, keep])).r).toBe('last_admin');
+    expect((await one<{ u: string | null }>('select user_id::text as u from public.crm_staff where email = $1', [keep])).u).toBe(only);
+    await db.query("update public.crm_staff set active = true where role = 'admin' and email <> $1", [keep]);
+    expect(await bound()).toBeGreaterThanOrEqual(2);
+  });
+
+  it('crm_staff_reset_binding forgets ONLY the binding: role and scope stay as they are, it is audited, and it refuses oneself', async () => {
+    await add('target@vbfa.test');
+    await db.exec("update public.crm_staff set kinds = array['newsletter'] where email = 'target@vbfa.test'");
+    await portal('s-target', 'target@vbfa.test');
+    const adminActor = (await one<{ user_id: string }>("select user_id::text as user_id from public.crm_staff where email = 'rollback@vbfa.test'")).user_id;
+    const call = (actor: string, email: string) => one<{ r: string }>('select public.crm_staff_reset_binding($1, $2) as r', [actor, email]).then((x) => x.r);
+    expect(await call(adminActor, 'Target@VBFA.test')).toBe('ok');
+    expect(await one('select role, kinds, user_id, sanity_user_id from public.crm_staff where email = $1', ['target@vbfa.test'])).toEqual({ role: 'staff', kinds: ['newsletter'], user_id: null, sanity_user_id: null });
+    expect((await audit('staff_reset')).at(-1)).toMatchObject({ actor_email: 'rollback@vbfa.test', detail: { target: 'target@vbfa.test' } });
+    expect(await call(adminActor, 'nobody-here@vbfa.test')).toBe('not_found');
+    expect(await call(adminActor, 'rollback@vbfa.test')).toBe('self');
+    expect((await one<{ s: string | null }>("select sanity_user_id as s from public.crm_staff where email = 'rollback@vbfa.test'")).s).toBe('s-rb');
+    // only an active administrator may call it
+    const staffActor = await derived('s-rm');
+    expect(await code(db.query('select public.crm_staff_reset_binding($1, $2)', [staffActor, 'target@vbfa.test']))).toBe('42501');
+    expect(await code(db.query('select public.crm_staff_reset_binding($1, $2)', ['55555555-5555-4555-8555-555555555555', 'target@vbfa.test']))).toBe('42501');
+  });
+
+  it('refuses an e-mail that is not plain ASCII: a Unicode letter that folds into ASCII must not reach the allowlist row', async () => {
+    await add('kevin@vbfa.test');
+    expect(await portal('s-k', '\u212Aevin@vbfa.test')).toEqual([]); // Kelvin sign
+    expect(await portal('s-k', 'kevin@vbfa.test ')).toMatchObject([{ email: 'kevin@vbfa.test' }]); // surrounding blanks are trimmed
+    expect(await who('s-k', '\u212Aevin@vbfa.test')).toEqual([]);
+    expect(await who('s-k', 'kevin@vbfa.test')).toHaveLength(1);
   });
 });
