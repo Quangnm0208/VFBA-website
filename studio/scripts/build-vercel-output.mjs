@@ -50,7 +50,7 @@ export const ROUTES = [
 ];
 
 export const FUNCTION_CONFIG = {
-  runtime: 'nodejs22.x',
+  runtime: 'nodejs24.x', // the same runtime the website's functions run on (runtime=nodejs24.x in their logs)
   handler: 'index.mjs',
   launcherType: 'Nodejs',
   shouldAddHelpers: false,

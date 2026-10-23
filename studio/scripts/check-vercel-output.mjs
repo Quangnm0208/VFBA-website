@@ -35,7 +35,7 @@ check('no route allows cross-origin access (no Access-Control-* header anywhere)
 
 const fn = join(output, 'functions', 'api', 'portal.func');
 const vc = JSON.parse(readFileSync(join(fn, '.vc-config.json'), 'utf8'));
-check('function config: Node 22, Nodejs launcher, no helpers, handler file exists', JSON.stringify(vc) === JSON.stringify(FUNCTION_CONFIG) && /^nodejs22\./.test(vc.runtime) && vc.launcherType === 'Nodejs' && statSync(join(fn, vc.handler)).isFile());
+check('function config: Node 24, Nodejs launcher, no helpers, handler file exists', JSON.stringify(vc) === JSON.stringify(FUNCTION_CONFIG) && /^nodejs24\./.test(vc.runtime) && vc.launcherType === 'Nodejs' && statSync(join(fn, vc.handler)).isFile());
 const mod = await import(pathToFileURL(join(fn, vc.handler)).href);
 check('the bundle exports a (req, res) listener as default', typeof mod.default === 'function' && mod.default.length === 2, typeof mod.default);
 
