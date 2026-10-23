@@ -83,7 +83,7 @@ Bảo vệ: khoá Turnstile thử luôn trả "pass" ⇒ **không bao giờ** đ
 
 ## 5. Báo cáo E2E, Lighthouse, trợ năng
 
-**E2E thật Function ↔ Turnstile (khoá thử) ↔ Supabase: ĐÃ CHẠY 2026-10-23** sau khi Owner đặt biến Preview và secret `VERCEL_PROTECTION_BYPASS`: workflow `VBFA Preview real-service E2E` run `39911745667` trên deployment `dpl_DxkZ7gb6MdHzRhGcyWaQS8wVvZTh` (`05633ff`): **HTTP 24/24**; **SQL thật đúng 3 hàng** (`join-v2`, `newsletter-v1` x2, `ip_hash` 32 ký tự), 0 hàng cho các kịch bản không được lưu; **log Vercel có sự kiện `lead.*` và không có email/tên**. **Dọn dẹp còn mở**: lệnh `DELETE` qua kết nối bị treo (chờ xác nhận), 3 hàng thử vẫn còn cho tới khi Owner chạy câu lệnh xoá (`docs/evidence/E2E_REAL_2026-10-23.md` mục 5). Chưa chứng minh: khoá Turnstile thật và luồng trình duyệt thật.
+**E2E thật Function ↔ Turnstile (khoá thử) ↔ Supabase: ĐÃ CHẠY 2026-10-23** sau khi Owner đặt biến Preview và secret `VERCEL_PROTECTION_BYPASS`: workflow `VBFA Preview real-service E2E` run `39911745667` trên deployment `dpl_DxkZ7gb6MdHzRhGcyWaQS8wVvZTh` (`05633ff`): **HTTP 24/24**; **SQL thật đúng 3 hàng** (`join-v2`, `newsletter-v1` x2, `ip_hash` 32 ký tự), 0 hàng cho các kịch bản không được lưu; **log Vercel có sự kiện `lead.*` và không có email/tên**. **Đã dọn dẹp**: Owner chạy `DELETE` trong Supabase SQL Editor; đọc lại lúc 06:38 UTC: `website_leads` = 0 hàng, 0 hàng `e2e-` (`docs/evidence/E2E_REAL_2026-10-23.md` mục 5). Chưa chứng minh: khoá Turnstile thật và luồng trình duyệt thật.
 
 | Kiểm thử | Kết quả | Loại |
 |---|---|---|
@@ -139,7 +139,7 @@ Các bước (kỹ sư thực hiện sau GO; mỗi bước ghi SHA/ID deployment
 |---|---|---|
 | B-1 | Chính sách bảo mật + hai câu đồng ý + thời hạn lưu + danh sách bên xử lý/chuyển dữ liệu **được duyệt bằng văn bản** (`docs/privacy/`) | chưa |
 | B-2 | Trang Chính sách bảo mật đã Publish và được chọn trong Studio (cả hai ô tích có liên kết) | chưa |
-| B-3 | E2E thật PASS: HTTP + SQL thật, đúng 3 hàng, đã xoá, log không có PII (mục 6.7) | **gần đạt**: HTTP 24/24, SQL đúng 3 hàng, log không PII (THẬT, 2026-10-23); còn **xoá 3 hàng thử và xác nhận count = 0** |
+| B-3 | E2E thật PASS: HTTP + SQL thật, đúng 3 hàng, đã xoá, log không có PII (mục 6.7) | **ĐẠT với khoá thử** (THẬT, 2026-10-23): HTTP 24/24, SQL đúng 3 hàng, log không PII, đã xoá và `count = 0`; còn lại cho Release B: khoá Turnstile thật và luồng trình duyệt thật |
 | B-4 | Data API từ chối khoá anon (HTTP) | chưa |
 | B-5 | WAF `/api/*` đã bật và đã thử | chưa |
 | B-6 | Khoá Turnstile thật (+ hostname domain chính thức) | chưa |

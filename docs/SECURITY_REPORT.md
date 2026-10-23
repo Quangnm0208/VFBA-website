@@ -88,7 +88,7 @@ Chính sách bảo mật, sổ câu đồng ý, đề xuất thời hạn lưu v
 | ID | Mức | Nội dung | Ai | Hạn |
 |---|---|---|---|---|
 | SEC-O1 | Trung bình | Chưa có quy tắc rate limit Vercel WAF cho `/api/*` | Owner (UI) | trước Release B |
-| SEC-O2 | Thấp (đã giảm) | E2E thật đã chạy 2026-10-23 (HTTP 24/24, SQL đúng 3 hàng, log không PII: `docs/evidence/E2E_REAL_2026-10-23.md`). Còn: xoá 3 hàng thử và xác nhận count = 0; chạy lại với khoá Turnstile thật và luồng trình duyệt thật | Owner xoá hàng thử (hoặc duyệt xác nhận `DELETE`); agents ghi lại | trước Release B |
+| SEC-O2 | Thấp (đã giảm) | E2E thật đã chạy 2026-10-23 (HTTP 24/24, SQL đúng 3 hàng, log không PII: `docs/evidence/E2E_REAL_2026-10-23.md`). Đã xoá hàng thử, `count = 0` (06:38 UTC). Còn: chạy lại với khoá Turnstile thật và luồng trình duyệt thật | agents | trước Release B |
 | SEC-O3 | Thấp | Chưa xác minh được bằng HTTP rằng khoá anon bị từ chối ở Data API (chỉ có bằng chứng quyền DB) | Owner/CI chạy lệnh `curl` trong runbook | trước Release B |
 | SEC-O4 | Thấp | Branch protection và bảo vệ GitHub Environment `vbfa-cms` chưa kiểm chứng | Owner | trước Release A |
 | SEC-O5 | Thấp | Function dùng khoá `service_role` (bỏ qua RLS). Nếu lộ, toàn bộ DB bị lộ. Giảm thiểu hiện có: chỉ ở biến môi trường Vercel (Sensitive), không có trong bundle (đã quét), một dự án chỉ chứa dữ liệu lead. Nâng cấp đề xuất sau khi ra mắt: vai trò Postgres riêng chỉ có `EXECUTE` trên một RPC `insert_lead` | Kỹ sư (sau Release B) | sau ra mắt |

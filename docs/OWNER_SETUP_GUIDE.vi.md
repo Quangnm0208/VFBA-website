@@ -18,6 +18,7 @@
 | 2. Deploy Hook | đã tạo `sanity-preview`, nhánh `feat/vbfa-services-activation-20261022` | URL không lộ trong ảnh |
 | 3. Webhook Sanity | Owner báo đã tạo | chưa có bằng chứng build do webhook: cần một lần Publish thử |
 | 4. Biến Vercel | đã thêm; còn 2 chỗ cần sửa: `IP_HASH_SALT` đang ở **Production** (cần Preview + nhánh), `SUPABASE_SERVICE_ROLE_KEY` có thêm 1 dòng Preview **không gắn nhánh** (nên xoá) | tuỳ chọn: gắn nhánh cho `PUBLIC_TURNSTILE_SITE_KEY`, bật Sensitive cho `TURNSTILE_SECRET_KEY` |
+| 4. Chạy E2E thật | **ĐẠT** (HTTP 24/24, SQL đúng 3 hàng, log không PII, đã xoá, count = 0) | `docs/evidence/E2E_REAL_2026-10-23.md`; **lưu ý**: ảnh danh sách biến mới nhất **không còn `IP_HASH_SALT`** ở Production lẫn Preview — build kế tiếp sẽ mất salt và form trả 503 nếu không thêm lại (Preview + nhánh, Sensitive) |
 | 4. Secret GitHub | đã có `SANITY_DEPLOY_TOKEN` và `VERCEL_PROTECTION_BYPASS` (repository secrets) | thấy trong ảnh |
 | 5. Người dùng Beta / Supabase Auth | chưa | chờ đồng ý ở bước 6 |
 | 6. Xác nhận phạm vi Beta + người duyệt | chưa | cần để bắt đầu xây Lead Inbox |
