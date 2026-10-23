@@ -224,3 +224,27 @@ the first costs brand fidelity on slow first visits and the second adds a visibl
 - Only GitHub CI uses the fixed Cloudflare dummy credentials with a stubbed Siteverify fetch, never production credentials. Server-side real verification is still required in end-to-end UAT.
 - Migration 0001 explicitly grants `INSERT` to `service_role`, independent of Supabase project default privileges; exposed anonymous/authenticated roles have no access.
 - **No live Sanity project, Supabase database or client PII has been created or modified during this hardening phase.**
+
+### Real-Preview Lighthouse run 4 (2026-10-23, SHA `69b4a7f`, run `39983086734`): the LCP and CLS elements are now named
+
+First run with the platform rate limit respected (120 requests per window and address, `docs/SECURITY_REPORT.md` 8.2; responsive audit **0 FAIL** at 320/375/768/1024/1440 x 4 pages + overlays; Lighthouse spaced by 35 s). Median of 3, CI runner, same configuration as runs 1-3:
+
+| Form factor | Page | Perf | A11y | BP | SEO | FCP | LCP | CLS | TBT |
+|---|---|---|---|---|---|---|---|---|---|
+| mobile | `/tin-tuc/` | 94 | 100 | 92 | n/a | 1084 ms | **3109 ms** | 0.0001 | 0 |
+| mobile | `/tin-tuc/test/` | 95 | 100 | 92 | n/a | 928 ms | **2887 ms** | **0.0455** | 0 |
+| desktop | `/` | 100 | 100 | 92 | n/a | 387 ms | 601 ms | 0.0012 | 0 |
+| desktop | `/tin-tuc/` | 100 | 100 | 92 | n/a | 308 ms | 668 ms | 0.0012 | 0 |
+| desktop | `/tin-tuc/test/` | 100 | 100 | 92 | n/a | 305 ms | 659 ms | 0.0029 | 0 |
+| mobile, Cloudflare widget blocked (1 run) | `/` | 95 | 100 | 92 | n/a | 1688 ms | 2813 ms | 0.0000 | 0 |
+
+**QA-OPEN-3 (mobile LCP 2.8-3.1 s): the element is identified.**
+- `/tin-tuc/` and `/tin-tuc/test/` (mobile): the LCP element is the **fallback cover** `<img src="/og-default.png" width="1200" height="630" fetchpriority="high" loading="eager">` (the test article has no cover image, so `DEFAULT_COVER` is used). It is discoverable in the initial HTML, high priority and not lazy: the discovery insight is clean. The file was a **168 KB PNG**.
+- Home (mobile): the LCP element is the logo (`header.site-header a.logo img`, WebP, high priority, not lazy). Nothing to fix in its markup.
+- The observed (unthrottled) LCP breakdown on the runner is tiny: time to first byte 14-23 ms, load delay 57-88 ms, load duration 17-35 ms, render delay 48-212 ms (about 0.2-0.3 s in total). The 2.8-3.1 s is Lighthouse's **simulated mobile** (4x CPU, 1.6 Mbit/s, 150 ms round trip) value, which is dominated by serial round trips and bytes. Bytes are the only cheap lever.
+- Change made: the on-page fallback cover is now `public/og-default.webp` (**27.8 KB, -83 %**, visually checked); the PNG stays the social preview (`DEFAULT_OG`). Home is not changed: its simulated LCP follows FCP (1.7 s with the widget blocked), i.e. render-blocking CSS/fonts under a 150 ms round trip; inlining critical CSS would be a larger change that the Beta does not justify. Re-measure after this change: see the next run below (same runner configuration).
+
+**QA-OPEN-1 (CLS 0.0455 on the mobile article page): reproducible (0.0455 again), below the 0.1 "good" limit, so no code change.** Lighthouse names the shifted element: `main#main > article > div.container > div.cover` (the cover moves by 4.5 % of the viewport); the "unsized image" it lists as the cause is its heuristic for the decorative `img.gfx-leaf` (which has width/height attributes and is positioned absolutely, so it cannot move the cover). The most likely cause is the web-font swap changing the height of the title above the cover on a runner whose fallback font metrics differ; not proven (needs a trace with font timing). Desktop CLS is 0.001-0.003.
+
+**Unchanged and explained:** best practices 92 = the Vercel feedback script (`vercel.live`) that exists only on Preview deployments is blocked by our CSP (`errors-in-console`, `inspector-issues`); SEO "n/a" = `robots-txt` audit errored and `is-crawlable` is intentionally off (noindex Preview).
+
