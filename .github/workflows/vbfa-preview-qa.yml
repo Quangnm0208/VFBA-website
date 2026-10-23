@@ -48,6 +48,7 @@ jobs:
         env:
           QA_ARTICLE: /tin-tuc/test/
           QA_OUT: qa-artifacts/preview-responsive
+          QA_PACE_MS: '2500'
         run: node scripts/qa/responsive.mjs "$SITE"
       - name: Fonts on this runner (does local("Arial") resolve?)
         run: fc-match Arial; fc-match sans-serif; fc-list | wc -l

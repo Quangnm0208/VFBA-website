@@ -26,6 +26,8 @@ const ROUTES = [
 ];
 // Vercel "Protection Bypass for Automation" for a protected Preview: added to requests to the audited origin ONLY (never to third parties).
 const bypass = process.env.VERCEL_PROTECTION_BYPASS;
+// QA_PACE_MS: pause after each page load (a gentler pace for a protected Preview behind a rate-limiting platform).
+const PACE_MS = Number(process.env.QA_PACE_MS || 0);
 const heightFor = (w) => (w <= 430 ? 800 : w <= 834 ? 1100 : 900);
 
 await mkdir(outDir, { recursive: true });
@@ -52,10 +54,26 @@ async function open(width, path) {
     try { localStorage.setItem('vbfa:popup:demo-welcome', JSON.stringify({ rev: 'demo-1', at: Date.now() })); } catch {}
   });
   const page = await context.newPage();
+  const limited = [];
   page.errors = [];
   page.on('pageerror', (e) => page.errors.push(`pageerror: ${e.message}`));
   page.on('console', (m) => { if (m.type() === 'error') page.errors.push(`console: ${m.text()}`); });
-  const response = await page.goto(base + path, { waitUntil: 'networkidle' });
+  // The platform in front of the site may answer 429 when one address loads many pages in a short time (seen on the protected Preview from a CI
+  // runner). That is not a defect of the page, but it must never be hidden: print what the answer says, wait as told, retry, and say so.
+  page.on('response', (r) => {
+    if (r.status() !== 429 || limited.length >= 3) return;
+    const h = r.headers();
+    limited.push({ path: new URL(r.url()).pathname, retryAfter: h['retry-after'], mitigated: h['x-vercel-mitigated'], server: h.server, id: h['x-vercel-id'] });
+  });
+  let response = await page.goto(base + path, { waitUntil: 'networkidle' });
+  for (let attempt = 1; response?.status() === 429 && attempt <= 3; attempt++) {
+    const wait = Math.min(60, Number(response.headers()['retry-after']) || 20 * attempt);
+    add('INFO', `${path}@${width}`, `HTTP 429 from the platform, waiting ${wait}s (attempt ${attempt}/3)`, { retryAfter: response.headers()['retry-after'], mitigated: response.headers()['x-vercel-mitigated'], server: response.headers().server, id: response.headers()['x-vercel-id'] });
+    await page.waitForTimeout(wait * 1000);
+    response = await page.goto(base + path, { waitUntil: 'networkidle' });
+  }
+  if (limited.length) add('INFO', `${path}@${width}`, `${limited.length}+ sub-resource(s) answered 429`, limited);
+  if (PACE_MS) await new Promise((resolve) => setTimeout(resolve, PACE_MS));
   return { context, page, response };
 }
 
