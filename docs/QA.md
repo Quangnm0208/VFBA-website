@@ -120,6 +120,37 @@ Two desktop runs (login n = 2, lead detail n = 2) ended with Lighthouse's `NO_NA
 The CRM browser suite (`scripts/qa/crm-browser.mjs`, 37 checks) adds axe-core WCAG 2.2 A/AA on every screen (0 violations), keyboard-only sign-in and workflow, 8 widths from 320 px to 1920 px with no document overflow, and 400 % zoom.
 Not covered by any of this: screen readers, real phones, assistive-technology users (see "Known limits").
 
+### The protected Preview as deployed (2026-10-23, THẬT: real Vercel, real CDN, real Sanity data)
+
+Workflow `VBFA Preview browser QA (real deployment)` (`.github/workflows/vbfa-preview-qa.yml`), run `39922432516`, job `120310610291`, 08:07–08:14 UTC, started by the Owner's account labelling PR #8 with `run-preview-qa`
+(the job removed the label). The run was started on code SHA `05cd6b5` (Vercel `dpl_Fuz8EsH2UMpSSyEKtEEgYHYMSYXX`); it tests the branch alias with the Automation Bypass secret (never printed). The next commit `a8d73b2` changes `docs/` only and was pushed while the run was in progress, so the alias moved to it at about 08:09 UTC (the page's `vbfa-build` marker read `a8d73b2` at 08:16): the smoke test ran on `05cd6b5`, the responsive audit started on it and finished on whichever build was current, and Lighthouse ran on `a8d73b2`. The two builds have identical code.
+Artifacts (screenshots, `report.json`, Lighthouse JSON) are attached to the run (`preview-qa`, 14 days).
+
+| Check | Result |
+|---|---|
+| Black-box smoke (`smoke.mjs`: headers, redirects, CSP on 404, API methods/types/origin/size, fail-closed) | **15 passed, 0 failed, 1 skipped** (the skipped one is a valid submission: it would write; the write test is the separate real-service E2E) |
+| Responsive audit, 9 widths (320 / 375 / 390 / 430 / 768 / 834 / 1024 / 1440 / 1920) x home / news / article (`/tin-tuc/test/`) / 404 + overlays | **0 FAIL**, 22 INFO |
+| Lighthouse 13.5, runner `ubuntu-latest`, median of 3, bypass header | see table |
+
+| Page | Form factor | Perf | A11y | Best practices | SEO | FCP | LCP | CLS | TBT |
+|---|---|---|---|---|---|---|---|---|---|
+| `/` | mobile | 95 | 100 | 92 | 0† | 1696 ms | 2746 ms | 0.0000 | 0 ms |
+| `/tin-tuc/` | mobile | 93 | 100 | 92 | 0† | 1070 ms | 3240 ms | 0.0001 | 0 ms |
+| `/tin-tuc/test/` | mobile | 95 | 100 | 92 | 0† | 931 ms | 2881 ms | 0.0455 | 0 ms |
+| `/` | desktop | 100 | 100 | 92 | 0† | 387 ms | 607 ms | 0.0012 | 0 ms |
+| `/tin-tuc/` | desktop | 100 | 100 | 92 | 0† | 302 ms | 662 ms | 0.0017 | 0 ms |
+| `/tin-tuc/test/` | desktop | 100 | 100 | 92 | 0† | 339 ms | 665 ms | 0.0029 | 0 ms |
+
+What these numbers are and are not:
+
+- The 22 INFO lines are touch-target notes, not failures: one is the placeholder link `[BETA TEST] Test-123` (31–36 px high on phones; it disappears when real content replaces it), the others are the six desktop menu links at 41 px (mouse pointer, not touch).
+- **Differences from the local lab above are real, not noise.** Local numbers are HTTP/2 on one machine with the Arial shim; this is a shared CI runner reaching a CDN with Vercel's Preview layer on top. Mobile LCP is 2.75 s (`/`), 3.24 s (`/tin-tuc/`) and 2.88 s (article) here against 2.2–2.4 s locally, so **all three are above the 2.5 s "good" threshold in this lab** (the "needs improvement" band is 2.5–4.0 s). Desktop LCP is 0.6–0.7 s. Treat this as lab data from one shared runner under Lighthouse's simulated mobile throttling, re-measure on the final Production host, and do not read it as field data. The earlier "mobile 97/98/98" claim in this document was measured locally and does not carry over to the deployed Preview.
+- CLS 0.0455 on the mobile article page is below 0.1 (good) but it is the largest value measured anywhere; local measurement of the same page was 0.0003. The cause is not yet established (candidates: the CDN-served cover image arriving before its dimensions are applied, or the Preview's own injected overlay). Recorded as QA-OPEN-1 below.
+- † SEO shows 0 on the Preview while the same page measured 69 locally with `is-crawlable` as the only failing audit. The Preview is `noindex` by design (header, meta and `robots.txt`), so the category is not a gate. One cause is now **known**: reading the deployed page shows that `canonical`, `og:url`, `og:image` and the JSON-LD URLs carry the Production host `https://vfba-website-alpha.vercel.app` (`astro.config.ts` takes `PUBLIC_SITE_URL`, else `VERCEL_PROJECT_PRODUCTION_URL`, never the Preview host), which Lighthouse's `canonical` audit flags as "points to another domain". That is correct for Production and harmless while the Preview is `noindex`, but it means the SEO category cannot be read on a Preview. Whether that, and not an audit error, explains a score of 0 rather than about 69 is **not established**: the run did not record the failing audits. The script now prints the failing audits of the best-practices and SEO categories (`failing audits: …`), so the next run answers it.
+- Best practices 92 (local 100) is likewise unexplained from this run's output; a likely candidate is something Vercel injects into Preview pages (not present in Production), but that is a hypothesis, not a finding.
+
+Open items from this run: **QA-OPEN-1** CLS 0.0455 on the mobile article (explain or fix), **QA-OPEN-2** best practices 92 and SEO 0 on the Preview (explain with the new per-audit output), **QA-OPEN-3** `/tin-tuc/` mobile LCP 3.24 s on the runner (check the listing's LCP element; local 2.2 s).
+
 ## CLS investigation (earlier report: 0.149 on an article page)
 
 Reproduced and explained. The number depends on whether the visitor's device has an Arial-compatible font:

@@ -41,6 +41,7 @@
 | Form → Vercel Function → Supabase → SQL readback → dọn dữ liệu | HTTP 24/24, đúng 3 hàng, log không PII, dọn còn 0 hàng (bản `05633ff`; chạy lại cho bản Beta cuối cùng cùng lúc với CRM) | `docs/evidence/E2E_REAL_2026-10-23.md` |
 | Cơ sở dữ liệu CRM (migration `0007`, `0008`) | vân tay trùng bản dựng; RLS bật, 0 policy; `anon`/`authenticated` không quyền; 11 hàm chỉ `service_role`; Advisor chỉ INFO | `docs/evidence/CRM_2026-10-23.md` |
 | Preview khi CRM tắt | `/admin/*` = 404 với đủ header (`DENY`, CSP, `no-store`, `noindex`) | như trên |
+| Trình duyệt thật trên Preview đã triển khai (run `39922432516`, mã `05cd6b5`/`a8d73b2`, chỉ khác `docs/`) | smoke 15/15 (1 bỏ qua có chủ đích); kiểm tra 9 độ rộng x 4 trang: 0 lỗi, 22 ghi chú kích thước vùng chạm; Lighthouse (runner CI, trung vị 3): desktop 100/100/92, mobile 93–95/100/92; **LCP mobile 2,75–3,24 s (vượt ngưỡng “tốt” 2,5 s trong phòng thí nghiệm này)**, CLS bài viết mobile 0,0455 | `docs/QA.md` (QA-OPEN-1…3) |
 | Cron `vbfa-purge-lead-metadata` | lần chạy đầu thành công 2026-10-23 03:17 UTC | `docs/evidence/SUPABASE_REAL_2026-10-22.md` |
 
 ### MÔ PHỎNG (code thật + SQL thật, Auth/PostgREST giả lập cục bộ)
@@ -69,6 +70,8 @@ Không có lỗ hổng Cao/Nghiêm trọng mở trong mã. Một rà soát độ
 - Nội dung thử: bài `[BETA TEST] Test-123` và tiêu đề trang tin `Test Test` là nội dung giữ chỗ; thay bằng nội dung được duyệt trước khi công khai (CONTENT-001).
 - Chưa kiểm thử trên thiết bị thật (iOS Safari, Android Chrome), chưa kiểm thử trình đọc màn hình.
 - Chỉ dùng dữ liệu tổng hợp cho đến khi Chính sách bảo mật, câu đồng ý và thời hạn lưu được duyệt (`docs/privacy/`).
+- Trên Preview, `canonical`, `og:url` và JSON-LD mang địa chỉ Production (`vfba-website-alpha.vercel.app`) vì `astro.config.ts` lấy `PUBLIC_SITE_URL` hoặc địa chỉ Production, không phải địa chỉ Preview. Đúng cho Production, vô hại khi Preview là `noindex`; khi gắn tên miền chính thức phải đặt `PUBLIC_SITE_URL` đúng tên miền đó.
+- Số đo trình duyệt trên Preview đã triển khai còn 3 mục mở (QA-OPEN-1…3 trong `docs/QA.md`): CLS 0,0455 ở bài viết mobile, điểm best practices 92 / SEO chưa giải thích được, LCP mobile của `/tin-tuc/` 3,24 s. Chưa sửa vì chưa biết nguyên nhân; kiểm thử sau sẽ in ra tên mục kiểm toán bị trừ điểm.
 - Bản Preview dùng khoá Turnstile **thử** (luôn qua): vì vậy Preview phải được bảo vệ; không công khai.
 
 ## 7. Việc cần Owner (gộp một lần)
