@@ -1,0 +1,42 @@
+name: VBFA platform rate-limit probe (protected Preview, black box)
+# Measures from outside whether, at what rate and for which paths the platform (Vercel Firewall) answers 429, and how long a block lasts.
+# Sends cheap GET requests to the project's own protected Preview only (at most ~180 per path, ~5 per second, stops at the first 429).
+# Never runs on push. It starts only when the owner's account adds the label `run-ratelimit-probe` to the activation pull request.
+on:
+  pull_request:
+    types: [labeled]
+permissions:
+  contents: read
+  pull-requests: write # only to remove the trigger label
+concurrency:
+  group: vbfa-ratelimit-probe
+  cancel-in-progress: false
+jobs:
+  probe:
+    if: >-
+      github.event.label.name == 'run-ratelimit-probe' &&
+      github.event.sender.login == github.repository_owner &&
+      github.event.pull_request.head.ref == 'feat/vbfa-services-activation-20261022'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/vbfa-services-activation-20261022
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Probe (the exit status of the script is the status of the step)
+        shell: bash
+        env:
+          SITE: https://vfba-website-git-feat-vbfa-services-activation-20261022-quangnm.vercel.app
+          VERCEL_PROTECTION_BYPASS: ${{ secrets.VERCEL_PROTECTION_BYPASS }}
+        run: |
+          node scripts/qa/ratelimit-probe.mjs | tee /tmp/ratelimit-probe.log
+          grep -E '^(PATH|\(cool)' /tmp/ratelimit-probe.log | sed 's/^/    /' >> "$GITHUB_STEP_SUMMARY" || true
+      - name: Remove the trigger label
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X DELETE "repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/labels/run-ratelimit-probe" || true
