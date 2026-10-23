@@ -3,7 +3,7 @@ import type { Logger } from '../log';
 import type { Safe } from './html';
 import type { AuthClient, AuthUser } from './auth';
 import { ABSOLUTE_MS, clearAll, COOKIE_ACCESS, COOKIE_REFRESH, COOKIE_SESSION, parseCookies, setCookie, signSession, verifySession } from './session';
-import { BadInputError, ForbiddenError, LEAD_KINDS, LEAD_STATUSES, WORKFLOW_STATUSES, type CrmStore, type LeadKind, type LeadStatus, type Role, type StaffIdentity, type WorkflowStatus } from './store';
+import { BadInputError, ForbiddenError, LEAD_KINDS, LEAD_STATUSES, safeErrorLabel, WORKFLOW_STATUSES, type CrmStore, type LeadKind, type LeadStatus, type Role, type StaffIdentity, type WorkflowStatus } from './store';
 import { accountPage, deniedPage, errorPage, leadPage, leadsPage, leadsQuery, loginPage, PAGE_SIZE, staffPage, type Flash } from './views';
 
 /**
@@ -228,12 +228,6 @@ export async function handleCrm(request: Request, clientIp: string | undefined, 
     if (error instanceof BadInputError) return done(respond(400, errorPage('Dữ liệu không hợp lệ', 'Vui lòng kiểm tra lại thông tin đã nhập.'), {}, carried), 'crm.bad_input');
     return done(respond(503, errorPage('Tạm thời không khả dụng', 'Hệ thống chưa xử lý được yêu cầu. Vui lòng thử lại sau ít phút.'), {}, carried), 'crm.error', { error: safeErrorLabel(error) });
   }
-}
-
-/** Our own store errors are `crm.<function>:<code>`; anything else (network, library) is reduced to its class so no host, URL or value reaches the logs. */
-function safeErrorLabel(error: unknown): string {
-  if (error instanceof Error && /^crm\.[a-z_]+:[A-Za-z0-9_]+$/.test(error.message)) return error.message;
-  return error instanceof Error ? error.name : 'unknown';
 }
 
 /* ───────────────────────── session ───────────────────────── */

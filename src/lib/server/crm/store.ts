@@ -18,6 +18,10 @@ export interface StaffIdentity {
   role: Role;
   kinds: LeadKind[];
 }
+/** A staff member as the Admin Portal resolves them: `actor` is the id every other function checks (crm_staff.user_id). */
+export interface PortalActor extends StaffIdentity {
+  actor: string;
+}
 export interface LeadRow {
   id: string;
   kind: LeadKind;
@@ -69,6 +73,12 @@ export interface ListFilter {
 }
 export type StatusResult = 'ok' | 'noop' | 'conflict' | 'locked' | 'not_found';
 
+/** Our own store errors are `crm.<function>:<code>`; anything else (network, library) is reduced to its class so no host, URL or value reaches the logs. */
+export function safeErrorLabel(error: unknown): string {
+  if (error instanceof Error && /^crm\.[a-z_]+:[A-Za-z0-9_]+$/.test(error.message)) return error.message;
+  return error instanceof Error ? error.name : 'unknown';
+}
+
 /** The actor is not an active staff member (or lacks the admin role): the function refused. */
 export class ForbiddenError extends Error {
   constructor() {
@@ -89,6 +99,11 @@ export interface CrmStore {
   login(userId: string, email: string): Promise<StaffIdentity | null>;
   whoami(userId: string): Promise<StaffIdentity | null>;
   recordEvent(actor: string, email: string, action: 'logout' | 'denied'): Promise<void>;
+  /** Admin Portal: binds the Sanity-verified identity to the allowlist on first use. null = not allowed. */
+  portalLogin(sanityId: string, email: string): Promise<PortalActor | null>;
+  /** Admin Portal, every request: an already bound, active staff member. null = not staff. */
+  portalWhoami(sanityId: string, email: string): Promise<PortalActor | null>;
+  portalDenied(sanityId: string, email: string, reason: string): Promise<void>;
   listLeads(actor: string, filter: ListFilter): Promise<{ rows: LeadRow[]; total: number }>;
   getLead(actor: string, id: string): Promise<LeadDetail | null>;
   setStatus(actor: string, id: string, from: string, to: WorkflowStatus): Promise<StatusResult>;
@@ -123,6 +138,11 @@ export function createSupabaseCrmStore(url: string, serviceRoleKey: string): Crm
     return row ? { email: row.email, role: row.role, kinds: row.kinds } : null;
   };
 
+  const portalActor = (rows: Array<{ actor: string; email: string; role: Role; kinds: LeadKind[] }> | null): PortalActor | null => {
+    const row = rows?.[0];
+    return row ? { actor: row.actor, email: row.email, role: row.role, kinds: row.kinds } : null;
+  };
+
   return {
     async loginThrottle(ipHash, subjectHash) {
       const verdict = await rpc<string>('crm_login_throttle', { p_ip_hash: ipHash, p_subject_hash: subjectHash });
@@ -137,6 +157,15 @@ export function createSupabaseCrmStore(url: string, serviceRoleKey: string): Crm
     },
     async recordEvent(actor, email, action) {
       await rpc('crm_record_event', { p_actor: actor, p_email: email, p_action: action });
+    },
+    async portalLogin(sanityId, email) {
+      return portalActor(await rpc('crm_portal_login', { p_sanity_id: sanityId, p_email: email }));
+    },
+    async portalWhoami(sanityId, email) {
+      return portalActor(await rpc('crm_portal_whoami', { p_sanity_id: sanityId, p_email: email }));
+    },
+    async portalDenied(sanityId, email, reason) {
+      await rpc('crm_portal_denied', { p_sanity_id: sanityId, p_email: email, p_reason: reason });
     },
     async listLeads(actor, f) {
       const data = await rpc<Array<LeadRow & { total: number }>>('crm_list_leads', {

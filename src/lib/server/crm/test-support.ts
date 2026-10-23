@@ -12,7 +12,7 @@ import { PGlite } from '@electric-sql/pglite';
 import type { AuthClient, AuthUser, TokenResult } from './auth';
 import { handleCrm, type CrmDeps } from './app';
 import { createLogger } from '../log';
-import { BadInputError, ForbiddenError, type CrmStore, type LeadRow, type StaffIdentity, type StatusResult } from './store';
+import { BadInputError, ForbiddenError, type CrmStore, type LeadRow, type PortalActor, type StaffIdentity, type StatusResult } from './store';
 
 export const ORIGIN = 'https://beta.vbfa.example';
 
@@ -55,6 +55,15 @@ export function pgliteStore(db: PGlite): CrmStore {
     },
     async recordEvent(actor, email, action) {
       await q('select public.crm_record_event($1, $2, $3)', [actor, email, action]);
+    },
+    async portalLogin(sanityId, email) {
+      return (await q<PortalActor>('select * from public.crm_portal_login($1, $2)', [sanityId, email]))[0] ?? null;
+    },
+    async portalWhoami(sanityId, email) {
+      return (await q<PortalActor>('select * from public.crm_portal_whoami($1, $2)', [sanityId, email]))[0] ?? null;
+    },
+    async portalDenied(sanityId, email, reason) {
+      await q('select public.crm_portal_denied($1, $2, $3)', [sanityId, email, reason]);
     },
     async listLeads(actor, f) {
       const rows = await q<LeadRow & { total: number }>('select * from public.crm_list_leads($1, $2, $3, $4, $5, $6, $7, $8)', [actor, f.kind ?? null, f.status ?? null, f.from ?? null, f.to ?? null, f.q ?? null, f.limit, f.offset]);
