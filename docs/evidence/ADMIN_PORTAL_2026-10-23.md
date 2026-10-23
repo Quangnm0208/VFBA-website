@@ -74,6 +74,10 @@ Chưa kiểm chứng được (người rà soát nêu và tôi xác nhận): ph
 
 Dấu vân tay lược đồ sau `0010`: **trực tiếp = bản dựng từ repo** (112 hàng, `d1a573dd92c2910200c66803ed8fc9a7`). Bộ tư vấn bảo mật Supabase: chỉ còn 6 mục INFO "RLS bật, không có policy" (chủ ý) và 1 cảnh báo `auth_leaked_password_protection` (bật trong Supabase Auth; một số gói yêu cầu bản trả phí — **không bật khi chưa được phê duyệt**; việc của Owner).
 
+## 4c. Lỗi kiểm thử chỉ lộ ra trên máy chạy CI (đã sửa)
+
+Lần đầu `portal-browser.mjs` chạy trên GitHub Actions (CI run `39971847633`, SHA `17b7cfd`) báo **49/52**: 3 kiểm tra (tiêu điểm vào tiêu đề chi tiết, khối đồng ý, ghi chú hiển thị dạng văn bản) đọc trạng thái ngay sau khi màn hình vẽ, không đợi dữ liệu tải xong; máy local nhanh nên luôn đạt. Không phải lỗi sản phẩm. Sửa bằng cách đợi kết quả (`poll`/`waitFor`); kiểm chứng: 52/52 cục bộ và 4 lần chạy song song (máy bị tải) đều 52/52. CI xanh trên SHA sửa là điều kiện của Gate 4.
+
 ## 5. Rủi ro chấp nhận / mở
 
 - `npm audit --omit=dev` ở `studio/`: 16 (7 trung bình, 9 cao), **0 gói nào nằm trong bundle của Function** (chỉ `@supabase/*`, `iceberg-js`, `tslib`); toàn bộ là chuỗi công cụ CLI/build của `sanity` (braces, micromatch, fast-glob, globby, chokidar, js-yaml, smol-toml, uuid/typeid-js). Bản sửa hạ `sanity` xuống 5.14.1 (phá vỡ): không làm. Xem lại khi có bản `sanity` mới.

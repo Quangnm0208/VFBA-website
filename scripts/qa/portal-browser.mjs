@@ -23,6 +23,16 @@ const check = (name, ok, detail = '') => {
   results.push({ name, ok: Boolean(ok), detail });
   console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}${ok || !detail ? '' : `  — ${detail}`}`);
 };
+/** The screens load data after they render: on a slower machine a check must wait for the result, not for the first paint. */
+const poll = async (fn, ms = 6000) => {
+  const end = Date.now() + ms;
+  let value = await fn();
+  while (!value && Date.now() < end) {
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    value = await fn();
+  }
+  return value;
+};
 const axeSource = readFileSync(createRequire(import.meta.url).resolve('axe-core/axe.min.js'), 'utf8');
 
 /* ───────── build: the Function bundle and the harness page ───────── */
@@ -210,8 +220,9 @@ try {
     await page.keyboard.press('Enter');
     await page.getByRole('heading', { name: 'Chi tiết khách' }).waitFor();
     await page.getByText('khach07@beta.invalid').first().waitFor();
-    check('opening a lead by keyboard moves focus to the detail heading', await page.evaluate(() => document.activeElement?.textContent === 'Chi tiết khách'));
-    check('detail shows consent version, time and source page', (await page.getByText('join-v2').count()) > 0 && (await page.getByText('Thời điểm đồng ý').count()) === 1 && (await page.getByText('Trang gửi').count()) === 1);
+    check('opening a lead by keyboard moves focus to the detail heading', await poll(() => page.evaluate(() => document.activeElement?.textContent === 'Chi tiết khách')));
+    await page.getByText('Thời điểm đồng ý').first().waitFor();
+    check('detail shows consent version, time and source page', await poll(async () => (await page.getByText('join-v2').count()) > 0 && (await page.getByText('Thời điểm đồng ý').count()) === 1 && (await page.getByText('Trang gửi').count()) === 1));
     await axe(page, 'lead detail');
     await snap(page, 'detail-1280');
 
@@ -233,7 +244,9 @@ try {
     await page.getByText('Đã lưu ghi chú.').waitFor();
     const note = (await q("select author_email, body from public.lead_notes order by created_at desc limit 1"))[0];
     check('a multi-line note is stored with the author from the database', note.author_email === 'staff@vbfa.test' && note.body === 'Gọi lại thứ Hai\nvề hội viên <b>x</b>');
-    check('the note is shown as text (markup not interpreted) with author and time', (await page.locator('li', { hasText: 'staff@vbfa.test' }).count()) === 1 && (await page.locator('li b').count()) === 0, `li with author: ${await page.locator('li', { hasText: 'staff@vbfa.test' }).count()}, li b: ${await page.locator('li b').count()}`);
+    await page.locator('li', { hasText: 'staff@vbfa.test' }).first().waitFor(); // the list is reloaded after "saved"
+    const shownAsText = await poll(async () => (await page.locator('li', { hasText: 'staff@vbfa.test' }).count()) === 1 && (await page.locator('li b').count()) === 0);
+    check('the note is shown as text (markup not interpreted) with author and time', shownAsText, `li with author: ${await page.locator('li', { hasText: 'staff@vbfa.test' }).count()}, li b: ${await page.locator('li b').count()}`);
     await page.getByRole('button', { name: 'Đóng' }).click();
 
     // hostile lead content
