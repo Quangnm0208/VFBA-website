@@ -50,7 +50,11 @@ if (process.argv[2] === '--host') {
     headers.set('x-forwarded-for', String(req.headers['x-test-ip'] ?? '198.51.100.7'));
     const request = new Request(ORIGIN + req.url, { method: req.method, headers, body: ['GET', 'HEAD'].includes(req.method) ? undefined : Buffer.concat(chunks) });
     const response = await entry.fetch(request);
-    res.writeHead(response.status, Object.fromEntries(response.headers));
+    // Keep several Set-Cookie headers apart (a plain Object.fromEntries would merge them into one comma-joined value).
+    const out = Object.fromEntries([...response.headers].filter(([name]) => name !== 'set-cookie'));
+    const cookies = response.headers.getSetCookie();
+    if (cookies.length) out['set-cookie'] = cookies;
+    res.writeHead(response.status, out);
     res.end(Buffer.from(await response.arrayBuffer()));
   });
   server.listen(0, '127.0.0.1', () => console.log(`HOST_READY ${server.address().port}`));

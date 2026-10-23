@@ -33,6 +33,8 @@ jobs:
       - run: python3 scripts/check_site.py
       - name: 'Compiled Vercel Function (real routes, emulated database): methods, bodies, limits, fail-closed, no PII in logs'
         run: node scripts/qa/api-function.mjs
+      - name: 'Compiled Vercel Function, CRM: sign-in, roles, IDOR, sessions, CSRF, audit, headers (real SQL in PGlite, emulated Auth)'
+        run: node scripts/qa/crm-function.mjs
       - run: npx playwright install --with-deps chromium
       - name: 'Browser QA (interactions, forms with mocked API, pop-up, motion, 404 + CSP) and responsive audit'
         run: |

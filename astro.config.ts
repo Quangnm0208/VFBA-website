@@ -4,8 +4,9 @@ import vercel from '@astrojs/vercel';
 /**
  * Architecture (see docs/ARCHITECTURE.md):
  *  - Pages are prerendered at build time and served from the Vercel Edge Network (CDN).
- *  - Only src/pages/api/** opts out of prerendering (`export const prerender = false`): those routes
- *    run as Vercel Functions and are the only place that touches Supabase / secrets.
+ *  - Only src/pages/api/** and src/pages/admin/** (the CRM Lead Inbox) opt out of prerendering
+ *    (`export const prerender = false`): those routes run as one Vercel Function and are the only
+ *    place that touches Supabase / secrets.
  *  - Content comes from Sanity at build time; a Sanity webhook triggers a Vercel deploy hook.
  */
 const site =
@@ -77,6 +78,9 @@ export default defineConfig({
     LEADS_ENABLED: envField.string({ context: 'server', access: 'secret', optional: true }),
     SUPABASE_URL: envField.string({ context: 'server', access: 'secret', optional: true }),
       SUPABASE_SERVICE_ROLE_KEY: envField.string({ context: 'server', access: 'secret', optional: true }),
+      // CRM (Lead Inbox, /admin/): Supabase Auth sign-in uses the publishable key; the go-live switch keeps it off elsewhere.
+      SUPABASE_PUBLISHABLE_KEY: envField.string({ context: 'server', access: 'secret', optional: true }),
+      CRM_ENABLED: envField.string({ context: 'server', access: 'secret', optional: true }),
       TURNSTILE_SECRET_KEY: envField.string({ context: 'server', access: 'secret', optional: true }),
       IP_HASH_SALT: envField.string({ context: 'server', access: 'secret', optional: true }),
       FORM_ALLOWED_ORIGINS: envField.string({ context: 'server', access: 'public', optional: true }),
