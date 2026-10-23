@@ -14,7 +14,7 @@ Phạm vi: một địa chỉ cho Nội dung (Sanity Studio) và Lead (CRM), dan
 | Bộ xử lý `/api/portal`, bộ kiểm tra danh tính | Test đơn vị với Sanity mô phỏng (22 + 9 test) |
 | Màn hình + bundle Function | Chromium thật, bundle thật, SQL thật, **Sanity mô phỏng**, không có vỏ Studio |
 | Hợp đồng chạy trên Vercel (Build Output API, Node listener) | **Chưa kiểm chứng trên Vercel**; chỉ kiểm tra cục bộ (cây output + listener). Sẽ kiểm bằng `run-portal-live` sau khi Owner tạo project |
-| Vercel Preview `vbfa-admin` | **Chưa có** (OWNER_ACTION_REQUIRED: Bước 8) |
+| Vercel Preview `vbfa-admin` | **Chưa có** (OWNER_ACTION_REQUIRED: Bước 8). Đã thử lúc 2026-10-23 ~13:55 UTC: `create_project` (đủ cấu hình: gốc `studio`, repo, ignore-step, 3 biến không bí mật) → `403 forbidden` (`POST /v11/projects`, requestId `iad1:sfo1::6zrv5-1792763741192-39777fda6457`); `create_git_project` → lỗi lược đồ phản hồi khi tra cứu project liên kết với repo (không phải 403, nhưng không tạo được). Không có CLI/thông tin đăng nhập Vercel trong môi trường của agents |
 
 ## 2. Quan sát thật từ API Sanity (probe `scripts/qa/sanity-probe.mjs`, workflow run `39958212710`, job `120429279705`, SHA `fc5257e`)
 
