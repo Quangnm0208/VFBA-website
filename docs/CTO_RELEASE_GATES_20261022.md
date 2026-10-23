@@ -10,7 +10,7 @@ Status: **UAT candidate, NO-GO for production**. This document is a release chec
 - No additional Next.js, WordPress, Redis, or generalized application server required for this scope.
 
 ## Code-level security completed in this hardening branch
-1. Newsletter requires a visible, mandatory email-marketing consent checkbox. The API validates `consent:true` and the fixed version `newsletter-v1`; a forged unchecked request fails before a DB attempt.
+1. Newsletter requires a visible, mandatory email-marketing consent checkbox. The API validates `consent:true` and a consent version of the form `newsletter-v<n>` (text and version are managed together in the Studio and rendered in the same build); a forged unchecked request fails before a DB attempt.
 2. Frontend stops inferring consent merely from using the newsletter form; newsletter consent is now an explicit action.
 3. A form backend is enabled only when `LEADS_ENABLED=true`, an HTTPS Supabase URL, server-only service-role key, HMAC salt, public Turnstile sitekey, and private Turnstile secret are all present. Otherwise 503, never silently persist.
 4. Compiled-Function QA intercepts Turnstile only in the test runner with Cloudflare's documented dummy credentials; production uses Cloudflare Siteverify directly.

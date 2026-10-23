@@ -8,7 +8,7 @@ Kỹ sư không soạn nội dung pháp lý và không đưa khẳng định ph�
 | Biểu mẫu | Trường | Bắt buộc | Lưu ở đâu | Phiên bản đồng ý lưu kèm |
 |---|---|---|---|---|
 | Hội viên (`/api/join/`) | họ tên, tổ chức, e-mail, điện thoại (tuỳ chọn), nhu cầu, nội dung thêm (≤1000 ký tự) | tên, tổ chức, e-mail, ô đồng ý | `public.website_leads` | `join-v2` (nội dung câu đồng ý nằm trong Sanity → Thông tin chung → Biểu mẫu) |
-| Bản tin (`/api/newsletter/`) | e-mail | e-mail, ô đồng ý riêng | `public.website_leads` (`kind = newsletter`, một hàng cho mỗi địa chỉ) | `newsletter-v1` (câu đồng ý đang viết cứng trong `NewsletterBand.astro` **[PHÁP LÝ QUYẾT ĐỊNH nội dung; sau đó chuyển sang CMS]**) |
+| Bản tin (`/api/newsletter/`) | e-mail | e-mail, ô đồng ý riêng | `public.website_leads` (`kind = newsletter`, một hàng cho mỗi địa chỉ) | `newsletter-v1` (câu đồng ý và phiên bản nằm trong Sanity → Thông tin chung → Biểu mẫu, mặc định giữ chỗ trong mã; **[PHÁP LÝ QUYẾT ĐỊNH nội dung]**, xem `CONSENT_TEXTS.vi.md`) |
 | Cả hai | nguồn trang (`source_path`, không có query), `utm_source/medium/campaign` (nếu có), thời điểm đồng ý | tự động | cùng hàng | |
 | Cả hai | băm HMAC có muối của địa chỉ IP (`ip_hash`, 32 ký tự hex) | tự động | cùng hàng và bảng `form_attempts` | |
 
