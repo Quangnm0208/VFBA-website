@@ -74,6 +74,10 @@ Chưa có "user event log" kiểu theo dõi hành vi. Nếu sau này cần (đo 
 Danh tính: Supabase Auth (kiểm tra phiên ở mỗi request); quyền: bảng `crm_staff` do quản trị quản lý; dữ liệu: 11 hàm SQL `SECURITY DEFINER` (migration `0007`) gọi bằng service-role key ở máy chủ.
 Tắt mặc định (`CRM_ENABLED`). Chi tiết, bảo mật và hướng dẫn: `docs/CRM.vi.md`.
 
+### 3c. Admin Portal (Nội dung + Lead một địa chỉ)
+
+Project Vercel riêng `vbfa-admin` (Root Directory `studio`): Sanity Studio tự lưu trữ + công cụ Lead/Nhân sự (`studio/portal/*`) + một Vercel Function `POST /api/portal` (`studio/portal-api/portal.ts`, logic `src/lib/server/crm/portal/*`). Danh tính = phiên Sanity của người dùng, được máy chủ xác minh với API Sanity ở mỗi request; quyền CRM vẫn do `crm_staff` quyết (migration `0009` thêm `sanity_user_id` và 3 hàm). Phát hành theo Build Output API (`.vercel/output`) vì function sinh lúc build trong `api/` không được Vercel nhận. Chi tiết, rủi ro và trạng thái nghiệm thu: `docs/ADMIN_PORTAL.vi.md`.
+
 ## 4. Mô hình nội dung (Sanity ↔ `src/lib/content/schema.ts`)
 
 | Loại | Dạng | Ghi chú |
@@ -133,8 +137,8 @@ src/
   scripts/             TypeScript phía trình duyệt, theo tính năng
   styles/              CSS tách khối, giữ nguyên thứ tự cascade của bản thiết kế
   assets/              font, ảnh thương hiệu, ảnh seed (được fingerprint)
-studio/                Sanity Studio (host riêng)
-supabase/migrations/   SQL + test migration (PGlite): 0001-0006 form/throttle/retention, 0007 CRM
+studio/                Sanity Studio + Admin Portal (portal/ màn hình Lead/Nhân sự, portal-api/ function, scripts/ build Build Output API)
+supabase/migrations/   SQL + test migration (PGlite): 0001-0006 form/throttle/retention, 0007-0008 CRM, 0009 danh tính Admin Portal
 public/admin/crm.css   CSS của CRM (tệp tĩnh, không nội tuyến)
 scripts/               check_site.py, export-seed.mjs, build-fonts.mjs, qa/ (e2e, serve, api-function, crm-*, live-*)
 docs/                  tài liệu này + design/ (handoff gốc)

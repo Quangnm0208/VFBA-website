@@ -3,11 +3,13 @@
  *
  * The Admin Portal is a Sanity Studio: a person signs in once, with Sanity, and the Studio holds a session token. Its Leads tool sends
  * that token to the portal's Function, which does NOT trust anything the browser says about roles or e-mail: it asks the project API
- * `users/me` with the same token. Facts about that endpoint, observed on the real project (docs/evidence/ADMIN_PORTAL_*.md):
- *   - a valid session answers 200 with { sanityUserId, email, provider, roles[], ... };
- *   - an invalid token answers 401;
- *   - NO token also answers 200 (with no user), so a 200 alone proves nothing: the body is checked;
- *   - an API (robot) token answers 200 with provider "sanity-token" and NO e-mail: robots are never staff.
+ * `users/me` with the same token. Facts about that endpoint (probe run 39958212710, docs/evidence/ADMIN_PORTAL_2026-10-23.md):
+ *   - OBSERVED with an API (robot) token: 200 with { sanityUserId, provider: "sanity-token", role, roles[], givenName, ... } and NO e-mail;
+ *     the key set (email, id, provider, role, roles, sanityUserId, ...) is the one this code reads;
+ *   - OBSERVED: an invalid token answers 401, and NO token also answers 200 (with no user), so a 200 alone proves nothing: the body is checked;
+ *   - NOT YET OBSERVED: the body for a person's browser session (provider google/github/..., with e-mail). It is the same documented
+ *     shape; it is confirmed by the Owner's first real sign-in (docs/OWNER_SETUP_GUIDE.vi.md, Step 8f). Until then the positive path is unproven.
+ * Robots are never staff.
  * Everything unexpected is a refusal (fail closed). A failure of Sanity itself is "unavailable", never "allowed".
  */
 export interface SanityIdentity {

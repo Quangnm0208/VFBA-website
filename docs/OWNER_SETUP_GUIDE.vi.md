@@ -22,6 +22,7 @@
 | 4. Secret GitHub | đã có `SANITY_DEPLOY_TOKEN` và `VERCEL_PROTECTION_BYPASS` (repository secrets) | thấy trong ảnh |
 | 5. Người dùng Beta / Supabase Auth | **xem Bước 7** (CRM Beta đã xây xong, đang chờ 3 thao tác của Owner) | agents tạo được tài khoản kiểm thử tổng hợp; tài khoản **thật** của quản trị/nhân viên do Owner tạo |
 | 6. Xác nhận phạm vi Beta + người duyệt | phạm vi CRM Beta đã được giao trong prompt Beta-first của Owner (migration `0007` chỉ **thêm**, không cấp quyền cho `anon`/`authenticated`) | vẫn cần người duyệt nội dung/pháp lý trước khi dùng dữ liệu thật |
+| 8. Cổng quản trị `vbfa-admin` (Nội dung + Lead một địa chỉ) | **chờ Owner** (kết nối Vercel của agents không tạo được project: `403`) | mã nguồn, kiểm thử và workflow đã sẵn sàng: `docs/ADMIN_PORTAL.vi.md`; **Bước 8** dưới đây |
 
 ---
 
@@ -159,3 +160,30 @@ CRM đã xây, đã chạy cơ sở dữ liệu thật (migration `0007`, schema
 
 Nhắn `xong bước 7`. Agents sẽ tự: tạo 4 tài khoản kiểm thử tổng hợp (`crm-e2e-*@vbfa-beta.invalid`, không cần bạn làm gì), chạy kiểm thử thật (form → Supabase → CRM, phân quyền, đăng xuất thu hồi phiên…), xoá dữ liệu thử và ghi biên bản.
 Hướng dẫn dùng CRM cho quản trị/nhân viên: `docs/CRM.vi.md`.
+
+---
+
+## Bước 8 — Tạo Cổng quản trị `vbfa-admin` (khoảng 15 phút)  ·  Nội dung (CMS) và Lead (CRM) trên **một** địa chỉ
+
+Agents đã viết xong và kiểm thử Cổng quản trị (`docs/ADMIN_PORTAL.vi.md`) nhưng **không tạo được project Vercel và không đặt được biến môi trường** (kết nối `403`). Không dịch vụ trả phí mới; dùng đúng team `quangnm`, Sanity `iqyx5ttc`, Supabase `bzrtllytykldnawbuszu`.
+
+- [ ] **8a. Tạo project.** Vercel → **Add New… → Project** → Import `Quangnm0208/VFBA-website`.
+  - *Project Name*: `vbfa-admin`
+  - *Root Directory*: `studio` (bấm Edit)
+  - *Framework Preset*: **Other** · để trống mọi ô Build/Install/Output override (đã có trong `studio/vercel.json`)
+  - mở rộng *Root Directory* và **giữ bật** "Include source files outside of the Root Directory in the Build Step" (mặc định bật)
+  - **chưa bấm Deploy** nếu chưa xong 8b (nếu đã bấm: lần build đầu sẽ báo thiếu biến, không sao; sau 8b agents đẩy một commit để build lại, **đừng Redeploy**).
+- [ ] **8b. Biến môi trường** (trước khi Deploy, hoặc *Settings → Environment Variables*): *Environment* = **Preview**, *Git Branch* = `feat/vbfa-services-activation-20261022`:
+  - `SUPABASE_URL` = `https://bzrtllytykldnawbuszu.supabase.co`
+  - `SUPABASE_SERVICE_ROLE_KEY` = khoá service-role của Supabase (*Supabase → Project Settings → API Keys*), bật **Sensitive**. Giống giá trị đã dùng ở project `vfba-website`; **không gửi qua chat**.
+  - `SANITY_STUDIO_PROJECT_ID` = `iqyx5ttc`
+  - `SANITY_STUDIO_DATASET` = `production`
+- [ ] **8c. Không build nhánh khác.** *Settings → Git → Ignored Build Step → Custom* và nhập: `test "$VERCEL_GIT_COMMIT_REF" != "feat/vbfa-services-activation-20261022"` (tránh một lần build `main` thất bại vô ích; `main` chưa có `studio/vercel.json`).
+- [ ] **8d. Bảo vệ.** *Settings → Deployment Protection*: **Vercel Authentication** để bật (mặc định). Bật **Protection Bypass for Automation** → copy secret → GitHub repo → *Settings → Secrets and variables → Actions → New repository secret* tên **`VBFA_ADMIN_PROTECTION_BYPASS`**.
+- [ ] **8e. Nhắn `xong bước 8`.** Agents sẽ: xác minh project/biến bằng công cụ, thêm **đúng một** origin vào CORS của Sanity (workflow `run-sanity-cors`; nếu token thiếu quyền, agents ghi `OWNER_ACTION_REQUIRED`: vào *sanity.io/manage → API → CORS origins → Add* origin `https://vbfa-admin-git-feat-vbfa-services-activation-20261022-quangnm.vercel.app`, bật *Allow credentials*, **không** dùng ký tự đại diện `*`), rồi chạy kiểm tra thật `run-portal-live`.
+- [ ] **8f. Bạn nghiệm thu đăng nhập thật (agents không làm thay được).** Mở địa chỉ Cổng quản trị → đăng nhập bằng tài khoản Sanity của bạn → mục **Quản lý Lead** phải mở được danh sách. Điều kiện: **e-mail Sanity của bạn trùng e-mail trong `crm_staff`** (bước 7c). Nếu khác, chạy ở *Supabase → SQL Editor*:
+  ```sql
+  insert into public.crm_staff (email, role, created_by) values (lower('email-sanity-cua-ban@vi-du.vn'), 'admin', 'bootstrap')
+  on conflict (email) do update set role = 'admin', active = true;
+  ```
+  Rồi nhắn kết quả: *mở được* / *báo lỗi gì* (chụp màn hình thông báo, **không** chụp token). Chỉ khi bạn xác nhận bước này, mới được gọi là "một lần đăng nhập" (`docs/ADMIN_PORTAL.vi.md` §7).

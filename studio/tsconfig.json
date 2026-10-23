@@ -11,15 +11,17 @@
     "resolveJsonModule": true,
     "types": [
       "node"
-    ]
+    ],
+    "allowJs": true
   },
   "include": [
     "**/*.ts",
-    "**/*.tsx"
+    "**/*.tsx",
+    ".sanity/**/*"
   ],
   "exclude": [
     "node_modules",
     "dist",
-    ".sanity"
+    ".vercel"
   ]
 }

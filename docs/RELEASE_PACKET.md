@@ -42,6 +42,7 @@ Nhãn bằng chứng: **THẬT** = chạy/quan sát trên dịch vụ thật · 
 | 11 | Kiểm kê nội dung | mục 4 | xong |
 | 12 | Quyền riêng tư / đồng ý | `docs/privacy/` | bản nháp, **CHƯA được duyệt** |
 | 13 | Kế hoạch triển khai | mục 7 (A) và 8 (B) | xong |
+| 13b | Admin Portal (project Vercel riêng `vbfa-admin`, không nằm trong Release A/B và không đụng Production của `vfba-website`) | `studio/`, `docs/ADMIN_PORTAL.vi.md`, `docs/evidence/ADMIN_PORTAL_2026-10-23.md` | mã + kiểm thử xong; **chưa tạo project** (OWNER_ACTION: Bước 8); đăng nhập một lần chưa nghiệm thu |
 | 14 | Kế hoạch rollback | mục 9 | xong |
 | 15 | Bản ghi GO/NO-GO | mục 10 | chờ Owner |
 

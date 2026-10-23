@@ -149,3 +149,25 @@ Kết quả: không có mức Nghiêm trọng/Cao. Các phát hiện và trạng
 | SEC-C4 | Trung bình | Quy tắc WAF/rate limit cho `/api/*` và `/admin/*`: kết nối Vercel trả `404 Seawall Config not found` cho cả đọc, `PATCH` và `PUT` (đã thử 3 cách) nên **chưa có quy tắc**. Mô tả quy tắc đề xuất: đường dẫn bắt đầu bằng `/api/` hoặc `/admin/`, giới hạn 120 yêu cầu/phút/IP, hành động từ chối 1 phút | Owner (UI Vercel → Firewall) | trước Release B |
 | SEC-C5 | — | Chưa có kết quả THẬT cho đăng nhập/RBAC/IDOR trên Preview (cần Bước 7) | Owner bật CRM; kỹ sư chạy `live-crm-e2e.mjs` | trước khi tuyên bố Beta |
 
+## 8. Admin Portal (Gate 2), rà soát 2026-10-23
+
+Chi tiết: `docs/ADMIN_PORTAL.vi.md`, bằng chứng: `docs/evidence/ADMIN_PORTAL_2026-10-23.md`.
+
+| Kiểm soát | Trạng thái |
+|---|---|
+| Danh tính do **máy chủ** xác minh với API Sanity ở mỗi request; token robot, thiếu e-mail, không phải thành viên dự án, phản hồi 200 không có người dùng đều bị từ chối; Sanity lỗi/quá hạn ⇒ 503 (không bao giờ mặc định cho qua) | test đơn vị (9) + token sai/robot kiểm tra thật qua `run-portal-live` khi có project |
+| Quyền CRM từ `crm_staff` (vai trò + phạm vi loại lead); lần đầu gắn e-mail ⇄ `sanity_user_id`, sau đó phải khớp cả hai; mỗi hàm SQL kiểm tra lại actor và phạm vi; IDOR → 404 | PGlite (12) + màn hình (50) + handler (22) |
+| Chỉ `Authorization: Bearer` (không cookie ⇒ không có bề mặt CSRF); cùng origin bắt buộc; JSON ≤ 32 KB; chỉ POST | handler (22), `portal-live` kiểm thật |
+| Khoá service-role chỉ ở biến môi trường của Function; quét bundle trình duyệt (tên khoá, mã Supabase, tên hàm CRM) | `check-vercel-output.mjs` (CI) |
+| Log chỉ có thao tác/trạng thái/vai trò/thời gian; lỗi 500 chỉ ghi tên lớp lỗi (đã sửa lỗi lộ tiền tố thông điệp) | test log |
+| CORS Sanity: đúng một origin (`run-sanity-cors` từ chối ký tự đại diện và máy chủ lạ; không bao giờ `*.vercel.app` kèm credentials) | script + workflow, chờ project |
+
+Rủi ro còn lại:
+
+| ID | Mức | Nội dung | Ai |
+|---|---|---|---|
+| SEC-P1 | Trung bình | Chế độ `token` lưu token phiên Sanity trong `localStorage` của origin portal (XSS ở origin này lấy được token). Giảm thiểu: origin riêng chỉ có Studio, không script bên thứ ba, thoát ký tự ở mọi màn hình (test chèn markup). CSP đang **Report-Only** (`script-src 'unsafe-inline'` do khởi động Studio) — chặn sau khi có phiên thật | Owner chấp nhận hoặc yêu cầu cứng hoá |
+| SEC-P2 | Thấp | `npm audit` của `studio/` (16, đều trong chuỗi CLI/build của `sanity`, 0 gói trong bundle Function) | theo dõi mỗi bản `sanity` |
+| SEC-P3 | Trung bình | Chưa có rate-limit riêng cho `/api/portal` (cùng nguyên nhân SEC-C4) | Owner (Firewall) |
+| SEC-P4 | — | Đường đăng nhập dương bằng phiên người thật chưa được chứng minh; phản hồi `users/me` của phiên người thật chưa quan sát | Owner (Bước 8f) |
+

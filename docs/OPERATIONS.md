@@ -37,6 +37,7 @@ Tạo widget (Managed) cho domain website → lấy **Site key** và **Secret ke
 2. Settings → Git → **Deploy Hooks** → tạo hook cho nhánh `main` (tên `sanity-publish`), sao chép URL.
 3. Sanity: manage → API → **Webhooks** → Create: URL = Deploy Hook ở trên; Dataset `production`; Trigger on *Create, Update, Delete*; **tắt** "Include drafts"; Filter: `_type in ["article","page","homePage","newsPage","siteSettings","popup"]`; Method `POST`. Từ giờ mỗi lần *Publish* sẽ tự build lại.
 4. (Tuỳ chọn) Vercel → Observability / Log Drains để chuyển log kỹ thuật sang công cụ giám sát.
+5. **Cổng quản trị** (Nội dung + Lead một địa chỉ): project riêng `vbfa-admin`, Root Directory `studio`, biến `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (Sensitive), `SANITY_STUDIO_PROJECT_ID`, `SANITY_STUDIO_DATASET`; Sanity CORS đúng một origin; secret GitHub `VBFA_ADMIN_PROTECTION_BYPASS`. Từng bước: `docs/OWNER_SETUP_GUIDE.vi.md` Bước 8; kiến trúc và rollback: `docs/ADMIN_PORTAL.vi.md`. Khi có người nhân sự mới: thêm họ trong mục *Quản trị nhân sự*; họ cũng phải được mời vào dự án Sanity (quyền sửa nội dung là quyền riêng).
 
 ### E. Kiểm thử Sanity sau khi kích hoạt (làm trên Preview trước, ghi kết quả vào biên bản)
 

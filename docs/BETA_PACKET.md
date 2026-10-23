@@ -9,7 +9,8 @@
 |---|---|---|---|
 | **Website Beta** (Preview của nhánh kích hoạt) | `https://vfba-website-git-feat-vbfa-services-activation-20261022-quangnm.vercel.app/` | Vercel Authentication (chỉ thành viên team `quangnm`, hoặc liên kết chia sẻ do Owner tạo); `noindex`; `robots.txt` chặn tất cả | **Hoạt động** (THẬT) |
 | **CMS** (Sanity Studio) | https://vbfa-site.sanity.studio | đăng nhập Sanity; chỉ người được Owner mời vào dự án `iqyx5ttc` | **Hoạt động** (THẬT) |
-| **CRM Beta** | `<địa chỉ Website Beta>/admin/` | đăng nhập Supabase Auth (chỉ người được mời) + Vercel Authentication | **TẮT** cho đến khi Owner đặt `CRM_ENABLED=true` (Bước 7a); khi tắt trả 404 (THẬT) |
+| **CRM Beta** | `<địa chỉ Website Beta>/admin/` | đăng nhập Supabase Auth (chỉ người được mời) + Vercel Authentication | **ĐÃ BẬT và đã kiểm thử THẬT 48/48** trên Preview (`docs/evidence/CRM_REAL_E2E_2026-10-23.md`) |
+| **VBFA Admin Portal** (Nội dung + Lead, một địa chỉ) | `https://vbfa-admin-git-feat-vbfa-services-activation-20261022-quangnm.vercel.app` (dự kiến; kiểm lại sau khi tạo) | Vercel Authentication + đăng nhập Sanity; quyền Lead theo `crm_staff` | **CHƯA TẠO** — chờ Owner (Bước 8); mã, kiểm thử và workflow đã sẵn sàng (`docs/ADMIN_PORTAL.vi.md`). Đăng nhập một lần: `PENDING OWNER VERIFICATION` |
 
 ## 2. Danh tính bản phát hành
 
@@ -54,6 +55,12 @@
 | `scripts/qa/crm-browser.mjs` (Chromium: bàn phím, cookie, `Origin` thật, axe-core WCAG 2.2 AA, 8 độ rộng, zoom 400 %) | 37/37 |
 | Lighthouse cục bộ cho 4 màn hình CRM (mobile) | hiệu năng 100, trợ năng 100, thực hành tốt 100 (SEO 45: **chủ ý** `noindex`) — xem `docs/QA.md` |
 
+### Admin Portal (Gate 2) — xem `docs/evidence/ADMIN_PORTAL_2026-10-23.md`
+
+- THẬT: migration `0009` đã áp dụng lên Supabase thật; quan sát API Sanity thật (token robot / sai / không có).
+- MÔ PHỎNG: màn hình + bundle Function + SQL thật với Sanity giả (50/50), 31 test đơn vị, build kiểu Vercel (cục bộ).
+- CHƯA: triển khai thật trên Vercel (`vbfa-admin` chưa tồn tại), kiểm tra thật `run-portal-live`, và **đường đăng nhập dương bằng phiên Sanity của người thật** (Bước 8f).
+
 ### CHƯA (chờ Owner, Bước 7)
 
 - Đăng nhập, phân quyền, IDOR, đổi trạng thái, ghi chú, đăng xuất thu hồi phiên **trên Preview thật** (`scripts/qa/live-crm-e2e.mjs`).
@@ -81,7 +88,8 @@ Không có lỗ hổng Cao/Nghiêm trọng mở trong mã. Một rà soát độ
 | 1 | Thêm 2 biến Vercel cho nhánh Beta: `SUPABASE_PUBLISHABLE_KEY` (khoá công khai), `CRM_ENABLED=true`, rồi Redeploy **Preview** | Vercel → Settings → Environment Variables | `OWNER_SETUP_GUIDE.vi.md` Bước 7a (kết nối Vercel của agents bị `403` khi tạo biến) |
 | 2 | Tắt “Allow new users to sign up” | Supabase → Authentication → Sign In / Providers | Bước 7b |
 | 3 | Tạo tài khoản quản trị thật + chạy 1 câu SQL cấp quyền | Supabase Auth + SQL Editor | Bước 7c |
-| 4 | Quy tắc WAF `/api/*` + `/admin/*` (120 yêu cầu/phút/IP, chặn 1 phút) | Vercel → Firewall | `SECURITY_REPORT.md` SEC-C4 |
+| 3b | **Tạo Cổng quản trị**: Vercel project `vbfa-admin` (Root Directory `studio`), 4 biến (khoá service-role: Sensitive), Ignored Build Step, secret bypass, rồi tự đăng nhập Sanity thử Quản lý Lead | Vercel + GitHub + trình duyệt | `OWNER_SETUP_GUIDE.vi.md` Bước 8 |
+| 4 | Quy tắc WAF `/api/*` + `/admin/*` (120 yêu cầu/phút/IP, chặn 1 phút; thêm cả project `vbfa-admin`) | Vercel → Firewall | `SECURITY_REPORT.md` SEC-C4 |
 | 5 | Branch protection cho `main`; sau Beta: thu hồi/hết hạn token Sanity `SANITY_DEPLOY_TOKEN` | GitHub / Sanity | `SECURITY_REPORT.md` SEC-O4 |
 | 6 | Quyết định lưu giữ (khách, ghi chú, nhật ký), chấp nhận tìm kiếm GET, duyệt chính sách bảo mật/câu đồng ý | tài liệu `docs/privacy/` | `RETENTION_PROPOSAL.vi.md` mục 4–5 |
 
@@ -93,6 +101,7 @@ Không có lỗ hổng Cao/Nghiêm trọng mở trong mã. Một rà soát độ
 | Website Beta lỗi | Vercel → Deployments → chọn deployment READY trước đó của nhánh → *Promote/Redeploy* (Preview) hoặc `git revert` commit lỗi rồi push; alias nhánh luôn giữ bản READY gần nhất khi build lỗi (đã kiểm chứng THẬT) |
 | Nội dung CMS sai | sửa/bỏ xuất bản trong Studio (rebuild ~30 s) hoặc dùng *History* của Sanity |
 | Cơ sở dữ liệu | migration `0007`/`0008` chỉ **thêm/thay hàm của CRM**; tắt CRM là đủ. Gỡ hẳn cần migration có phê duyệt (mất ghi chú/nhật ký) |
+| Cổng quản trị lỗi | tạm dừng/gỡ project `vbfa-admin`; nội dung vẫn sửa ở `vbfa-site.sanity.studio`, Lead vẫn xử lý ở `<website>/admin/` (migration `0009` chỉ thêm) |
 | Production | không bị đụng; mọi thao tác trên đây chỉ ảnh hưởng Preview |
 
 ## 9. Dừng ở đâu

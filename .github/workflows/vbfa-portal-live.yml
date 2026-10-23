@@ -1,0 +1,46 @@
+name: VBFA Admin Portal live checks (deployed vbfa-admin Preview)
+# Black-box checks of the DEPLOYED Admin Portal, with the REAL Sanity API answering the identity cases. Writes nothing.
+# Starts only when the owner's account adds the label `run-portal-live` to the activation pull request.
+# Needs the GitHub secret VBFA_ADMIN_PROTECTION_BYPASS (vbfa-admin project > Settings > Deployment Protection > Protection Bypass for Automation).
+on:
+  pull_request:
+    types: [labeled]
+permissions:
+  contents: read
+  pull-requests: write # only to remove the trigger label
+concurrency:
+  group: vbfa-portal-live
+  cancel-in-progress: false
+jobs:
+  live:
+    if: >-
+      github.event.label.name == 'run-portal-live' &&
+      github.event.sender.login == github.repository_owner &&
+      github.event.pull_request.head.ref == 'feat/vbfa-services-activation-20261022'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/vbfa-services-activation-20261022
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Source SHA
+        run: |
+          echo "Source SHA: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
+      - name: Checks (the exit status of the script is the status of the step)
+        shell: bash
+        env:
+          ADMIN_URL: https://vbfa-admin-git-feat-vbfa-services-activation-20261022-quangnm.vercel.app
+          VERCEL_ADMIN_PROTECTION_BYPASS: ${{ secrets.VBFA_ADMIN_PROTECTION_BYPASS }}
+          SANITY_DEPLOY_TOKEN: ${{ secrets.SANITY_DEPLOY_TOKEN }}
+        run: |
+          node scripts/qa/portal-live.mjs | tee /tmp/portal-live.log
+          grep -E '^(PASS|FAIL)|passed' /tmp/portal-live.log | sed 's/^/    /' >> "$GITHUB_STEP_SUMMARY" || true
+      - name: Remove the trigger label
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X DELETE "repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/labels/run-portal-live" || true

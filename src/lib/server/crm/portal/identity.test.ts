@@ -3,9 +3,9 @@ import { createSanityVerifier } from './identity';
 
 /**
  * The verifier against fakes of `GET https://<project>.api.sanity.io/<version>/users/me`.
- * The response shapes below were observed on the real project (probe run 39958212710, docs/evidence/ADMIN_PORTAL_*.md):
- * a session answers 200 with sanityUserId / email / provider / roles; an invalid token answers 401; NO token answers 200 (no user);
- * an API token answers 200 with provider "sanity-token" and no e-mail.
+ * Observed on the real project (probe run 39958212710, docs/evidence/ADMIN_PORTAL_2026-10-23.md): an API (robot) token answers 200 with
+ * provider "sanity-token" and no e-mail; an invalid token answers 401; NO token answers 200 (no user). The `session()` fake below -
+ * a person's browser session - follows the same documented key set but has NOT been observed yet (first real sign-in, Step 8f).
  */
 const TOKEN = 'skAbCdEf0123456789AbCdEf0123456789AbCdEf0123456789';
 const session = (over: Record<string, unknown> = {}) => ({
