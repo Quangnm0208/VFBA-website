@@ -17,12 +17,15 @@ const base = (process.argv[2] || 'http://localhost:4321').replace(/\/$/, '');
 const outDir = process.env.QA_OUT || 'qa-artifacts/responsive';
 const WIDTHS = (process.env.QA_WIDTHS ? process.env.QA_WIDTHS.split(',').map(Number) : [320, 375, 390, 430, 768, 834, 1024, 1440, 1920]);
 const SHOTS = new Set([320, 390, 768, 834, 1024, 1440, 1920]);
+// QA_ARTICLE: article path to audit (default: a seed article; on a Preview built from the real CMS use the published one, e.g. /tin-tuc/test/).
 const ROUTES = [
   ['home', '/'],
   ['news', '/tin-tuc/'],
-  ['article', '/tin-tuc/dong-luc-tuong-lai/'],
+  ['article', process.env.QA_ARTICLE || '/tin-tuc/dong-luc-tuong-lai/'],
   ['notfound', '/trang-khong-ton-tai/'],
 ];
+// Vercel "Protection Bypass for Automation" for a protected Preview: added to requests to the audited origin ONLY (never to third parties).
+const bypass = process.env.VERCEL_PROTECTION_BYPASS;
 const heightFor = (w) => (w <= 430 ? 800 : w <= 834 ? 1100 : 900);
 
 await mkdir(outDir, { recursive: true });
@@ -41,6 +44,10 @@ async function open(width, path) {
     hasTouch: width <= 1040,
     reducedMotion: 'no-preference',
   });
+  if (bypass) {
+    const origin = new URL(base).origin;
+    await context.route((url) => url.origin === origin, (route) => route.continue({ headers: { ...route.request().headers(), 'x-vercel-protection-bypass': bypass } }));
+  }
   await context.addInitScript(() => {
     try { localStorage.setItem('vbfa:popup:demo-welcome', JSON.stringify({ rev: 'demo-1', at: Date.now() })); } catch {}
   });

@@ -1,0 +1,68 @@
+name: VBFA Preview browser QA (real deployment)
+# Browser audit of the PROTECTED Preview as deployed: nine widths x four pages in Chromium (layout, overflow, images, focus,
+# console/CSP errors), the black-box smoke test (headers, redirects, API fail-closed) and Lighthouse mobile + desktop.
+# Never runs on push. It starts only when the owner's account adds the label `run-preview-qa` to the activation pull request.
+on:
+  pull_request:
+    types: [labeled]
+permissions:
+  contents: read
+  pull-requests: write # only to remove the trigger label
+concurrency:
+  group: vbfa-preview-qa
+  cancel-in-progress: false
+jobs:
+  qa:
+    name: Responsive audit, smoke test, Lighthouse
+    if: >-
+      github.event.label.name == 'run-preview-qa' &&
+      github.event.sender.login == github.repository_owner &&
+      github.event.pull_request.head.ref == 'feat/vbfa-services-activation-20261022'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      SITE: https://vfba-website-git-feat-vbfa-services-activation-20261022-quangnm.vercel.app
+      VERCEL_PROTECTION_BYPASS: ${{ secrets.VERCEL_PROTECTION_BYPASS }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/vbfa-services-activation-20261022
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Source SHA and deployed build marker
+        run: |
+          echo "Source SHA: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
+          marker="$(curl -s -H "x-vercel-protection-bypass: $VERCEL_PROTECTION_BYPASS" "$SITE/" | grep -o 'name="vbfa-build" content="[0-9a-f]*"' || true)"
+          echo "Deployed build marker: $marker" >> "$GITHUB_STEP_SUMMARY"
+      - name: Black-box smoke test of the deployment (headers, redirects, API fail-closed)
+        env:
+          SMOKE_BASE_URL: ${{ env.SITE }}
+          SMOKE_API_MODE: configured
+        run: node scripts/qa/smoke.mjs
+      - name: Responsive audit, 9 widths x home / news / article / 404 (real Chromium on the real deployment)
+        env:
+          QA_ARTICLE: /tin-tuc/test/
+          QA_OUT: qa-artifacts/preview-responsive
+        run: node scripts/qa/responsive.mjs "$SITE"
+      - name: Lighthouse mobile + desktop (median of 3)
+        run: node scripts/qa/lh-live.mjs / /tin-tuc/ /tin-tuc/test/
+      - name: Upload screenshots and reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: preview-qa
+          path: |
+            qa-artifacts/preview-responsive
+            qa-artifacts/lighthouse
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Remove the trigger label
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X DELETE "repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/labels/run-preview-qa" || true
