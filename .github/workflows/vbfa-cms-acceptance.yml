@@ -1,0 +1,43 @@
+name: VBFA CMS acceptance (real Sanity -> Vercel Preview)
+# Writes clearly labelled Beta test documents to the REAL Sanity dataset and watches the protected Preview rebuild.
+# Never runs on push. It starts only when the owner's account adds the label `run-cms-acceptance` to the activation pull request;
+# the job removes the label again so the next run is another deliberate label.
+on:
+  pull_request:
+    types: [labeled]
+permissions:
+  contents: read
+  pull-requests: write # only to remove the trigger label
+concurrency:
+  group: vbfa-cms-acceptance
+  cancel-in-progress: false
+jobs:
+  cms:
+    name: Publish, update, unpublish, delete, failed build, recovery
+    if: >-
+      github.event.label.name == 'run-cms-acceptance' &&
+      github.event.sender.login == github.repository_owner &&
+      github.event.pull_request.head.ref == 'feat/vbfa-services-activation-20261022'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/vbfa-services-activation-20261022
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Real Sanity -> webhook -> Deploy Hook -> Preview rebuild
+        env:
+          SANITY_TOKEN: ${{ secrets.SANITY_DEPLOY_TOKEN }}
+          VERCEL_PROTECTION_BYPASS: ${{ secrets.VERCEL_PROTECTION_BYPASS }}
+          SITE: https://vfba-website-git-feat-vbfa-services-activation-20261022-quangnm.vercel.app
+        run: |
+          echo "Source SHA: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
+          node scripts/qa/live-cms-e2e.mjs
+      - name: Remove the trigger label
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X DELETE "repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/labels/run-cms-acceptance" || true
