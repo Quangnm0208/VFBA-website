@@ -37,7 +37,14 @@ for (const formFactor of ['mobile', 'desktop']) {
       const failing = ['best-practices', 'seo'].flatMap((c) => j.categories[c].auditRefs.filter((r) => r.weight > 0 && j.audits[r.id].scoreDisplayMode !== 'notApplicable' && (j.audits[r.id].score ?? 0) < 1).map((r) => `${c === 'seo' ? 'seo' : 'bp'}:${r.id}`));
       const logged = ['errors-in-console', 'inspector-issues'].flatMap((id) => (j.audits[id].details?.items ?? []).map((item) => `${id}: ${String(item.description ?? item.issueType ?? item.issue ?? JSON.stringify(item)).replace(/\s+/g, ' ').slice(0, 160)}${item.sourceLocation?.url ? ` @ ${String(item.sourceLocation.url).replace(/^(https?:\/\/[^/]+).*$/, '$1')}` : ''}`));
       const erroredAudits = Object.values(j.audits).filter((a) => a.scoreDisplayMode === 'error').map((a) => a.id);
-      results.push({ logged, erroredAudits, failing, perf: j.categories.performance.score * 100, a11y: j.categories.accessibility.score * 100, bp: j.categories['best-practices'].score === null ? NaN : j.categories['best-practices'].score * 100, seo: j.categories.seo.score === null ? NaN : j.categories.seo.score * 100, fcp: j.audits['first-contentful-paint'].numericValue, lcp: j.audits['largest-contentful-paint'].numericValue, cls: j.audits['cumulative-layout-shift'].numericValue, tbt: j.audits['total-blocking-time'].numericValue });
+      const brief = (id) => {
+        const a = j.audits[id];
+        if (!a?.details) return null;
+        const text = JSON.stringify(a.details.items ?? a.details, (key, value) => (['boundingRect', 'lhId', 'path', 'nodeLabel', 'type', 'headings', 'debugData'].includes(key) ? undefined : value));
+        return `${id}: ${text.slice(0, 700)}`;
+      };
+      const evidence = ['largest-contentful-paint-element', 'lcp-breakdown-insight', 'lcp-discovery-insight', 'layout-shifts', 'cls-culprits-insight'].map(brief).filter(Boolean);
+      results.push({ evidence, logged, erroredAudits, failing, perf: j.categories.performance.score * 100, a11y: j.categories.accessibility.score * 100, bp: j.categories['best-practices'].score === null ? NaN : j.categories['best-practices'].score * 100, seo: j.categories.seo.score === null ? NaN : j.categories.seo.score * 100, fcp: j.audits['first-contentful-paint'].numericValue, lcp: j.audits['largest-contentful-paint'].numericValue, cls: j.audits['cumulative-layout-shift'].numericValue, tbt: j.audits['total-blocking-time'].numericValue });
     }
     if (!results.length) { failed++; continue; }
     const m = (k) => median(results.map((r) => r[k]).filter((v) => !Number.isNaN(v)));
@@ -48,6 +55,7 @@ for (const formFactor of ['mobile', 'desktop']) {
     console.log(`         failing audits: ${[...new Set(results.flatMap((r) => r.failing))].join(', ') || 'none'}`);
     const errored = [...new Set(results.flatMap((r) => r.erroredAudits))];
     if (errored.length) console.log(`         audits that ERRORED (their category has no score): ${errored.join(', ')}`);
+    if (process.env.LH_EVIDENCE !== '0') for (const line of results.at(-1).evidence) console.log(`         evidence ${line}`);
     for (const line of [...new Set(results.flatMap((r) => r.logged))].slice(0, 6)) console.log(`         logged by the page: ${line}`);
     lines.push(row);
     // The Preview is noindex on purpose, so the SEO category is not a gate here; accessibility and best practices are.
