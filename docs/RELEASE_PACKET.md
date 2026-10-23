@@ -23,7 +23,7 @@ Nhãn bằng chứng: **THẬT** = chạy/quan sát trên dịch vụ thật · 
 | Studio | `https://vbfa-site.sanity.studio/`, triển khai lại ngày 2026-10-22 15:45 UTC, workflow `VBFA Sanity Studio deployment` run `39807604001` (typecheck, `sanity schema validate` 0 lỗi/0 cảnh báo, build, `Deployed 1/1 schemas`) |
 | Supabase | dự án `bzrtllytykldnawbuszu`; vân tay schema `95bf69af89bfa4e96e9a78f4f78def2f` (43 dòng) = bản dựng từ 6 migration |
 | Production hiện tại | `dpl_9jxuNcjYNQcn9kdTXCZfqX5WcXnG` (`f9ef1c0`, frontend cũ) — **không đụng tới** |
-| Tài liệu bằng chứng | `docs/evidence/CMS_PREVIEW_2026-10-22.md`, `docs/evidence/SUPABASE_REAL_2026-10-22.md`, `docs/SECURITY_REPORT.md`, `docs/QA.md` |
+| Tài liệu bằng chứng | `docs/evidence/E2E_REAL_2026-10-23.md`, `docs/evidence/CMS_PREVIEW_2026-10-22.md`, `docs/evidence/SUPABASE_REAL_2026-10-22.md`, `docs/SECURITY_REPORT.md`, `docs/QA.md` |
 
 ## 2. Gói phát hành (15 hạng mục)
 
@@ -83,7 +83,7 @@ Bảo vệ: khoá Turnstile thử luôn trả "pass" ⇒ **không bao giờ** đ
 
 ## 5. Báo cáo E2E, Lighthouse, trợ năng
 
-**E2E thật Function ↔ Turnstile ↔ Supabase: CHƯA CHẠY.** Chưa thể chạy từ phía kỹ sư vì (1) kết nối Vercel của kỹ sư nhận `403` khi đọc/ghi biến môi trường, (2) cần `SUPABASE_SERVICE_ROLE_KEY`, `IP_HASH_SALT` và khoá Turnstile thử đặt trên Preview, (3) workflow cần secret `VERCEL_PROTECTION_BYPASS`. Workflow `VBFA Preview real-service E2E` có 0 lần chạy. Khi các điều kiện đủ, quy trình nghiệm thu (HTTP **và** SQL thật) ở mục 6, bước 7.
+**E2E thật Function ↔ Turnstile (khoá thử) ↔ Supabase: ĐÃ CHẠY 2026-10-23** sau khi Owner đặt biến Preview và secret `VERCEL_PROTECTION_BYPASS`: workflow `VBFA Preview real-service E2E` run `39911745667` trên deployment `dpl_DxkZ7gb6MdHzRhGcyWaQS8wVvZTh` (`05633ff`): **HTTP 24/24**; **SQL thật đúng 3 hàng** (`join-v2`, `newsletter-v1` x2, `ip_hash` 32 ký tự), 0 hàng cho các kịch bản không được lưu; **log Vercel có sự kiện `lead.*` và không có email/tên**. **Dọn dẹp còn mở**: lệnh `DELETE` qua kết nối bị treo (chờ xác nhận), 3 hàng thử vẫn còn cho tới khi Owner chạy câu lệnh xoá (`docs/evidence/E2E_REAL_2026-10-23.md` mục 5). Chưa chứng minh: khoá Turnstile thật và luồng trình duyệt thật.
 
 | Kiểm thử | Kết quả | Loại |
 |---|---|---|
@@ -139,7 +139,7 @@ Các bước (kỹ sư thực hiện sau GO; mỗi bước ghi SHA/ID deployment
 |---|---|---|
 | B-1 | Chính sách bảo mật + hai câu đồng ý + thời hạn lưu + danh sách bên xử lý/chuyển dữ liệu **được duyệt bằng văn bản** (`docs/privacy/`) | chưa |
 | B-2 | Trang Chính sách bảo mật đã Publish và được chọn trong Studio (cả hai ô tích có liên kết) | chưa |
-| B-3 | E2E thật PASS: HTTP + SQL thật, đúng 3 hàng, đã xoá, log không có PII (mục 6.7) | chưa chạy |
+| B-3 | E2E thật PASS: HTTP + SQL thật, đúng 3 hàng, đã xoá, log không có PII (mục 6.7) | **gần đạt**: HTTP 24/24, SQL đúng 3 hàng, log không PII (THẬT, 2026-10-23); còn **xoá 3 hàng thử và xác nhận count = 0** |
 | B-4 | Data API từ chối khoá anon (HTTP) | chưa |
 | B-5 | WAF `/api/*` đã bật và đã thử | chưa |
 | B-6 | Khoá Turnstile thật (+ hostname domain chính thức) | chưa |
