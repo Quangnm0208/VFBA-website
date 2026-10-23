@@ -34,9 +34,10 @@ const heightFor = (w) => (w <= 430 ? 800 : w <= 834 ? 1100 : 900);
 // (measured by scripts/qa/ratelimit-probe.mjs: the 121st request of a window is denied with HTTP 429, whatever the path). A page load is ~50 requests,
 // so before each load the audit waits until the last window plus the size of the previous load fits the budget. 0 = no limit (local servers).
 const REQ_BUDGET = Number(process.env.QA_REQ_BUDGET || 0);
-const stamps = [];
+// QA_REQ_PRESEED: requests the same job already sent in the current window (the smoke test runs just before this audit).
+const stamps = Array.from({ length: Number(process.env.QA_REQ_PRESEED || 0) }, () => Date.now());
 let lastLoadSize = 60;
-let stampsAtLastThrottle = 0;
+let stampsAtLastThrottle = stamps.length;
 async function throttle() {
   if (!REQ_BUDGET) return;
   const sent = stamps.length - stampsAtLastThrottle;

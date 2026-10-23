@@ -49,7 +49,8 @@ jobs:
           QA_ARTICLE: /tin-tuc/test/
           QA_OUT: qa-artifacts/preview-responsive
           # The Preview is behind a platform rate limit (120 requests per minute and address, measured by vbfa-ratelimit-probe); stay well under it.
-          QA_REQ_BUDGET: '110'
+          QA_REQ_BUDGET: '100'
+          QA_REQ_PRESEED: '25' # the smoke test and the build-marker request ran in the same minute
           QA_WIDTHS: '320,375,768,1024,1440'
         run: node scripts/qa/responsive.mjs "$SITE"
       - name: Fonts on this runner (does local("Arial") resolve?)
